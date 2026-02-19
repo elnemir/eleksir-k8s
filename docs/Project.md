@@ -157,6 +157,10 @@ roles/
 - Kubernetes: `1.30.14`
 - kubeadm config API: `kubeadm.k8s.io/v1beta3` (параметризуемо через `kubeadm_config_api_version`)
 - kubeadm experimental flag: `kubeadm_init_allow_experimental_api=false` (включается только при необходимости)
+- Kubernetes package install resilience:
+  - precheck репозитория через `dnf makecache` c retry;
+  - установка пакетов с retry;
+  - поддержка override версии пакетов через `kubernetes_packages_version_override`.
 - Runtime: `containerd`
 - Runtime packaging policy:
   - установка базового runtime выполняется без жесткой зависимости на пакет `cri-tools`;

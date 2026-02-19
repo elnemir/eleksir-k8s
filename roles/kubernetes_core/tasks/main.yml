@@ -5,6 +5,8 @@
   ansible.builtin.assert:
     that:
       - kubernetes_version is defined
+      - kubernetes_packages is iterable
+      - kubernetes_packages | length > 0
       - kubeadm_config_api_version is defined
       - kubeadm_config_api_version | length > 0
       - control_plane_endpoint is defined
@@ -12,6 +14,19 @@
       - service_subnet_cidr is defined
       - groups['control_plane'] | length > 0
     fail_msg: "Kubernetes core variables are incomplete"
+
+- name: Resolve Kubernetes package list for install
+  ansible.builtin.set_fact:
+    kubernetes_packages_resolved: >-
+      {{
+        (
+          kubernetes_packages
+          | map('regex_replace', '$', '-' ~ kubernetes_packages_version_override)
+          | list
+        )
+        if (kubernetes_packages_version_override | default('') | length > 0)
+        else kubernetes_packages
+      }}
 
 - name: Define node role flags
   ansible.builtin.set_fact:
@@ -26,10 +41,25 @@
     dest: /etc/yum.repos.d/kubernetes.repo
     mode: "0644"
 
+- name: Refresh Kubernetes repo metadata with retries
+  ansible.builtin.command: dnf -q makecache --refresh --disablerepo='*' --enablerepo=kubernetes
+  register: kubernetes_repo_makecache
+  changed_when: false
+  retries: "{{ kubernetes_repo_validate_retries | int }}"
+  delay: "{{ kubernetes_repo_validate_delay | int }}"
+  until: kubernetes_repo_makecache.rc == 0
+  when: kubernetes_repo_validate_before_install | bool
+  environment: "{{ proxy_environment | default({}) }}"
+
 - name: Install Kubernetes packages
-  ansible.builtin.package:
-    name: "{{ kubernetes_packages }}"
+  ansible.builtin.dnf:
+    name: "{{ kubernetes_packages_resolved }}"
     state: present
+  register: kubernetes_packages_install_result
+  retries: "{{ kubernetes_package_install_retries | int }}"
+  delay: "{{ kubernetes_package_install_delay | int }}"
+  until: kubernetes_packages_install_result is succeeded
+  environment: "{{ proxy_environment | default({}) }}"
 
 - name: Ensure kubelet is enabled
   ansible.builtin.service:

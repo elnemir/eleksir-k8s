@@ -8,6 +8,12 @@ management_cidr: "10.255.106.0/26"
 kubernetes_version: "1.30.14"
 kubeadm_config_api_version: "kubeadm.k8s.io/v1beta3"
 kubeadm_init_allow_experimental_api: false
+kubernetes_packages_version_override: ""
+kubernetes_repo_validate_before_install: true
+kubernetes_repo_validate_retries: 4
+kubernetes_repo_validate_delay: 15
+kubernetes_package_install_retries: 4
+kubernetes_package_install_delay: 20
 kubernetes_cni: calico
 control_plane_endpoint: "10.255.106.20"
 control_plane_endpoint_port: 8443

@@ -61,6 +61,9 @@ ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/reinstal
 - `kubeadm_config_api_version: kubeadm.k8s.io/v1beta3`
 - `kubeadm_init_allow_experimental_api: false`
 - `container_runtime_install_cri_tools: false` (рекомендуемо для текущего набора repo на RedOS)
+- `kubernetes_repo_validate_before_install: true`
+- `kubernetes_package_install_retries: 4`
+- `kubernetes_packages_version_override: ""` (пусто = использовать текущую версию из repo channel)
 
 ## 5. Режим A: Изолированная сеть (proxy включен)
 Убедитесь, что в `inventories/prod/group_vars/all.yml`:
@@ -203,6 +206,18 @@ ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml
 Если на этапе runtime возникает `Depsolve Error` по `cri-tools`:
 1. Убедиться, что `container_runtime_install_cri_tools: false`.
 2. Перезапустить bootstrap:
+```bash
+ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml
+```
+
+Если на этапе `kubernetes_core` возникает `Cannot download, all mirrors were already tried`:
+1. Проверить доступность repo metadata на хосте:
+```bash
+sudo dnf -q makecache --refresh --disablerepo='*' --enablerepo=kubernetes
+```
+2. При недоступности нужного patch-релиза временно указать доступную версию:
+- `kubernetes_packages_version_override: "1.30.1-150500.1.1"` (пример)
+3. Повторить bootstrap:
 ```bash
 ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml
 ```

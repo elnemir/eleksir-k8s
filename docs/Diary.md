@@ -338,3 +338,18 @@
 ### Проблемы
 - До фикса роль `container_runtime` не может стабильно отрабатывать на RedOS с текущим набором репозиториев.
 - После фикса требуется повторный запуск `playbooks/bootstrap.yml` на control host для подтверждения устранения depsolve.
+
+## Дата: 2026-02-19 (сессия 25)
+### Наблюдения
+- На этапе `kubernetes_core` зафиксирован сбой загрузки `kubeadm` (`Cannot download, all mirrors were already tried without success`).
+- Требуется повысить устойчивость роли к временной недоступности зеркал и добавить параметр явного выбора версии пакетов.
+
+### Решения
+- Стартована задача `T-029` на доработку `kubernetes_core`: precheck repo, retries установки и override версии Kubernetes-пакетов.
+- Добавлен precheck `dnf makecache --enablerepo=kubernetes` с retry.
+- Добавлен retry для установки Kubernetes-пакетов.
+- Добавлен параметр `kubernetes_packages_version_override` для ручного выбора доступного patch-релиза.
+
+### Проблемы
+- Без этой доработки bootstrap остается чувствительным к сетевой деградации/нестабильным зеркалам.
+- Для подтверждения фикса нужен повторный запуск `bootstrap` на control host.

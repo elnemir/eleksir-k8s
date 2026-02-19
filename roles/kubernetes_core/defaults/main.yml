@@ -9,6 +9,13 @@ kubernetes_packages:
   - kubeadm
   - kubectl
 
+kubernetes_packages_version_override: ""
+kubernetes_repo_validate_before_install: true
+kubernetes_repo_validate_retries: 4
+kubernetes_repo_validate_delay: 15
+kubernetes_package_install_retries: 4
+kubernetes_package_install_delay: 20
+
 kubernetes_repo_channel: "v{{ (kubernetes_version.split('.')[0:2] | join('.')) }}"
 kubernetes_repo_baseurl: "https://pkgs.k8s.io/core:/stable:/{{ kubernetes_repo_channel }}/rpm/"
 kubernetes_repo_gpgkey: "{{ kubernetes_repo_baseurl }}repodata/repomd.xml.key"

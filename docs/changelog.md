@@ -209,3 +209,15 @@
 - Обновлен `inventories/prod/group_vars/all.yml`: зафиксирован безопасный default `container_runtime_install_cri_tools: false`.
 - Обновлены `docs/Project.md` и `docs/runbook.md`: добавлены указания по runtime packaging policy и troubleshooting depsolve для `cri-tools`.
 - Обновлен `docs/Tasktracker.md`: задача `T-028` переведена в `Завершена`.
+
+## 2026-02-19 (старт k8s repo resilience fix)
+### Изменено
+- Обновлен `docs/Tasktracker.md`: добавлена задача `T-029` в статусе `В процессе`.
+
+## 2026-02-19 (k8s repo resilience fix)
+### Изменено
+- Обновлен `roles/kubernetes_core/defaults/main.yml`: добавлены параметры `kubernetes_packages_version_override`, `kubernetes_repo_validate_*`, `kubernetes_package_install_*`.
+- Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлены шаги precheck repo (`dnf makecache` c retry), вычисление списка устанавливаемых пакетов с учетом override-версии и retry установки пакетов.
+- Обновлен `inventories/prod/group_vars/all.yml`: зафиксированы параметры resilience для Kubernetes package install.
+- Обновлены `docs/Project.md` и `docs/runbook.md`: добавлены правила эксплуатации и troubleshooting для недоступности зеркал Kubernetes repo.
+- Обновлен `docs/Tasktracker.md`: задача `T-029` переведена в `Завершена`.
