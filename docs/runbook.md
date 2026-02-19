@@ -131,10 +131,13 @@ kubectl --kubeconfig /etc/kubernetes/admin.conf -n nfs-storage get all
 - `storage_nfs_data_disk_partition_number: 1`
 - `storage_nfs_data_disk_fs_type: xfs`
 - `storage_nfs_data_disk_mount_opts: defaults`
+- `storage_nfs_data_disk_allow_system_disk: false`
 
 Важно:
 - сценарий может переформатировать выбранный диск (в зависимости от `storage_nfs_data_disk_fs_force`);
 - используйте только целевой data-диск.
+- по умолчанию включен guardrail, блокирующий системный диск (`/`, `/boot`, `/boot/efi`, `/var`).
+- принудительный обход возможен только явным `storage_nfs_data_disk_allow_system_disk=true` (не рекомендуется).
 
 ## 12. Рекомендованный порядок запуска
 1. `playbooks/bootstrap.yml`

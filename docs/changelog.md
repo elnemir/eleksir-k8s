@@ -119,3 +119,11 @@
 ### Изменено
 - Обновлен `docs/Tasktracker.md`: добавлена задача `T-021` в статусе `В процессе`.
 - Обновлен `docs/Project.md`: добавлено требование guardrail для NFS data-диска.
+
+## 2026-02-19 (NFS system-disk guardrail)
+### Изменено
+- Обновлен `roles/storage_nfs/tasks/main.yml`: добавлен guardrail, блокирующий выбор системного диска для data-диска NFS по умолчанию.
+- Обновлен `roles/storage_nfs/defaults/main.yml`: добавлены параметры `storage_nfs_data_disk_allow_system_disk` и `storage_nfs_data_disk_guard_mounts`.
+- Обновлен `inventories/prod/group_vars/nfs.yml`: добавлен параметр `storage_nfs_data_disk_allow_system_disk`.
+- Обновлен `docs/runbook.md`: добавлены инструкции по guardrail и override-поведению.
+- Обновлен `docs/Tasktracker.md`: задача `T-021` переведена в `Завершена (без стендовой валидации)`.
