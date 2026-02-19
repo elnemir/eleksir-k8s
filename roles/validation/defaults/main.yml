@@ -4,9 +4,17 @@
 validation_enable_failover_check: true
 validation_enable_storage_check: true
 validation_enable_ingress_vip_check: true
+validation_enable_api_vip_check: true
+validation_enable_control_plane_vip_state_check: true
+validation_enable_control_plane_vip_failover_test: false
 validation_kubeconfig: /etc/kubernetes/admin.conf
 validation_nfs_storage_class_name: "{{ nfs_storage_class.name | default('nfs-sp') }}"
 validation_metallb_namespace: metallb-system
 validation_ingress_namespace: ingress-nginx
 validation_ingress_service_name: ingress-nginx-controller
 validation_ingress_expected_vip: ""
+validation_control_plane_endpoint_host: "{{ control_plane_endpoint }}"
+validation_control_plane_endpoint_port: "{{ control_plane_endpoint_port | default(6443) }}"
+validation_api_readyz_path: /readyz
+validation_api_vip_kubectl_insecure_skip_tls_verify: true
+validation_failover_wait_seconds: 15

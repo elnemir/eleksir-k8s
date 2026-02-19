@@ -60,7 +60,8 @@ flowchart LR
   - SELinux (Enforcing + корректные контексты/booleans),
   - базовые системные hardening-параметры.
 - `storage_nfs`: подготовка NFS и StorageClass/PV/PVC для персистентных данных.
-- `validation`: smoke/e2e проверки, валидация health и идемпотентности.
+- `validation`: smoke/e2e проверки, валидация health, VIP endpoint и идемпотентности.
+  - on-demand failover-проверка запускается отдельным тегом `failover`.
 
 ## 6. Предлагаемая структура Ansible-репозитория
 ```text
@@ -195,6 +196,12 @@ roles/
   - `validation_ingress_namespace: ingress-nginx`
   - `validation_ingress_service_name: ingress-nginx-controller`
   - `validation_ingress_expected_vip: 10.255.106.21`
+- В `validation` включен автоматический post-check control-plane API VIP:
+  - `validation_enable_api_vip_check: true`
+  - `validation_control_plane_endpoint_host: 10.255.106.20`
+  - `validation_control_plane_endpoint_port: 8443`
+  - `validation_enable_control_plane_vip_state_check: true`
+  - `validation_enable_control_plane_vip_failover_test: false` (включается только для стендовой проверки)
 
 ### 12.4 Proxy и репозитории
 - `proxy_enabled`: `true` (если `false`, proxy-настройки пропускаются)
@@ -289,7 +296,7 @@ roles/
   - `metallb`: установка и конфигурация IP pool
   - `storage_nfs`: NFS export + Kubernetes StorageClass через provisioner
   - `security_hardening`: SELinux/firewalld
-  - `validation`: проверки критериев приемки, включая автоматическую проверку ingress `LoadBalancer` и VIP
+  - `validation`: проверки критериев приемки, включая автоматические проверки ingress VIP, API VIP и состояния HA-сервисов
 - Дополнительные требования, принятые после первичной реализации:
   - системные hostname должны синхронизироваться с именами узлов из inventory;
   - необходимость настройки proxy должна управляться параметром (`proxy_enabled`).

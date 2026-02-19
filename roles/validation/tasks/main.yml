@@ -19,12 +19,188 @@
     validation_expected_node_count: >-
       {{ (groups['control_plane'] | length) + (groups['workers'] | length) + (groups['metallb'] | length) }}
 
+- name: Calculate validation feature toggles
+  ansible.builtin.set_fact:
+    validation_control_plane_vip_checks_enabled: >-
+      {{
+        (validation_enable_api_vip_check | bool)
+        or (validation_enable_control_plane_vip_state_check | bool)
+        or (validation_enable_control_plane_vip_failover_test | bool)
+      }}
+    validation_control_plane_vip_state_checks_enabled: >-
+      {{
+        (validation_enable_control_plane_vip_state_check | bool)
+        or (validation_enable_control_plane_vip_failover_test | bool)
+      }}
+  changed_when: false
+
 - name: Ensure all nodes are Ready
   ansible.builtin.assert:
     that:
       - validation_nodes.stdout_lines | length == validation_expected_node_count
       - validation_nodes.stdout_lines | select('search', '\\sReady') | list | length == validation_nodes.stdout_lines | length
     fail_msg: "Not all Kubernetes nodes are Ready"
+
+- name: Validate control-plane API VIP variables
+  ansible.builtin.assert:
+    that:
+      - validation_control_plane_endpoint_host | length > 0
+      - (validation_control_plane_endpoint_port | int) > 0
+      - (validation_control_plane_endpoint_port | int) <= 65535
+    fail_msg: "Control-plane API VIP validation variables are incomplete"
+  when: validation_control_plane_vip_checks_enabled | bool
+
+- name: Check Kubernetes API /readyz via control-plane VIP
+  ansible.builtin.shell: >-
+    kubectl --kubeconfig={{ validation_kubeconfig }}
+    --server=https://{{ validation_control_plane_endpoint_host }}:{{ validation_control_plane_endpoint_port }}
+    {% if validation_api_vip_kubectl_insecure_skip_tls_verify | bool %}--insecure-skip-tls-verify=true{% endif %}
+    get --raw={{ validation_api_readyz_path }}
+  args:
+    executable: /bin/bash
+  register: validation_api_vip_readyz
+  changed_when: false
+  failed_when: false
+  when: validation_enable_api_vip_check | bool
+
+- name: Ensure Kubernetes API VIP endpoint is healthy
+  ansible.builtin.assert:
+    that:
+      - validation_api_vip_readyz.rc == 0
+      - (validation_api_vip_readyz.stdout | default('')) is search('ok')
+    fail_msg: >-
+      Kubernetes API VIP endpoint is not healthy:
+      {{ validation_control_plane_endpoint_host }}:{{ validation_control_plane_endpoint_port }}{{ validation_api_readyz_path }}.
+  when: validation_enable_api_vip_check | bool
+
+- name: Check keepalived state on control-plane hosts
+  ansible.builtin.command: systemctl is-active keepalived
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['control_plane'] }}"
+  register: validation_keepalived_states
+  changed_when: false
+  failed_when: false
+  when: validation_control_plane_vip_state_checks_enabled | bool
+
+- name: Ensure keepalived is active on all control-plane hosts
+  ansible.builtin.assert:
+    that:
+      - (validation_keepalived_states.results | rejectattr('stdout', 'equalto', 'active') | list | length) == 0
+    fail_msg: "keepalived is not active on one or more control-plane hosts"
+  when: validation_control_plane_vip_state_checks_enabled | bool
+
+- name: Check haproxy state on control-plane hosts
+  ansible.builtin.command: systemctl is-active haproxy
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['control_plane'] }}"
+  register: validation_haproxy_states
+  changed_when: false
+  failed_when: false
+  when: validation_control_plane_vip_state_checks_enabled | bool
+
+- name: Ensure haproxy is active on all control-plane hosts
+  ansible.builtin.assert:
+    that:
+      - (validation_haproxy_states.results | rejectattr('stdout', 'equalto', 'active') | list | length) == 0
+    fail_msg: "haproxy is not active on one or more control-plane hosts"
+  when: validation_control_plane_vip_state_checks_enabled | bool
+
+- name: Detect control-plane VIP owners
+  ansible.builtin.shell: "ip -4 -o addr show | awk '{print $4}' | cut -d/ -f1 | grep -Fx {{ validation_control_plane_endpoint_host }}"
+  args:
+    executable: /bin/bash
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['control_plane'] }}"
+  register: validation_vip_presence
+  changed_when: false
+  failed_when: false
+  when: validation_control_plane_vip_state_checks_enabled | bool
+
+- name: Build control-plane VIP owner list
+  ansible.builtin.set_fact:
+    validation_vip_owner_hosts: "{{ validation_vip_presence.results | selectattr('rc', 'equalto', 0) | map(attribute='item') | list }}"
+  when: validation_control_plane_vip_state_checks_enabled | bool
+
+- name: Ensure exactly one control-plane host owns the VIP
+  ansible.builtin.assert:
+    that:
+      - validation_vip_owner_hosts | length == 1
+    fail_msg: >-
+      Expected exactly one VIP owner for {{ validation_control_plane_endpoint_host }},
+      got {{ validation_vip_owner_hosts | default([]) | join(', ') }}.
+  when: validation_enable_control_plane_vip_state_check | bool
+
+- name: Optional control-plane VIP failover test
+  block:
+    - name: Ensure failover test has single source owner
+      ansible.builtin.assert:
+        that:
+          - validation_vip_owner_hosts | length == 1
+        fail_msg: "Cannot start failover test: VIP owner is not uniquely detected"
+
+    - name: Set failover source host
+      ansible.builtin.set_fact:
+        validation_failover_source_host: "{{ validation_vip_owner_hosts[0] }}"
+
+    - name: Stop keepalived on failover source host
+      ansible.builtin.service:
+        name: keepalived
+        state: stopped
+      delegate_to: "{{ validation_failover_source_host }}"
+
+    - name: Wait for VIP migration
+      ansible.builtin.pause:
+        seconds: "{{ validation_failover_wait_seconds | int }}"
+
+    - name: Detect control-plane VIP owners after failover trigger
+      ansible.builtin.shell: "ip -4 -o addr show | awk '{print $4}' | cut -d/ -f1 | grep -Fx {{ validation_control_plane_endpoint_host }}"
+      args:
+        executable: /bin/bash
+      delegate_to: "{{ item }}"
+      loop: "{{ groups['control_plane'] }}"
+      register: validation_post_failover_vip_presence
+      changed_when: false
+      failed_when: false
+
+    - name: Build post-failover VIP owner list
+      ansible.builtin.set_fact:
+        validation_post_failover_vip_owner_hosts: "{{ validation_post_failover_vip_presence.results | selectattr('rc', 'equalto', 0) | map(attribute='item') | list }}"
+
+    - name: Ensure VIP moved to another control-plane host
+      ansible.builtin.assert:
+        that:
+          - validation_post_failover_vip_owner_hosts | length == 1
+          - validation_post_failover_vip_owner_hosts[0] != validation_failover_source_host
+        fail_msg: >-
+          VIP failover check failed. Source={{ validation_failover_source_host }},
+          post-owners={{ validation_post_failover_vip_owner_hosts | default([]) | join(', ') }}.
+
+    - name: Re-check Kubernetes API /readyz via VIP after failover
+      ansible.builtin.shell: >-
+        kubectl --kubeconfig={{ validation_kubeconfig }}
+        --server=https://{{ validation_control_plane_endpoint_host }}:{{ validation_control_plane_endpoint_port }}
+        {% if validation_api_vip_kubectl_insecure_skip_tls_verify | bool %}--insecure-skip-tls-verify=true{% endif %}
+        get --raw={{ validation_api_readyz_path }}
+      args:
+        executable: /bin/bash
+      register: validation_api_vip_readyz_after_failover
+      changed_when: false
+      failed_when: false
+
+    - name: Ensure Kubernetes API VIP endpoint is healthy after failover
+      ansible.builtin.assert:
+        that:
+          - validation_api_vip_readyz_after_failover.rc == 0
+          - (validation_api_vip_readyz_after_failover.stdout | default('')) is search('ok')
+        fail_msg: "Kubernetes API VIP endpoint is not healthy after failover"
+  always:
+    - name: Ensure keepalived is started on failover source host
+      ansible.builtin.service:
+        name: keepalived
+        state: started
+      delegate_to: "{{ validation_failover_source_host }}"
+      when: validation_failover_source_host is defined
+  when: validation_enable_control_plane_vip_failover_test | bool
 
 - name: Check MetalLB controller readiness
   ansible.builtin.command: >-
@@ -102,7 +278,9 @@
 - name: Reminder for failover check
   ansible.builtin.debug:
     msg: >-
-      Failover criterion requires operational test: temporarily stop one control-plane node
-      and confirm cluster remains healthy.
-  when: validation_enable_failover_check | bool
+      For automated control-plane VIP failover test use:
+      -e validation_enable_control_plane_vip_failover_test=true
+  when:
+    - validation_enable_failover_check | bool
+    - not (validation_enable_control_plane_vip_failover_test | bool)
   changed_when: false

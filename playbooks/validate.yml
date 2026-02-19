@@ -8,3 +8,17 @@
   roles:
     - role: validation
       tags: [validate]
+
+- name: Validate control-plane VIP failover on demand
+  hosts: control_plane[0]
+  become: true
+  gather_facts: true
+  roles:
+    - role: validation
+      tags: [never, failover]
+      vars:
+        validation_enable_storage_check: false
+        validation_enable_ingress_vip_check: false
+        validation_enable_api_vip_check: true
+        validation_enable_control_plane_vip_state_check: true
+        validation_enable_control_plane_vip_failover_test: true

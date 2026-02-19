@@ -161,3 +161,26 @@
 - Обновлены `roles/security_hardening/defaults/main.yml` и `roles/security_hardening/tasks/main.yml`: добавлена поддержка `firewall_allowed_protocols` (для `vrrp`).
 - Обновлены `docs/Project.md`, `docs/runbook.md`, `docs/qa.md`: зафиксирована архитектура и эксплуатация control-plane VIP.
 - Обновлен `docs/Tasktracker.md`: задача `T-024` переведена в `Завершена (без стендовой валидации)`.
+
+## 2026-02-19 (старт validation API VIP + failover-check)
+### Изменено
+- Обновлен `docs/Tasktracker.md`: добавлена задача `T-025` в статусе `В процессе`.
+
+## 2026-02-19 (validation API VIP + failover-check)
+### Изменено
+- Обновлен `roles/validation/defaults/main.yml`: добавлены параметры API VIP-проверки и опционального failover-test.
+- Обновлен `roles/validation/tasks/main.yml`: добавлены проверки API `readyz` через `control_plane_endpoint`, проверки `keepalived/haproxy` на всех control-plane узлах, проверка единственного владельца VIP и опциональный failover-test.
+- Обновлен `docs/runbook.md`: добавлены флаги запуска валидации для API VIP и failover-test.
+- Обновлен `docs/Project.md`: отражены новые проверки в архитектурном описании и статусе реализации.
+- Обновлен `docs/Tasktracker.md`: задача `T-025` переведена в `Завершена (без стендовой валидации)`.
+
+## 2026-02-19 (старт failover tag в validate.yml)
+### Изменено
+- Обновлен `docs/Tasktracker.md`: добавлена задача `T-026` в статусе `В процессе`.
+
+## 2026-02-19 (failover tag в validate.yml)
+### Изменено
+- Обновлен `playbooks/validate.yml`: добавлен отдельный on-demand play c тегами `never,failover` для запуска только failover-сценария роли `validation`.
+- Обновлен `docs/runbook.md`: добавлена команда запуска `ansible-playbook ... --tags failover`.
+- Обновлен `docs/Project.md`: зафиксирован механизм on-demand failover-проверки по тегу.
+- Обновлен `docs/Tasktracker.md`: задача `T-026` переведена в `Завершена`.

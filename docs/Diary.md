@@ -278,3 +278,33 @@
 
 ### Проблемы
 - Нужна обязательная стендовая проверка failover VIP между control-plane нодами на control host.
+
+## Дата: 2026-02-19 (сессия 21)
+### Наблюдения
+- После реализации `control_plane_vip` не хватает автоматизированной проверки доступности API через VIP в роли `validation`.
+- Нужен базовый сценарий проверки failover control-plane VIP с безопасным default-поведением.
+
+### Решения
+- Стартована задача `T-025`: добавить post-check API endpoint `10.255.106.20:8443`.
+- Стартована доработка `validation` для базового failover-check сценария (опционально, по флагу).
+- Добавлена проверка API через `kubectl --server=https://10.255.106.20:8443 get --raw=/readyz`.
+- Добавлены проверки сервисов `keepalived/haproxy` на всех control-plane узлах.
+- Добавлена проверка наличия ровно одного владельца control-plane VIP.
+- Добавлен опциональный failover-test (`validation_enable_control_plane_vip_failover_test=true`) с возвратом `keepalived` в `started`.
+
+### Проблемы
+- Авто-failover проверка должна быть выключена по умолчанию, чтобы избежать нежелательных переключений в production.
+- Практический запуск failover-test нужно делать только на стенде/в согласованное окно.
+
+## Дата: 2026-02-19 (сессия 22)
+### Наблюдения
+- Для операционного запуска нужен отдельный тег, позволяющий запускать только failover-сценарий, без полного набора validate-задач.
+
+### Решения
+- Стартована задача `T-026` на добавление отдельного тега `failover` в `playbooks/validate.yml`.
+- Добавлен отдельный play в `playbooks/validate.yml` с тегами `never,failover`.
+- Для failover-play отключены нецелевые проверки (`storage`, `ingress`) и включен целевой `validation_enable_control_plane_vip_failover_test=true`.
+- В runbook добавлена отдельная команда запуска `--tags failover`.
+
+### Проблемы
+- Важно сохранить безопасный default: failover-сценарий не должен запускаться без явного `--tags failover`.

@@ -37,6 +37,8 @@
 | T-022 | MetalLB Ops | Зафиксировать сценарий публикации ingress VIP в L2 без доступа к vCenter | Высокий | Завершена |
 | T-023 | Validation | Добавить автоматизированный post-check ingress VIP (`LoadBalancer`/EXTERNAL-IP) | Высокий | Завершена (без стендовой валидации) |
 | T-024 | Control Plane HA | Реализовать control-plane endpoint VIP через `keepalived + haproxy` | Критический | Завершена (без стендовой валидации) |
+| T-025 | Validation API HA | Добавить автоматическую проверку API VIP (`10.255.106.20:8443`) и базовый failover-check сценарий | Критический | Завершена (без стендовой валидации) |
+| T-026 | Validation Tagging | Добавить отдельный тег `failover` для запуска только failover-сценария валидации | Высокий | Завершена |
 
 ## Собранные данные (2026-02-19)
 - VMware: `vCenter 7.0.3`, `ESXi 7.0.3`, `clone_from_template`, шаблон `k8s-pcp-template`.
@@ -74,6 +76,8 @@
 - В документации зафиксирован операционный сценарий MetalLB L2 без прав на сетевые изменения в `vCenter`.
 - В роль `validation` добавлена автоматическая проверка ingress `LoadBalancer` и ожидаемого VIP.
 - Добавлена роль `control_plane_vip`: реализация API endpoint VIP через `keepalived + haproxy` на control-plane нодах.
+- Роль `validation` дополнена проверками API VIP (`/readyz`), состояния `keepalived/haproxy` и опциональным failover-test для control-plane VIP.
+- В `playbooks/validate.yml` добавлен отдельный on-demand путь запуска failover-проверки по тегу `failover`.
 
 ## Декомпозиция ближайшего этапа (сбор данных)
 - [x] Утвердить схему IP-адресов и список нод/ролей.

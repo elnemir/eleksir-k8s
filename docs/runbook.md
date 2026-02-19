@@ -146,9 +146,28 @@ curl -Ik https://10.255.106.21
 ```
 
 Автоматизация в `playbooks/validate.yml`:
+- Роль `validation` проверяет доступность API через control-plane VIP (`/readyz` через `kubectl --server=https://10.255.106.20:8443`).
+- Роль `validation` проверяет `keepalived/haproxy` на всех control-plane нодах и наличие ровно одного владельца VIP.
 - Роль `validation` проверяет, что ingress-service имеет `type=LoadBalancer` и ненулевой external address.
 - При заданном `validation_ingress_expected_vip` дополнительно валидируется точное совпадение VIP.
+- Опциональный failover-test VIP (по умолчанию выключен): `-e validation_enable_control_plane_vip_failover_test=true`.
+- Для отключения API/VIP проверок: `-e validation_enable_api_vip_check=false -e validation_enable_control_plane_vip_state_check=false`.
 - Для отключения проверки: `-e validation_enable_ingress_vip_check=false`.
+
+Пример запуска:
+```bash
+# Стандартная безопасная валидация
+ansible-playbook -i inventories/prod/hosts.yml playbooks/validate.yml
+
+# Стендовый failover-check control-plane VIP
+ansible-playbook -i inventories/prod/hosts.yml playbooks/validate.yml \
+  -e validation_enable_control_plane_vip_failover_test=true
+```
+
+Запуск только failover-сценария по тегу:
+```bash
+ansible-playbook -i inventories/prod/hosts.yml playbooks/validate.yml --tags failover
+```
 
 ## 11. Полезные команды диагностики
 ```bash
