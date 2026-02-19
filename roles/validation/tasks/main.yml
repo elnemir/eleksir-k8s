@@ -40,6 +40,50 @@
       - validation_metallb_controller.stdout | int > 0
     fail_msg: "MetalLB controller is not ready"
 
+- name: Read ingress service type and VIP details
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ validation_kubeconfig }}
+    -n {{ validation_ingress_namespace }}
+    get svc {{ validation_ingress_service_name }}
+    -o jsonpath='{.spec.type}|{.status.loadBalancer.ingress[0].ip}|{.status.loadBalancer.ingress[0].hostname}'
+  register: validation_ingress_service
+  changed_when: false
+  failed_when: false
+  when: validation_enable_ingress_vip_check | bool
+
+- name: Parse ingress service details
+  ansible.builtin.set_fact:
+    validation_ingress_service_type: >-
+      {{ ((validation_ingress_service.stdout.split('|') if (validation_ingress_service.stdout | length > 0) else []) + ['', '', ''])[0] }}
+    validation_ingress_service_ip: >-
+      {{ ((validation_ingress_service.stdout.split('|') if (validation_ingress_service.stdout | length > 0) else []) + ['', '', ''])[1] }}
+    validation_ingress_service_hostname: >-
+      {{ ((validation_ingress_service.stdout.split('|') if (validation_ingress_service.stdout | length > 0) else []) + ['', '', ''])[2] }}
+  when: validation_enable_ingress_vip_check | bool
+
+- name: Validate ingress service exposure and external address
+  ansible.builtin.assert:
+    that:
+      - validation_ingress_service.rc == 0
+      - validation_ingress_service_type == 'LoadBalancer'
+      - (validation_ingress_service_ip | length > 0) or (validation_ingress_service_hostname | length > 0)
+    fail_msg: >-
+      Ingress service validation failed for {{ validation_ingress_namespace }}/{{ validation_ingress_service_name }}.
+      type={{ validation_ingress_service_type | default('') }},
+      ip={{ validation_ingress_service_ip | default('') }},
+      hostname={{ validation_ingress_service_hostname | default('') }},
+      rc={{ validation_ingress_service.rc | default(-1) }}.
+  when: validation_enable_ingress_vip_check | bool
+
+- name: Validate expected ingress VIP when fixed VIP is configured
+  ansible.builtin.assert:
+    that:
+      - validation_ingress_expected_vip | length == 0 or validation_ingress_service_ip == validation_ingress_expected_vip
+    fail_msg: >-
+      Expected ingress VIP {{ validation_ingress_expected_vip }} but got {{ validation_ingress_service_ip | default('') }}
+      for {{ validation_ingress_namespace }}/{{ validation_ingress_service_name }}.
+  when: validation_enable_ingress_vip_check | bool
+
 - name: Check NFS StorageClass existence
   ansible.builtin.command: >-
     kubectl --kubeconfig={{ validation_kubeconfig }}

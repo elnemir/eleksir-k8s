@@ -139,6 +139,11 @@ curl -I http://10.255.106.21
 curl -Ik https://10.255.106.21
 ```
 
+Автоматизация в `playbooks/validate.yml`:
+- Роль `validation` проверяет, что ingress-service имеет `type=LoadBalancer` и ненулевой external address.
+- При заданном `validation_ingress_expected_vip` дополнительно валидируется точное совпадение VIP.
+- Для отключения проверки: `-e validation_enable_ingress_vip_check=false`.
+
 ## 11. Полезные команды диагностики
 ```bash
 # Kubernetes

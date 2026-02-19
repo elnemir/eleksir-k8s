@@ -3,6 +3,10 @@
 # - **Описание**: Дефолтные параметры post-deploy валидации.
 validation_enable_failover_check: true
 validation_enable_storage_check: true
+validation_enable_ingress_vip_check: true
 validation_kubeconfig: /etc/kubernetes/admin.conf
 validation_nfs_storage_class_name: "{{ nfs_storage_class.name | default('nfs-sp') }}"
 validation_metallb_namespace: metallb-system
+validation_ingress_namespace: ingress-nginx
+validation_ingress_service_name: ingress-nginx-controller
+validation_ingress_expected_vip: ""

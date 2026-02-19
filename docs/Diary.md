@@ -234,3 +234,21 @@
 
 ### Проблемы
 - Внешние предпосылки (IPAM/DHCP reservation, маршрутизация, firewall, DNS) зависят от сетевой команды и должны быть выполнены до приемки.
+
+## Дата: 2026-02-19 (сессия 18)
+### Наблюдения
+- Требуется автоматизировать проверку публикации ingress через VIP в рамках роли `validation`.
+- Текущая валидация проверяет readiness нод, MetalLB controller и NFS StorageClass, но не проверяет ingress EXTERNAL-IP.
+
+### Решения
+- Стартована задача `T-023` на добавление post-check для `Service type=LoadBalancer` и выделенного VIP ingress.
+- В `roles/validation/tasks/main.yml` добавлен блок проверок ingress-сервиса:
+  - тип сервиса `LoadBalancer`,
+  - наличие внешнего адреса (`ip` или `hostname`),
+  - опциональная сверка с `validation_ingress_expected_vip`.
+- В `group_vars/all.yml` зафиксирован ожидаемый VIP `10.255.106.21`.
+- В `runbook.md` добавлена инструкция по включению/отключению автоматической проверки.
+
+### Проблемы
+- Значение ожидаемого ingress VIP должно быть параметризуемым, чтобы не ломать сценарии без фиксированного VIP.
+- Стендовая проверка `playbooks/validate.yml` отложена до запуска на control host.

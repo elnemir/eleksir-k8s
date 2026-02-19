@@ -185,6 +185,11 @@ roles/
   - Должна быть сетевая достижимость клиентов до VIP (L2/L3 маршрут).
   - На периметре должен быть разрешен доступ к VIP на `80/443`.
   - DNS-записи внешних сервисов должны указывать на VIP ingress.
+- В `validation` включен автоматический post-check ingress:
+  - `validation_enable_ingress_vip_check: true`
+  - `validation_ingress_namespace: ingress-nginx`
+  - `validation_ingress_service_name: ingress-nginx-controller`
+  - `validation_ingress_expected_vip: 10.255.106.21`
 
 ### 12.4 Proxy и репозитории
 - `proxy_enabled`: `true` (если `false`, proxy-настройки пропускаются)
@@ -276,7 +281,7 @@ roles/
   - `metallb`: установка и конфигурация IP pool
   - `storage_nfs`: NFS export + Kubernetes StorageClass через provisioner
   - `security_hardening`: SELinux/firewalld
-  - `validation`: базовые проверки критериев приемки
+  - `validation`: проверки критериев приемки, включая автоматическую проверку ingress `LoadBalancer` и VIP
 - Дополнительные требования, принятые после первичной реализации:
   - системные hostname должны синхронизироваться с именами узлов из inventory;
   - необходимость настройки proxy должна управляться параметром (`proxy_enabled`).

@@ -134,3 +134,16 @@
 - Обновлен `docs/runbook.md`: добавлен checklist внешних предпосылок (IPAM/DHCP, маршрутизация, firewall, DNS), команды фиксации VIP и проверки доступности.
 - Обновлен `docs/qa.md`: добавлено архитектурное ограничение по отсутствию доступа к сетевым настройкам в `vCenter`.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-022`.
+
+## 2026-02-19 (старт ingress VIP post-check)
+### Изменено
+- Обновлен `docs/Tasktracker.md`: добавлена задача `T-023` в статусе `В процессе`.
+
+## 2026-02-19 (ingress VIP post-check)
+### Изменено
+- Обновлен `roles/validation/tasks/main.yml`: добавлены проверки ingress service (`type=LoadBalancer`, external address, optional expected VIP).
+- Обновлен `roles/validation/defaults/main.yml`: добавлены параметры `validation_enable_ingress_vip_check`, `validation_ingress_namespace`, `validation_ingress_service_name`, `validation_ingress_expected_vip`.
+- Обновлен `inventories/prod/group_vars/all.yml`: зафиксированы параметры проверки ingress VIP и ожидаемый VIP `10.255.106.21`.
+- Обновлен `docs/Project.md`: добавлено описание автоматического ingress VIP post-check в архитектурной части.
+- Обновлен `docs/runbook.md`: добавлено описание автоматизации проверки в `playbooks/validate.yml`.
+- Обновлен `docs/Tasktracker.md`: задача `T-023` переведена в `Завершена (без стендовой валидации)`.
