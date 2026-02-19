@@ -1,0 +1,131 @@
+# ## Задача: Полная переустановка кластера с уничтожением данных
+# - **Статус**: В процессе
+# - **Описание**: Выполнить деструктивный reset Kubernetes и удалить все данные в NFS export path.
+
+- name: Reinstall guardrail checks
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    reinstall_expected_token: DESTROY_CLUSTER_AND_NFS_DATA
+  tasks:
+    - name: Validate destructive reinstall confirmation token
+      ansible.builtin.assert:
+        that:
+          - reinstall_confirm_token is defined
+          - reinstall_confirm_token == reinstall_expected_token
+        fail_msg: >-
+          Destructive reinstall is blocked. Pass
+          -e reinstall_confirm_token={{ reinstall_expected_token }}
+
+    - name: Validate scope is cluster_and_nfs
+      ansible.builtin.assert:
+        that:
+          - reinstall_scope is defined
+          - reinstall_scope == 'cluster_and_nfs'
+        fail_msg: "Set -e reinstall_scope=cluster_and_nfs"
+
+- name: Reset Kubernetes nodes destructively
+  hosts: k8s_cluster
+  become: true
+  gather_facts: true
+  vars:
+    reinstall_k8s_paths_to_purge:
+      - /etc/kubernetes
+      - /var/lib/etcd
+      - /var/lib/kubelet
+      - /etc/cni/net.d
+      - /var/lib/cni
+      - /opt/cni/bin
+      - /var/lib/containerd
+      - /root/.kube
+      - "/home/{{ ansible_user | default('root') }}/.kube"
+    reinstall_k8s_packages:
+      - kubeadm
+      - kubelet
+      - kubectl
+      - kubernetes-cni
+  tasks:
+    - name: Stop kubelet service
+      ansible.builtin.service:
+        name: kubelet
+        state: stopped
+        enabled: false
+      failed_when: false
+
+    - name: Reset kubeadm state
+      ansible.builtin.command: kubeadm reset -f
+      register: kubeadm_reset
+      failed_when: false
+      changed_when: kubeadm_reset.rc == 0
+
+    - name: Remove Kubernetes packages
+      ansible.builtin.package:
+        name: "{{ reinstall_k8s_packages }}"
+        state: absent
+      failed_when: false
+
+    - name: Purge Kubernetes and container runtime data
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop: "{{ reinstall_k8s_paths_to_purge }}"
+
+    - name: Reset iptables chains used by Kubernetes (best effort)
+      ansible.builtin.shell: |
+        iptables -F || true
+        iptables -t nat -F || true
+        iptables -t mangle -F || true
+        iptables -X || true
+      args:
+        executable: /bin/bash
+      changed_when: false
+
+    - name: Restart container runtime if installed
+      ansible.builtin.service:
+        name: "{{ container_runtime_name | default('containerd') }}"
+        state: restarted
+        enabled: true
+      failed_when: false
+
+- name: Destroy NFS data for full reinstall
+  hosts: nfs
+  become: true
+  gather_facts: true
+  vars:
+    reinstall_nfs_export_path: "{{ nfs_export_path }}"
+  tasks:
+    - name: Validate NFS export path is defined
+      ansible.builtin.assert:
+        that:
+          - reinstall_nfs_export_path is defined
+          - reinstall_nfs_export_path | length > 1
+          - reinstall_nfs_export_path.startswith('/')
+        fail_msg: "NFS export path for destructive cleanup is invalid"
+
+    - name: Destroy NFS export path with all data
+      ansible.builtin.file:
+        path: "{{ reinstall_nfs_export_path }}"
+        state: absent
+
+    - name: Recreate empty NFS export directory
+      ansible.builtin.file:
+        path: "{{ reinstall_nfs_export_path }}"
+        state: directory
+        mode: "0777"
+
+    - name: Reload NFS exports
+      ansible.builtin.command: exportfs -ra
+      changed_when: false
+
+- name: Reinstall completion message
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Print completion message
+      ansible.builtin.debug:
+        msg: >-
+          Destructive reinstall completed for scope=cluster_and_nfs.
+          All Kubernetes state and NFS data were removed.
+      changed_when: false
