@@ -197,3 +197,15 @@
 - Обновлен `inventories/prod/group_vars/all.yml`: зафиксированы безопасные значения `kubeadm_config_api_version: kubeadm.k8s.io/v1beta3` и `kubeadm_init_allow_experimental_api: false`.
 - Обновлены `docs/Project.md` и `docs/runbook.md`: добавлены эксплуатационные инструкции по совместимости kubeadm API.
 - Обновлен `docs/Tasktracker.md`: задача `T-027` переведена в `Завершена`.
+
+## 2026-02-19 (старт container runtime depsolve fix)
+### Изменено
+- Обновлен `docs/Tasktracker.md`: добавлена задача `T-028` в статусе `В процессе`.
+
+## 2026-02-19 (container runtime depsolve fix)
+### Изменено
+- Обновлен `roles/container_runtime/defaults/main.yml`: установка `cri-tools` вынесена в опциональные параметры (`container_runtime_install_cri_tools`, `container_runtime_cri_tools_package`), из дефолтного списка runtime-пакетов удален `cri-tools`.
+- Обновлен `roles/container_runtime/tasks/main.yml`: добавлен probe `crictl` и условная установка `cri-tools` только при явном включении.
+- Обновлен `inventories/prod/group_vars/all.yml`: зафиксирован безопасный default `container_runtime_install_cri_tools: false`.
+- Обновлены `docs/Project.md` и `docs/runbook.md`: добавлены указания по runtime packaging policy и troubleshooting depsolve для `cri-tools`.
+- Обновлен `docs/Tasktracker.md`: задача `T-028` переведена в `Завершена`.

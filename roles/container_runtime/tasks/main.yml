@@ -6,12 +6,28 @@
     that:
       - container_runtime_name in ['containerd', 'crio']
       - container_runtime_packages_map[container_runtime_name] is iterable
+      - container_runtime_cri_tools_package is string
     fail_msg: "Supported runtimes: containerd, crio"
 
 - name: Install container runtime packages
   ansible.builtin.package:
     name: "{{ container_runtime_packages_map[container_runtime_name] }}"
     state: present
+
+- name: Check if crictl binary is already present
+  ansible.builtin.command: command -v crictl
+  register: container_runtime_crictl_probe
+  changed_when: false
+  failed_when: false
+
+- name: Install cri-tools package when explicitly enabled and crictl is missing
+  ansible.builtin.package:
+    name: "{{ container_runtime_cri_tools_package }}"
+    state: present
+  when:
+    - container_runtime_install_cri_tools | bool
+    - container_runtime_cri_tools_package | length > 0
+    - container_runtime_crictl_probe.rc != 0
 
 - name: Ensure containerd config directory exists
   ansible.builtin.file:

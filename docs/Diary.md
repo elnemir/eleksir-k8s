@@ -323,3 +323,18 @@
 ### Проблемы
 - До фикса bootstrap Kubernetes не может пройти, а join-фаза блокируется.
 - Практическая проверка исправления требует повторного запуска `playbooks/bootstrap.yml` на control host.
+
+## Дата: 2026-02-19 (сессия 24)
+### Наблюдения
+- На этапе `container_runtime` получен `Depsolve Error`: конфликт установленного `cri-tools1.34` с пакетом `cri-tools` из `kubernetes` repo (`1.30.x`).
+- Сбой воспроизводится на всех control-plane узлах и блокирует дальнейший bootstrap.
+
+### Решения
+- Стартована задача `T-028`: убрать жесткую зависимость роли runtime от пакета `cri-tools` и сделать установку `crictl` опциональной/безопасной.
+- Из дефолтного списка `container_runtime_packages_map` удален `cri-tools`; оставлена установка только базового runtime (`containerd`/`cri-o`).
+- Добавлен probe `command -v crictl` и условная установка `cri-tools` только при `container_runtime_install_cri_tools=true`.
+- В `group_vars/all.yml` зафиксирован безопасный default `container_runtime_install_cri_tools: false`.
+
+### Проблемы
+- До фикса роль `container_runtime` не может стабильно отрабатывать на RedOS с текущим набором репозиториев.
+- После фикса требуется повторный запуск `playbooks/bootstrap.yml` на control host для подтверждения устранения depsolve.

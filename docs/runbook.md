@@ -60,6 +60,7 @@ ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/reinstal
 - `control_plane_vip_enabled: true`
 - `kubeadm_config_api_version: kubeadm.k8s.io/v1beta3`
 - `kubeadm_init_allow_experimental_api: false`
+- `container_runtime_install_cri_tools: false` (рекомендуемо для текущего набора repo на RedOS)
 
 ## 5. Режим A: Изолированная сеть (proxy включен)
 Убедитесь, что в `inventories/prod/group_vars/all.yml`:
@@ -195,6 +196,13 @@ kubectl --kubeconfig /etc/kubernetes/admin.conf -n nfs-storage get all
 Если на bootstrap возникает ошибка `experimental API spec ... is not allowed`:
 1. Убедиться, что используется `kubeadm_config_api_version: kubeadm.k8s.io/v1beta3`.
 2. Перезапустить bootstrap после фикса:
+```bash
+ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml
+```
+
+Если на этапе runtime возникает `Depsolve Error` по `cri-tools`:
+1. Убедиться, что `container_runtime_install_cri_tools: false`.
+2. Перезапустить bootstrap:
 ```bash
 ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml
 ```

@@ -33,6 +33,8 @@ registry_mode: external_via_proxy
 rpm_mirror_mode: external_via_proxy
 proxy_environment: "{{ {'HTTP_PROXY': http_proxy, 'HTTPS_PROXY': https_proxy, 'NO_PROXY': (no_proxy | join(','))} if (proxy_enabled | bool) else {} }}"
 container_runtime_name: containerd
+container_runtime_install_cri_tools: false
+container_runtime_cri_tools_package: cri-tools
 kubeadm_cri_socket: unix:///run/containerd/containerd.sock
 
 dns_servers:
