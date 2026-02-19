@@ -8,6 +8,18 @@ nfs_export_path: /srv/storage
 nfs_export_cidr: 10.255.106.0/26
 nfs_export_options: rw,sync,no_root_squash,no_subtree_check
 
+# Опциональная подготовка выделенного диска под nfs_export_path
+storage_nfs_data_disk_enabled: false
+storage_nfs_data_disk_device: ""   # example: /dev/sdb or /dev/nvme1n1
+storage_nfs_data_disk_partition_number: 1
+storage_nfs_data_disk_fs_type: xfs
+storage_nfs_data_disk_fs_force: false
+storage_nfs_data_disk_mount_opts: defaults
+
+# Guardrail: защищает от использования системного диска.
+# Использовать true только осознанно и вручную после проверки.
+storage_nfs_data_disk_allow_system_disk: false
+
 nfs_storage_class:
   name: nfs-sp
   reclaim_policy: Delete

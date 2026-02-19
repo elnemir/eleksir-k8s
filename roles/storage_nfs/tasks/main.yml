@@ -14,6 +14,28 @@
     resolved_nfs_export_options: "{{ nfs_export_options | default(hostvars[nfs_server_host].nfs_export_options) }}"
     resolved_nfs_storage_class: "{{ nfs_storage_class | default(hostvars[nfs_server_host].nfs_storage_class) }}"
     resolved_nfs_performance: "{{ nfs_performance | default(hostvars[nfs_server_host].nfs_performance) }}"
+    resolved_storage_nfs_data_disk_enabled: >-
+      {{ storage_nfs_data_disk_enabled | default(hostvars[nfs_server_host].storage_nfs_data_disk_enabled | default(false)) }}
+    resolved_storage_nfs_data_disk_device: >-
+      {{ storage_nfs_data_disk_device | default(hostvars[nfs_server_host].storage_nfs_data_disk_device | default('')) }}
+    resolved_storage_nfs_data_disk_partition_number: >-
+      {{ storage_nfs_data_disk_partition_number | default(hostvars[nfs_server_host].storage_nfs_data_disk_partition_number | default(1)) }}
+    resolved_storage_nfs_data_disk_label: >-
+      {{ storage_nfs_data_disk_label | default(hostvars[nfs_server_host].storage_nfs_data_disk_label | default('gpt')) }}
+    resolved_storage_nfs_data_disk_part_start: >-
+      {{ storage_nfs_data_disk_part_start | default(hostvars[nfs_server_host].storage_nfs_data_disk_part_start | default('1MiB')) }}
+    resolved_storage_nfs_data_disk_part_end: >-
+      {{ storage_nfs_data_disk_part_end | default(hostvars[nfs_server_host].storage_nfs_data_disk_part_end | default('100%')) }}
+    resolved_storage_nfs_data_disk_fs_type: >-
+      {{ storage_nfs_data_disk_fs_type | default(hostvars[nfs_server_host].storage_nfs_data_disk_fs_type | default('xfs')) }}
+    resolved_storage_nfs_data_disk_fs_force: >-
+      {{ storage_nfs_data_disk_fs_force | default(hostvars[nfs_server_host].storage_nfs_data_disk_fs_force | default(false)) }}
+    resolved_storage_nfs_data_disk_mount_opts: >-
+      {{ storage_nfs_data_disk_mount_opts | default(hostvars[nfs_server_host].storage_nfs_data_disk_mount_opts | default('defaults')) }}
+    resolved_storage_nfs_data_disk_allow_system_disk: >-
+      {{ storage_nfs_data_disk_allow_system_disk | default(hostvars[nfs_server_host].storage_nfs_data_disk_allow_system_disk | default(false)) }}
+    resolved_storage_nfs_data_disk_guard_mounts: >-
+      {{ storage_nfs_data_disk_guard_mounts | default(hostvars[nfs_server_host].storage_nfs_data_disk_guard_mounts | default(['/','/boot','/boot/efi','/var'])) }}
 
 - name: Validate resolved NFS variables
   ansible.builtin.assert:
@@ -23,6 +45,136 @@
       - resolved_nfs_performance.min_iops | int > 0
       - groups['control_plane'] | length > 0
     fail_msg: "NFS variables are incomplete"
+
+- name: Validate data disk option values
+  ansible.builtin.assert:
+    that:
+      - resolved_storage_nfs_data_disk_device | length > 0
+    fail_msg: "Set storage_nfs_data_disk_device when storage_nfs_data_disk_enabled=true"
+  when:
+    - storage_nfs_manage_server | bool
+    - inventory_hostname in groups['nfs']
+    - resolved_storage_nfs_data_disk_enabled | bool
+
+- name: Resolve target partition path for data disk
+  ansible.builtin.set_fact:
+    resolved_storage_nfs_partition_path: >-
+      {{ resolved_storage_nfs_data_disk_device }}{{ 'p' if (resolved_storage_nfs_data_disk_device | regex_search('[0-9]$')) else '' }}{{ resolved_storage_nfs_data_disk_partition_number }}
+  when:
+    - storage_nfs_manage_server | bool
+    - inventory_hostname in groups['nfs']
+    - resolved_storage_nfs_data_disk_enabled | bool
+
+- name: Collect critical mounted devices for system-disk guardrail
+  ansible.builtin.shell: |
+    set -o pipefail
+    for m in {{ resolved_storage_nfs_data_disk_guard_mounts | join(' ') }}; do
+      findmnt -n -o SOURCE "$m" 2>/dev/null || true
+    done | awk 'NF' | sort -u
+  args:
+    executable: /bin/bash
+  register: storage_nfs_guard_mount_sources
+  changed_when: false
+  when:
+    - storage_nfs_manage_server | bool
+    - inventory_hostname in groups['nfs']
+    - resolved_storage_nfs_data_disk_enabled | bool
+
+- name: Resolve parent block devices for mounted critical sources
+  ansible.builtin.command: "lsblk -ndo PKNAME {{ item }}"
+  loop: "{{ storage_nfs_guard_mount_sources.stdout_lines | default([]) }}"
+  register: storage_nfs_guard_parent_lookup
+  changed_when: false
+  failed_when: false
+  when:
+    - storage_nfs_manage_server | bool
+    - inventory_hostname in groups['nfs']
+    - resolved_storage_nfs_data_disk_enabled | bool
+
+- name: Build blocked system-device list
+  ansible.builtin.set_fact:
+    storage_nfs_blocked_devices: >-
+      {{
+        (
+          (storage_nfs_guard_mount_sources.stdout_lines | default([]))
+          + ((storage_nfs_guard_mount_sources.stdout_lines | default([])) | map('regex_replace', 'p?[0-9]+$', '') | list)
+          + ((storage_nfs_guard_parent_lookup.results | default([])) | map(attribute='stdout') | reject('equalto', '') | map('regex_replace', '^(.*)$', '/dev/\\1') | list)
+        ) | unique
+      }}
+  when:
+    - storage_nfs_manage_server | bool
+    - inventory_hostname in groups['nfs']
+    - resolved_storage_nfs_data_disk_enabled | bool
+
+- name: Guardrail - block selected system disk by default
+  ansible.builtin.assert:
+    that:
+      - resolved_storage_nfs_data_disk_device not in storage_nfs_blocked_devices
+    fail_msg: >-
+      Selected storage_nfs_data_disk_device={{ resolved_storage_nfs_data_disk_device }}
+      matches critical system devices: {{ storage_nfs_blocked_devices | join(', ') }}.
+      To bypass intentionally set storage_nfs_data_disk_allow_system_disk=true.
+  when:
+    - storage_nfs_manage_server | bool
+    - inventory_hostname in groups['nfs']
+    - resolved_storage_nfs_data_disk_enabled | bool
+    - not (resolved_storage_nfs_data_disk_allow_system_disk | bool)
+
+- name: Ensure disk tooling is installed when data disk option is enabled
+  ansible.builtin.package:
+    name:
+      - parted
+      - xfsprogs
+    state: present
+  when:
+    - storage_nfs_manage_server | bool
+    - inventory_hostname in groups['nfs']
+    - resolved_storage_nfs_data_disk_enabled | bool
+
+- name: Create partition table and data partition on selected disk
+  community.general.parted:
+    device: "{{ resolved_storage_nfs_data_disk_device }}"
+    number: "{{ resolved_storage_nfs_data_disk_partition_number }}"
+    label: "{{ resolved_storage_nfs_data_disk_label }}"
+    part_start: "{{ resolved_storage_nfs_data_disk_part_start }}"
+    part_end: "{{ resolved_storage_nfs_data_disk_part_end }}"
+    state: present
+  when:
+    - storage_nfs_manage_server | bool
+    - inventory_hostname in groups['nfs']
+    - resolved_storage_nfs_data_disk_enabled | bool
+
+- name: Create filesystem on selected partition
+  ansible.builtin.filesystem:
+    fstype: "{{ resolved_storage_nfs_data_disk_fs_type }}"
+    dev: "{{ resolved_storage_nfs_partition_path }}"
+    force: "{{ resolved_storage_nfs_data_disk_fs_force | bool }}"
+  when:
+    - storage_nfs_manage_server | bool
+    - inventory_hostname in groups['nfs']
+    - resolved_storage_nfs_data_disk_enabled | bool
+
+- name: Ensure mountpoint exists before mounting data disk
+  ansible.builtin.file:
+    path: "{{ resolved_nfs_export_path }}"
+    state: directory
+    mode: "0777"
+  when:
+    - storage_nfs_manage_server | bool
+    - inventory_hostname in groups['nfs']
+    - resolved_storage_nfs_data_disk_enabled | bool
+
+- name: Mount selected data disk to NFS export path
+  ansible.builtin.mount:
+    path: "{{ resolved_nfs_export_path }}"
+    src: "{{ resolved_storage_nfs_partition_path }}"
+    fstype: "{{ resolved_storage_nfs_data_disk_fs_type }}"
+    opts: "{{ resolved_storage_nfs_data_disk_mount_opts }}"
+    state: mounted
+  when:
+    - storage_nfs_manage_server | bool
+    - inventory_hostname in groups['nfs']
+    - resolved_storage_nfs_data_disk_enabled | bool
 
 - name: Ensure NFS packages are installed on NFS host
   ansible.builtin.package:

@@ -8,3 +8,21 @@ storage_nfs_kubeconfig: /etc/kubernetes/admin.conf
 storage_nfs_namespace: nfs-storage
 storage_nfs_provisioner_name: k8s-sigs.io/nfs-subdir-external-provisioner
 storage_nfs_provisioner_image: registry.k8s.io/sig-storage/nfs-subdir-external-provisioner:v4.0.2
+
+storage_nfs_data_disk_enabled: false
+storage_nfs_data_disk_device: ""
+storage_nfs_data_disk_partition_number: 1
+storage_nfs_data_disk_label: gpt
+storage_nfs_data_disk_part_start: 1MiB
+storage_nfs_data_disk_part_end: 100%
+storage_nfs_data_disk_fs_type: xfs
+storage_nfs_data_disk_fs_force: false
+storage_nfs_data_disk_mount_opts: defaults
+
+# Guardrail: block selected system disk by default.
+storage_nfs_data_disk_allow_system_disk: false
+storage_nfs_data_disk_guard_mounts:
+  - /
+  - /boot
+  - /boot/efi
+  - /var

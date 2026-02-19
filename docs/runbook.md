@@ -51,6 +51,7 @@ ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/bootstra
 ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/hardening.yml
 ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/storage.yml
 ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/validate.yml
+ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/reinstall_cluster_and_nfs.yml
 ```
 
 ## 5. Режим A: Изолированная сеть (proxy включен)
@@ -123,7 +124,19 @@ kubectl --kubeconfig /etc/kubernetes/admin.conf -n metallb-system get all
 kubectl --kubeconfig /etc/kubernetes/admin.conf -n nfs-storage get all
 ```
 
-## 11. Рекомендованный порядок запуска
+## 11. Опция data-диска для NFS
+Если нужен отдельный диск под `nfs_export_path`, настройте в `inventories/prod/group_vars/nfs.yml`:
+- `storage_nfs_data_disk_enabled: true`
+- `storage_nfs_data_disk_device: /dev/sdb` (или другой нужный диск)
+- `storage_nfs_data_disk_partition_number: 1`
+- `storage_nfs_data_disk_fs_type: xfs`
+- `storage_nfs_data_disk_mount_opts: defaults`
+
+Важно:
+- сценарий может переформатировать выбранный диск (в зависимости от `storage_nfs_data_disk_fs_force`);
+- используйте только целевой data-диск.
+
+## 12. Рекомендованный порядок запуска
 1. `playbooks/bootstrap.yml`
 2. `playbooks/hardening.yml`
 3. `playbooks/storage.yml`
@@ -133,3 +146,24 @@ kubectl --kubeconfig /etc/kubernetes/admin.conf -n nfs-storage get all
 ```bash
 ansible-playbook -i inventories/prod/hosts.yml playbooks/site.yml
 ```
+
+## 13. Деструктивный сценарий: полная переустановка (cluster_and_nfs)
+Внимание: сценарий удаляет:
+- весь Kubernetes state на узлах `k8s_cluster`;
+- все данные из NFS export path (`/srv/storage`).
+
+Обязательные guardrail-параметры:
+- `reinstall_scope=cluster_and_nfs`
+- `reinstall_confirm_token=DESTROY_CLUSTER_AND_NFS_DATA`
+
+Запуск:
+```bash
+ansible-playbook -i inventories/prod/hosts.yml playbooks/reinstall_cluster_and_nfs.yml \
+  -e reinstall_scope=cluster_and_nfs \
+  -e reinstall_confirm_token=DESTROY_CLUSTER_AND_NFS_DATA
+```
+
+После выполнения:
+1. Повторно развернуть кластер через `playbooks/site.yml`.
+2. Проверить, что `StorageClass nfs-sp` пересоздан и PVC создаются заново.
+3. Проверить readiness всех нод и системных подов.

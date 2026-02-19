@@ -77,6 +77,7 @@ playbooks/
   hardening.yml
   storage.yml
   validate.yml
+  reinstall_cluster_and_nfs.yml
 roles/
   base_os/
   proxy/
@@ -118,6 +119,8 @@ roles/
 - Доступ Ansible через выделенного операционного пользователя с ограниченными правами + sudo.
 - Контроль источников пакетов/образов в условиях прокси и изолированного контура.
 - Прокси-конфигурация должна быть параметризуемой и отключаемой для неизолированных контуров.
+- Для NFS-сервера должна поддерживаться опциональная разметка и монтирование выделенного диска под export path.
+- Для NFS data-disk сценария должна действовать защита от выбора системного диска (с явным override-параметром).
 
 ## 10. Требования к производительности
 - Настройки sysctl и runtime под Kubernetes-нагрузку.
@@ -200,6 +203,13 @@ roles/
   - name: `nfs-sp`
   - reclaimPolicy: `Delete`
   - default: `true`
+- Опционально: выделенный data-диск для NFS export path (параметризуемая разметка/FS/mount).
+  - `storage_nfs_data_disk_enabled`
+  - `storage_nfs_data_disk_device`
+  - `storage_nfs_data_disk_partition_number`
+  - `storage_nfs_data_disk_fs_type`
+  - `storage_nfs_data_disk_mount_opts`
+  - guardrail: запрет на использование системного диска по умолчанию (`storage_nfs_data_disk_allow_system_disk: false`)
 
 ### 12.6 Security и эксплуатация
 - Ansible user: `enemirov`
@@ -232,6 +242,7 @@ roles/
   - `playbooks/hardening.yml`
   - `playbooks/storage.yml`
   - `playbooks/validate.yml`
+  - `playbooks/reinstall_cluster_and_nfs.yml`
 - Реализован каркас ролей:
   - `roles/base_os`
   - `roles/proxy`
@@ -259,3 +270,5 @@ roles/
 - Дополнительные требования, принятые после первичной реализации:
   - системные hostname должны синхронизироваться с именами узлов из inventory;
   - необходимость настройки proxy должна управляться параметром (`proxy_enabled`).
+  - должен существовать отдельный деструктивный сценарий полной переустановки (`cluster_and_nfs`).
+  - для NFS должна поддерживаться опциональная подготовка выделенного data-диска.
