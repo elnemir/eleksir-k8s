@@ -1,0 +1,23 @@
+global
+  log /dev/log local0
+  log /dev/log local1 notice
+  daemon
+  maxconn 2048
+
+defaults
+  log global
+  mode tcp
+  option tcplog
+  timeout connect 10s
+  timeout client 1m
+  timeout server 1m
+
+frontend kube_api_frontend
+  bind {{ control_plane_vip_address }}:{{ control_plane_vip_port }}
+  default_backend kube_api_backend
+
+backend kube_api_backend
+  balance roundrobin
+{% for host in groups['control_plane'] %}
+  server {{ host }} {{ hostvars[host].ansible_host | default(host) }}:{{ control_plane_vip_backend_port }} check
+{% endfor %}

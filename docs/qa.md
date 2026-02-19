@@ -58,6 +58,8 @@
 - Runtime: `containerd`
 - CNI: `calico`
 - Control plane endpoint: `10.255.106.20`
+- Control plane endpoint port: `8443`
+- Control-plane endpoint HA: `keepalived + haproxy` на control-plane узлах
 - MetalLB mode: `l2`
 - Address pool: `pcidss-lan`, range `10.255.106.21-10.255.106.30`
 - Ingress controller: `nginx`

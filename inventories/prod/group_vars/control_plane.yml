@@ -6,8 +6,16 @@ node_role: control-plane
 kube_node_labels:
   - "node-role.kubernetes.io/control-plane="
 
+control_plane_vip_enabled: true
+control_plane_vip_virtual_router_id: 51
+control_plane_vip_auth_pass: "k8svip01"
+control_plane_vip_use_unicast: true
+control_plane_vip_priority_base: 150
+control_plane_vip_priority_step: 10
+
 firewall_allowed_tcp:
   - 22
+  - 8443
   - 6443
   - 2379-2380
   - 10250
@@ -24,3 +32,6 @@ firewall_allowed_udp:
   - 8472
   - 2049
   - 20048
+
+firewall_allowed_protocols:
+  - vrrp

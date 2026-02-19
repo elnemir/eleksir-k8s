@@ -7,6 +7,7 @@
       - selinux_target_mode in ['Enforcing', 'Permissive', 'Disabled']
       - firewall_allowed_tcp is defined
       - firewall_allowed_udp is defined
+      - firewall_allowed_protocols is defined
     fail_msg: "Security variables are incomplete"
 
 - name: Ensure firewalld package is installed
@@ -37,6 +38,11 @@
     security_firewall_udp_ports: "{{ firewall_allowed_udp | map('string') | map('regex_replace', '$', '/udp') | list }}"
   when: firewalld_enabled | bool
 
+- name: Build firewalld protocols list
+  ansible.builtin.set_fact:
+    security_firewall_protocols: "{{ firewall_allowed_protocols | map('string') | list }}"
+  when: firewalld_enabled | bool
+
 - name: Configure firewalld TCP ports
   ansible.posix.firewalld:
     port: "{{ item }}"
@@ -54,6 +60,17 @@
     state: enabled
   loop: "{{ security_firewall_udp_ports }}"
   when: firewalld_enabled | bool
+
+- name: Configure firewalld allowed protocols
+  ansible.posix.firewalld:
+    protocol: "{{ item }}"
+    permanent: true
+    immediate: true
+    state: enabled
+  loop: "{{ security_firewall_protocols }}"
+  when:
+    - firewalld_enabled | bool
+    - security_firewall_protocols | length > 0
 
 - name: Ensure firewalld is enabled persistently
   ansible.posix.firewalld:

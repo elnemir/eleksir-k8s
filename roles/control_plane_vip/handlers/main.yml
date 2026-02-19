@@ -1,0 +1,12 @@
+# ## Задача: Роль control_plane_vip handlers
+# - **Статус**: В процессе
+# - **Описание**: Обработчики для keepalived/haproxy.
+- name: Restart haproxy
+  ansible.builtin.service:
+    name: haproxy
+    state: restarted
+
+- name: Restart keepalived
+  ansible.builtin.service:
+    name: keepalived
+    state: restarted

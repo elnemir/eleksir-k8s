@@ -147,3 +147,17 @@
 - Обновлен `docs/Project.md`: добавлено описание автоматического ingress VIP post-check в архитектурной части.
 - Обновлен `docs/runbook.md`: добавлено описание автоматизации проверки в `playbooks/validate.yml`.
 - Обновлен `docs/Tasktracker.md`: задача `T-023` переведена в `Завершена (без стендовой валидации)`.
+
+## 2026-02-19 (старт control-plane VIP keepalived+haproxy)
+### Изменено
+- Обновлен `docs/Tasktracker.md`: добавлена задача `T-024` в статусе `В процессе`.
+
+## 2026-02-19 (control-plane VIP keepalived+haproxy)
+### Изменено
+- Добавлена роль `roles/control_plane_vip` (установка `keepalived/haproxy`, настройка VRRP unicast, VIP listener для Kubernetes API).
+- Обновлен `playbooks/bootstrap.yml`: добавлен запуск роли `control_plane_vip` до `kubernetes_core`.
+- Обновлен `roles/kubernetes_core/templates/kubeadm-config.yaml.j2`: `controlPlaneEndpoint` параметризован через `control_plane_endpoint_port`.
+- Обновлены `inventories/prod/group_vars/all.yml` и `inventories/prod/group_vars/control_plane.yml`: включен control-plane VIP, задан endpoint port `8443`, добавлены VRRP/firewall параметры.
+- Обновлены `roles/security_hardening/defaults/main.yml` и `roles/security_hardening/tasks/main.yml`: добавлена поддержка `firewall_allowed_protocols` (для `vrrp`).
+- Обновлены `docs/Project.md`, `docs/runbook.md`, `docs/qa.md`: зафиксирована архитектура и эксплуатация control-plane VIP.
+- Обновлен `docs/Tasktracker.md`: задача `T-024` переведена в `Завершена (без стендовой валидации)`.

@@ -37,6 +37,7 @@ flowchart LR
     U --> PX["Proxy Server"]
     PX --> EXT["External Repositories / Registries"]
     U --> CP["K8s Control Plane x3"]
+    CP --> APIVIP["Control-Plane API VIP (keepalived + haproxy)"]
     U --> WK["K8s Worker x3"]
     U --> MB["MetalLB Nodes x3"]
     U --> NFS["NFS Server (system + data disk)"]
@@ -50,6 +51,7 @@ flowchart LR
 - `base_os`: базовая подготовка RedOS (time sync, packages, kernel params).
 - `proxy`: настройка системного и пакетного прокси (`dnf`, `container runtime`, systemd env).
 - `container_runtime`: установка и настройка containerd/CRI-O (уточняется).
+- `control_plane_vip`: настройка HA endpoint Kubernetes API через `keepalived + haproxy`.
 - `kubernetes_core`: kubeadm/kubelet/kubectl, bootstrap control-plane, join worker.
 - `networking`: CNI-плагин (Calico/Cilium/Flannel, уточняется) и сетевые политики.
 - `metallb`: установка и настройка MetalLB с адресными пулами для ingress.
@@ -82,6 +84,7 @@ roles/
   base_os/
   proxy/
   container_runtime/
+  control_plane_vip/
   kubernetes_core/
   networking/
   metallb/
@@ -154,6 +157,8 @@ roles/
 - Runtime: `containerd`
 - CNI: `calico`
 - Control plane endpoint: `10.255.106.20`
+- Control plane endpoint port: `8443`
+- Control-plane API HA: `keepalived + haproxy` на control-plane нодах
 - Management CIDR: `10.255.106.0/26`
 - Pod CIDR: `10.245.0.0/16`
 - Service CIDR: `10.246.0.0/16`
@@ -239,6 +244,7 @@ roles/
   - Полный запуск `playbooks/site.yml` завершается успешно на чистом контуре.
   - Повторный запуск плейбука не приводит к незапланированным изменениям (идемпотентность).
   - Все ноды кластера в состоянии `Ready`, системные поды в `Running`.
+  - Kubernetes API доступен через `control_plane_endpoint` (`10.255.106.20:8443`).
   - Сервис типа `LoadBalancer` получает IP из пула MetalLB и доступен по `80/443`.
   - Публикация ingress через VIP работает без изменений сети в `vCenter` (при выполненных внешних сетевых предпосылках).
   - PVC через NFS StorageClass `nfs-sp` успешно создается и проходит RW-проверку.
@@ -262,6 +268,7 @@ roles/
   - `roles/base_os`
   - `roles/proxy`
   - `roles/container_runtime`
+  - `roles/control_plane_vip`
   - `roles/kubernetes_core`
   - `roles/networking`
   - `roles/metallb`
@@ -276,6 +283,7 @@ roles/
   - `base_os`: подготовка ОС (packages/sysctl/swap/chrony)
   - `proxy`: proxy-настройки профиля, dnf и systemd drop-ins
   - `container_runtime`: установка и конфигурация runtime
+  - `control_plane_vip`: HA endpoint API через `keepalived + haproxy`, unicast VRRP, VIP listener
   - `kubernetes_core`: `kubeadm init/join` для control-plane/worker/metallb
   - `networking`: применение CNI
   - `metallb`: установка и конфигурация IP pool
@@ -287,3 +295,4 @@ roles/
   - необходимость настройки proxy должна управляться параметром (`proxy_enabled`).
   - должен существовать отдельный деструктивный сценарий полной переустановки (`cluster_and_nfs`).
   - для NFS должна поддерживаться опциональная подготовка выделенного data-диска.
+  - control-plane endpoint должен быть реализован как HA VIP через `keepalived + haproxy`.

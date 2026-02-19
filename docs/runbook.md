@@ -54,6 +54,11 @@ ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/validate
 ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/reinstall_cluster_and_nfs.yml
 ```
 
+Проверить параметры control-plane VIP в `inventories/prod/group_vars`:
+- `control_plane_endpoint: 10.255.106.20`
+- `control_plane_endpoint_port: 8443`
+- `control_plane_vip_enabled: true`
+
 ## 5. Режим A: Изолированная сеть (proxy включен)
 Убедитесь, что в `inventories/prod/group_vars/all.yml`:
 - `proxy_enabled: true`
@@ -104,10 +109,11 @@ ansible-playbook -i inventories/prod/hosts.yml playbooks/site.yml
 1. Все хосты доступны через `ansible -m ping`.
 2. `kubeadm`-кластер поднят, все ноды `Ready`.
 3. CNI установлен и рабочий.
-4. MetalLB controller/speaker в `Running`, IP-пул применен.
-5. `StorageClass nfs-sp` создан, PVC успешно bind.
-6. SELinux/firewalld применены по ролям.
-7. Повторный прогон плейбука не создает нежелательных изменений.
+4. Kubernetes API доступен через `10.255.106.20:8443`.
+5. MetalLB controller/speaker в `Running`, IP-пул применен.
+6. `StorageClass nfs-sp` создан, PVC успешно bind.
+7. SELinux/firewalld применены по ролям.
+8. Повторный прогон плейбука не создает нежелательных изменений.
 
 ## 10. MetalLB L2 без доступа к vCenter
 Ограничение: сетевые изменения в `vCenter` недоступны.
@@ -151,6 +157,12 @@ kubectl --kubeconfig /etc/kubernetes/admin.conf get nodes -o wide
 kubectl --kubeconfig /etc/kubernetes/admin.conf get pods -A
 kubectl --kubeconfig /etc/kubernetes/admin.conf get svc -A
 kubectl --kubeconfig /etc/kubernetes/admin.conf get storageclass
+
+# Control-plane VIP
+ansible -i inventories/prod/hosts.yml control_plane -m command -a "systemctl is-active haproxy"
+ansible -i inventories/prod/hosts.yml control_plane -m command -a "systemctl is-active keepalived"
+ansible -i inventories/prod/hosts.yml control_plane -m shell -a "ip -4 addr show | grep -F 10.255.106.20 || true"
+nc -vz 10.255.106.20 8443
 
 # Проверка MetalLB
 kubectl --kubeconfig /etc/kubernetes/admin.conf -n metallb-system get all

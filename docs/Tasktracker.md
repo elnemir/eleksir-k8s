@@ -36,10 +36,11 @@
 | T-021 | NFS Guardrail | Добавить защиту от использования системного диска в NFS data-disk сценарии | Критический | Завершена (без стендовой валидации) |
 | T-022 | MetalLB Ops | Зафиксировать сценарий публикации ingress VIP в L2 без доступа к vCenter | Высокий | Завершена |
 | T-023 | Validation | Добавить автоматизированный post-check ingress VIP (`LoadBalancer`/EXTERNAL-IP) | Высокий | Завершена (без стендовой валидации) |
+| T-024 | Control Plane HA | Реализовать control-plane endpoint VIP через `keepalived + haproxy` | Критический | Завершена (без стендовой валидации) |
 
 ## Собранные данные (2026-02-19)
 - VMware: `vCenter 7.0.3`, `ESXi 7.0.3`, `clone_from_template`, шаблон `k8s-pcp-template`.
-- Kubernetes stack: `k8s 1.30.14`, `containerd`, `calico`, `control_plane_endpoint 10.255.106.20`.
+- Kubernetes stack: `k8s 1.30.14`, `containerd`, `calico`, `control_plane_endpoint 10.255.106.20:8443`.
 - Узлы и роли: 3 `control-plane`, 3 `worker`, 3 `metallb`, 1 `nfs`; IP-адреса зафиксированы.
 - MetalLB: `l2`, пул `10.255.106.21-10.255.106.30`, ingress `nginx`.
 - NFS: `/srv/storage`, CIDR `10.255.106.0/26`, StorageClass `nfs-sp` по умолчанию.
@@ -72,6 +73,7 @@
 - Добавлен guardrail в `storage_nfs`: блокировка системного диска по умолчанию с явным override-флагом.
 - В документации зафиксирован операционный сценарий MetalLB L2 без прав на сетевые изменения в `vCenter`.
 - В роль `validation` добавлена автоматическая проверка ingress `LoadBalancer` и ожидаемого VIP.
+- Добавлена роль `control_plane_vip`: реализация API endpoint VIP через `keepalived + haproxy` на control-plane нодах.
 
 ## Декомпозиция ближайшего этапа (сбор данных)
 - [x] Утвердить схему IP-адресов и список нод/ролей.

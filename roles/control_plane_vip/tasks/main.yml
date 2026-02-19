@@ -1,0 +1,107 @@
+# ## Задача: Роль control_plane_vip
+# - **Статус**: В процессе
+# - **Описание**: Настроить HA endpoint Kubernetes API через keepalived + haproxy.
+- name: Define control-plane VIP role facts
+  ansible.builtin.set_fact:
+    control_plane_vip_host_index: "{{ groups['control_plane'].index(inventory_hostname) }}"
+    control_plane_vip_state: "{{ 'MASTER' if (inventory_hostname == groups['control_plane'][0]) else 'BACKUP' }}"
+    control_plane_vip_priority: "{{ (control_plane_vip_priority_base | int) - ((groups['control_plane'].index(inventory_hostname)) * (control_plane_vip_priority_step | int)) }}"
+    control_plane_vip_interface_resolved: "{{ (control_plane_vip_interface | default('') | trim) | default(ansible_facts.get('default_ipv4', {}).get('interface', ''), true) }}"
+    control_plane_vip_peer_ips: >-
+      {{
+        groups['control_plane']
+        | reject('equalto', inventory_hostname)
+        | map('extract', hostvars, 'ansible_host')
+        | list
+      }}
+  when:
+    - control_plane_vip_enabled | bool
+    - inventory_hostname in groups['control_plane']
+
+- name: Validate control-plane VIP variables
+  ansible.builtin.assert:
+    that:
+      - groups['control_plane'] | length >= 2
+      - control_plane_vip_address | length > 0
+      - (control_plane_vip_port | int) > 0
+      - (control_plane_vip_port | int) <= 65535
+      - (control_plane_vip_backend_port | int) > 0
+      - (control_plane_vip_backend_port | int) <= 65535
+      - control_plane_vip_interface_resolved | length > 0
+      - control_plane_vip_auth_pass | length <= 8
+      - control_plane_vip_auth_pass | length > 0
+      - control_plane_vip_priority | int > 0
+      - control_plane_vip_peer_ips | length > 0
+    fail_msg: "Control-plane VIP variables are invalid or incomplete"
+  when:
+    - control_plane_vip_enabled | bool
+    - inventory_hostname in groups['control_plane']
+
+- name: Install keepalived and haproxy packages
+  ansible.builtin.package:
+    name:
+      - keepalived
+      - haproxy
+    state: present
+  when:
+    - control_plane_vip_enabled | bool
+    - inventory_hostname in groups['control_plane']
+
+- name: Enable non-local bind for VIP listener
+  ansible.builtin.sysctl:
+    name: net.ipv4.ip_nonlocal_bind
+    value: "1"
+    state: present
+    sysctl_set: true
+    reload: true
+  when:
+    - control_plane_vip_enabled | bool
+    - inventory_hostname in groups['control_plane']
+
+- name: Deploy haproxy configuration for kube-apiserver VIP
+  ansible.builtin.template:
+    src: haproxy.cfg.j2
+    dest: "{{ control_plane_vip_haproxy_cfg_path }}"
+    mode: "0644"
+  notify: Restart haproxy
+  when:
+    - control_plane_vip_enabled | bool
+    - inventory_hostname in groups['control_plane']
+
+- name: Deploy keepalived health-check script
+  ansible.builtin.template:
+    src: check-haproxy.sh.j2
+    dest: "{{ control_plane_vip_check_script_path }}"
+    mode: "0755"
+  notify: Restart keepalived
+  when:
+    - control_plane_vip_enabled | bool
+    - inventory_hostname in groups['control_plane']
+
+- name: Deploy keepalived configuration for control-plane VIP
+  ansible.builtin.template:
+    src: keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+    mode: "0644"
+  notify: Restart keepalived
+  when:
+    - control_plane_vip_enabled | bool
+    - inventory_hostname in groups['control_plane']
+
+- name: Ensure haproxy service is enabled and started
+  ansible.builtin.service:
+    name: haproxy
+    enabled: true
+    state: started
+  when:
+    - control_plane_vip_enabled | bool
+    - inventory_hostname in groups['control_plane']
+
+- name: Ensure keepalived service is enabled and started
+  ansible.builtin.service:
+    name: keepalived
+    enabled: true
+    state: started
+  when:
+    - control_plane_vip_enabled | bool
+    - inventory_hostname in groups['control_plane']

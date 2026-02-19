@@ -1,0 +1,16 @@
+# ## Задача: Роль control_plane_vip
+# - **Статус**: В процессе
+# - **Описание**: Настроить HA endpoint Kubernetes API через keepalived + haproxy.
+control_plane_vip_enabled: false
+control_plane_vip_address: "{{ control_plane_endpoint }}"
+control_plane_vip_port: "{{ control_plane_endpoint_port | default(8443) }}"
+control_plane_vip_backend_port: 6443
+control_plane_vip_interface: ""
+control_plane_vip_cidr_mask: "{{ (management_cidr | string).split('/')[-1] | default('26') }}"
+control_plane_vip_virtual_router_id: 51
+control_plane_vip_auth_pass: "k8svip01"
+control_plane_vip_use_unicast: true
+control_plane_vip_priority_base: 150
+control_plane_vip_priority_step: 10
+control_plane_vip_haproxy_cfg_path: /etc/haproxy/haproxy.cfg
+control_plane_vip_check_script_path: /usr/local/bin/check-haproxy.sh

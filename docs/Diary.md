@@ -252,3 +252,29 @@
 ### Проблемы
 - Значение ожидаемого ingress VIP должно быть параметризуемым, чтобы не ломать сценарии без фиксированного VIP.
 - Стендовая проверка `playbooks/validate.yml` отложена до запуска на control host.
+
+## Дата: 2026-02-19 (сессия 19)
+### Наблюдения
+- Выявлен архитектурный пробел: `control_plane_endpoint` задан, но отсутствует реализованный механизм владения VIP.
+- Требуется HA endpoint для Kubernetes API без изменений сетевой инфраструктуры в `vCenter`.
+
+### Решения
+- Стартована задача `T-024` на реализацию control-plane VIP через `keepalived + haproxy`.
+- План реализации: отдельная роль, подключение в `bootstrap.yml` до `kubeadm init/join`, обновление firewall-политик для VRRP.
+
+### Проблемы
+- Нужно исключить конфликт портов между `haproxy` и `kube-apiserver` на control-plane узлах.
+
+## Дата: 2026-02-19 (сессия 20)
+### Наблюдения
+- Реализован control-plane VIP endpoint для Kubernetes API без зависимости от изменений в `vCenter`.
+- Для исключения портового конфликта с `kube-apiserver:6443` VIP listener вынесен на `8443`.
+
+### Решения
+- Добавлена роль `control_plane_vip` и подключена в `playbooks/bootstrap.yml` перед `kubernetes_core`.
+- Включены `keepalived + haproxy` на control-plane узлах, включен `net.ipv4.ip_nonlocal_bind=1`.
+- Обновлен `kubeadm`-шаблон на использование `control_plane_endpoint_port`.
+- В `security_hardening` добавлена поддержка `firewall_allowed_protocols`, для control-plane разрешен `vrrp`.
+
+### Проблемы
+- Нужна обязательная стендовая проверка failover VIP между control-plane нодами на control host.

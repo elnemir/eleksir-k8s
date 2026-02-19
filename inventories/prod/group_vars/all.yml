@@ -8,6 +8,7 @@ management_cidr: "10.255.106.0/26"
 kubernetes_version: "1.30.14"
 kubernetes_cni: calico
 control_plane_endpoint: "10.255.106.20"
+control_plane_endpoint_port: 8443
 pod_subnet_cidr: "10.245.0.0/16"
 service_subnet_cidr: "10.246.0.0/16"
 

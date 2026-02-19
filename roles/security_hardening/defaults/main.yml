@@ -3,3 +3,4 @@
 # - **Описание**: Дефолтные параметры firewalld и SELinux.
 selinux_target_mode: Enforcing
 firewalld_enabled: true
+firewall_allowed_protocols: []
