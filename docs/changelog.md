@@ -127,3 +127,10 @@
 - Обновлен `inventories/prod/group_vars/nfs.yml`: добавлен параметр `storage_nfs_data_disk_allow_system_disk`.
 - Обновлен `docs/runbook.md`: добавлены инструкции по guardrail и override-поведению.
 - Обновлен `docs/Tasktracker.md`: задача `T-021` переведена в `Завершена (без стендовой валидации)`.
+
+## 2026-02-19 (MetalLB L2 без доступа к vCenter)
+### Изменено
+- Обновлен `docs/Project.md`: зафиксирована модель публикации ingress через VIP в `MetalLB L2` при отсутствии прав на сетевые изменения в `vCenter`.
+- Обновлен `docs/runbook.md`: добавлен checklist внешних предпосылок (IPAM/DHCP, маршрутизация, firewall, DNS), команды фиксации VIP и проверки доступности.
+- Обновлен `docs/qa.md`: добавлено архитектурное ограничение по отсутствию доступа к сетевым настройкам в `vCenter`.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-022`.

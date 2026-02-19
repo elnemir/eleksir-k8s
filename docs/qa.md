@@ -9,6 +9,7 @@
 ### 1.1 VMware и инфраструктура
 - vCenter: `7.0.3`
 - ESXi: `7.0.3`
+- Доступ к изменению сетевых настроек в vCenter: отсутствует
 - Provisioning: `clone_from_template`
 - Template: `k8s-pcp-template`
 - Datacenter: `Eleksir`
