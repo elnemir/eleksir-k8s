@@ -245,6 +245,7 @@ roles/
 - Добавлены инфраструктурные файлы:
   - `ansible.cfg`
   - `requirements.yml`
+  - `docs/runbook.md`
 - Реализована базовая рабочая логика ролей:
   - `base_os`: подготовка ОС (packages/sysctl/swap/chrony)
   - `proxy`: proxy-настройки профиля, dnf и systemd drop-ins

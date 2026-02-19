@@ -76,3 +76,19 @@
 - Обновлен `playbooks/bootstrap.yml`: роль `proxy` теперь запускается только при `proxy_enabled=true`.
 - Обновлены роли `networking`, `metallb`, `storage_nfs`: proxy-переменные для `kubectl` применяются условно через `proxy_environment`.
 - Обновлен `docs/Tasktracker.md`: `T-017` переведена в `Завершена (без стендовой валидации)`.
+
+## 2026-02-19 (старт подготовки runbook)
+### Изменено
+- Обновлен `docs/Tasktracker.md`: добавлена задача `T-018` в статусе `В процессе`.
+
+## 2026-02-19 (runbook для control host)
+### Добавлено
+- Добавлен `docs/runbook.md` с пошаговым сценарием запуска на control host:
+  - подготовка окружения;
+  - режим `proxy_enabled=true` (изолированная сеть);
+  - режим `proxy_enabled=false` (неизолированная сеть);
+  - проверка hostname по inventory;
+  - checklist идемпотентности и приемки.
+
+### Изменено
+- Обновлен `docs/Tasktracker.md`: задача `T-018` переведена в `Завершена`.
