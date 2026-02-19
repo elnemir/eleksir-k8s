@@ -1,4 +1,6 @@
 # ## Задача: Роль proxy handlers
 # - **Статус**: В процессе
 # - **Описание**: Обработчики роли proxy.
----
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true

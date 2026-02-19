@@ -3,3 +3,14 @@
 # - **Описание**: Дефолтные параметры container runtime.
 container_runtime_name: containerd
 container_runtime_manage_config: true
+
+container_runtime_packages_map:
+  containerd:
+    - containerd
+    - cri-tools
+  crio:
+    - cri-o
+    - cri-tools
+
+containerd_config_path: /etc/containerd/config.toml
+containerd_sandbox_image: registry.k8s.io/pause:3.9

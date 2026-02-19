@@ -2,3 +2,9 @@
 # - **Статус**: В процессе
 # - **Описание**: Дефолтные параметры CNI и сетевой конфигурации.
 network_cni: "{{ kubernetes_cni }}"
+network_kubeconfig: /etc/kubernetes/admin.conf
+
+network_manifest_urls:
+  calico: https://raw.githubusercontent.com/projectcalico/calico/v3.28.2/manifests/calico.yaml
+  cilium: https://raw.githubusercontent.com/cilium/cilium/v1.16.6/install/kubernetes/quick-install.yaml
+  flannel: https://raw.githubusercontent.com/flannel-io/flannel/v0.25.5/Documentation/kube-flannel.yml

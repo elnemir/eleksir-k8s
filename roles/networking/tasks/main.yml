@@ -5,9 +5,31 @@
   ansible.builtin.assert:
     that:
       - network_cni in ['calico', 'cilium', 'flannel']
+      - network_manifest_urls[network_cni] is defined
     fail_msg: "Unsupported CNI plugin"
 
-- name: Networking role skeleton
-  ansible.builtin.debug:
-    msg: "networking role skeleton is in place"
+- name: Wait for Kubernetes API availability
+  ansible.builtin.command: kubectl --kubeconfig={{ network_kubeconfig }} get nodes
+  register: kube_api_wait
+  retries: 20
+  delay: 15
+  until: kube_api_wait.rc == 0
+  changed_when: false
+
+- name: Apply CNI manifest
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ network_kubeconfig }}
+    apply -f {{ network_manifest_urls[network_cni] }}
+  register: networking_apply
+  changed_when: "'created' in networking_apply.stdout or 'configured' in networking_apply.stdout"
+  environment:
+    HTTP_PROXY: "{{ http_proxy }}"
+    HTTPS_PROXY: "{{ https_proxy }}"
+    NO_PROXY: "{{ no_proxy | join(',') }}"
+
+- name: Wait for CNI DaemonSet rollout (calico)
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ network_kubeconfig }}
+    -n kube-system rollout status daemonset/calico-node --timeout=300s
+  when: network_cni == 'calico'
   changed_when: false

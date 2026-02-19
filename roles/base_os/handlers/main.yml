@@ -1,4 +1,11 @@
 # ## Задача: Роль base_os handlers
 # - **Статус**: В процессе
 # - **Описание**: Обработчики роли base_os.
----
+- name: Apply sysctl settings
+  ansible.builtin.command: sysctl --system
+  changed_when: false
+
+- name: Restart chronyd
+  ansible.builtin.service:
+    name: chronyd
+    state: restarted

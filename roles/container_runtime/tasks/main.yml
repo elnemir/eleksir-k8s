@@ -5,9 +5,43 @@
   ansible.builtin.assert:
     that:
       - container_runtime_name in ['containerd', 'crio']
+      - container_runtime_packages_map[container_runtime_name] is iterable
     fail_msg: "Supported runtimes: containerd, crio"
 
-- name: Container runtime role skeleton
-  ansible.builtin.debug:
-    msg: "container_runtime role skeleton is in place"
-  changed_when: false
+- name: Install container runtime packages
+  ansible.builtin.package:
+    name: "{{ container_runtime_packages_map[container_runtime_name] }}"
+    state: present
+
+- name: Ensure containerd config directory exists
+  ansible.builtin.file:
+    path: /etc/containerd
+    state: directory
+    mode: "0755"
+  when: container_runtime_name == 'containerd'
+
+- name: Configure containerd
+  ansible.builtin.template:
+    src: containerd-config.toml.j2
+    dest: "{{ containerd_config_path }}"
+    mode: "0644"
+  when:
+    - container_runtime_name == 'containerd'
+    - container_runtime_manage_config | bool
+  notify: Restart containerd
+
+- name: Configure crictl endpoint
+  ansible.builtin.copy:
+    dest: /etc/crictl.yaml
+    mode: "0644"
+    content: |
+      runtime-endpoint: {{ 'unix:///run/containerd/containerd.sock' if container_runtime_name == 'containerd' else 'unix:///var/run/crio/crio.sock' }}
+      image-endpoint: {{ 'unix:///run/containerd/containerd.sock' if container_runtime_name == 'containerd' else 'unix:///var/run/crio/crio.sock' }}
+      timeout: 10
+      debug: false
+
+- name: Ensure container runtime service is enabled
+  ansible.builtin.service:
+    name: "{{ 'containerd' if container_runtime_name == 'containerd' else 'crio' }}"
+    enabled: true
+    state: started

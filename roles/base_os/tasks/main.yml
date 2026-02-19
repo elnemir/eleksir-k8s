@@ -1,14 +1,69 @@
 # ## Задача: Роль base_os
 # - **Статус**: В процессе
 # - **Описание**: Базовая подготовка ОС перед установкой Kubernetes.
-- name: Validate RedOS release variable
+- name: Validate base OS variables
   ansible.builtin.assert:
     that:
       - redos_release is defined
-      - redos_release | length > 0
-    fail_msg: "Variable redos_release must be defined"
+      - base_os_packages is iterable
+      - base_os_kernel_modules is iterable
+    fail_msg: "Base OS variables are incomplete"
 
-- name: Base OS role skeleton
-  ansible.builtin.debug:
-    msg: "base_os role skeleton is in place"
-  changed_when: false
+- name: Install baseline packages
+  ansible.builtin.package:
+    name: "{{ base_os_packages }}"
+    state: present
+
+- name: Configure kernel modules for Kubernetes
+  ansible.builtin.copy:
+    dest: /etc/modules-load.d/k8s.conf
+    mode: "0644"
+    content: |
+      {% for module in base_os_kernel_modules %}
+      {{ module }}
+      {% endfor %}
+
+- name: Load required kernel modules
+  community.general.modprobe:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ base_os_kernel_modules }}"
+
+- name: Configure sysctl settings for Kubernetes
+  ansible.builtin.template:
+    src: k8s-sysctl.conf.j2
+    dest: /etc/sysctl.d/99-kubernetes.conf
+    mode: "0644"
+  notify: Apply sysctl settings
+
+- name: Disable swap immediately
+  ansible.builtin.command: swapoff -a
+  when:
+    - base_os_disable_swap | bool
+    - ansible_swaptotal_mb | int > 0
+  changed_when: true
+
+- name: Disable swap in fstab for persistence
+  ansible.builtin.replace:
+    path: /etc/fstab
+    regexp: '^(\\S+\\s+\\S+\\s+swap\\s+.*)$'
+    replace: '# \\1'
+  when: base_os_disable_swap | bool
+
+- name: Configure chrony NTP servers
+  ansible.builtin.blockinfile:
+    path: /etc/chrony.conf
+    marker: "# {mark} ANSIBLE MANAGED NTP"
+    block: |
+      {% for server in ntp_servers | default([]) %}
+      server {{ server }} iburst
+      {% endfor %}
+  when: base_os_manage_time | bool
+  notify: Restart chronyd
+
+- name: Ensure chronyd is enabled and running
+  ansible.builtin.service:
+    name: chronyd
+    state: started
+    enabled: true
+  when: base_os_manage_time | bool

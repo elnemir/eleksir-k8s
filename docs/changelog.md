@@ -52,3 +52,14 @@
 ### Изменено
 - Обновлен `docs/Tasktracker.md`: задачи `T-005`...`T-012` переведены в `В процессе`.
 - Зафиксирован переход от каркаса к реализации рабочей логики ролей.
+
+## 2026-02-19 (реализация логики ролей)
+### Изменено
+- Реализована роль `base_os`: пакеты, modules-load, sysctl, swap, chrony.
+- Реализована роль `proxy`: профили окружения, `dnf` proxy, systemd drop-in для `containerd/kubelet/crio`.
+- Реализована роль `container_runtime`: установка runtime, конфиг `containerd`, `crictl`, управление сервисом.
+- Реализована роль `kubernetes_core`: установка компонентов Kubernetes, `kubeadm init/join`, подготовка kubeconfig.
+- Реализованы роли `networking`, `metallb`, `storage_nfs`, `security_hardening`, `validation` с базовой рабочей логикой.
+- Обновлен `playbooks/bootstrap.yml`: роль `kubernetes_core` запускается на всей группе `k8s_cluster`.
+- Обновлен `inventories/prod/group_vars/all.yml`: дополнен `no_proxy`, добавлены runtime-переменные.
+- Обновлен `docs/Tasktracker.md`: задачи `T-005`...`T-012` переведены в `Завершена (без стендовой валидации)`.

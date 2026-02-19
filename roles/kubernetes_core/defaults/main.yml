@@ -3,3 +3,15 @@
 # - **Описание**: Дефолтные параметры bootstrap Kubernetes.
 kubernetes_install_mode: auto
 kubeadm_config_path: /etc/kubernetes/kubeadm-config.yaml
+
+kubernetes_packages:
+  - kubelet
+  - kubeadm
+  - kubectl
+
+kubernetes_repo_channel: "v{{ (kubernetes_version.split('.')[0:2] | join('.')) }}"
+kubernetes_repo_baseurl: "https://pkgs.k8s.io/core:/stable:/{{ kubernetes_repo_channel }}/rpm/"
+kubernetes_repo_gpgkey: "{{ kubernetes_repo_baseurl }}repodata/repomd.xml.key"
+
+kubeadm_cri_socket: "unix:///run/containerd/containerd.sock"
+kubernetes_admin_user: "{{ ansible_user | default('root') }}"

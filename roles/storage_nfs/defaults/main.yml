@@ -3,3 +3,8 @@
 # - **Описание**: Дефолтные параметры NFS и StorageClass.
 storage_nfs_manage_server: true
 storage_nfs_manage_k8s: true
+storage_nfs_kubeconfig: /etc/kubernetes/admin.conf
+
+storage_nfs_namespace: nfs-storage
+storage_nfs_provisioner_name: k8s-sigs.io/nfs-subdir-external-provisioner
+storage_nfs_provisioner_image: registry.k8s.io/sig-storage/nfs-subdir-external-provisioner:v4.0.2

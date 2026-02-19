@@ -1,0 +1,4 @@
+# Managed by Ansible (base_os)
+{% for key, value in base_os_sysctl.items() %}
+{{ key }} = {{ value }}
+{% endfor %}

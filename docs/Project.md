@@ -242,3 +242,13 @@ roles/
 - Добавлены инфраструктурные файлы:
   - `ansible.cfg`
   - `requirements.yml`
+- Реализована базовая рабочая логика ролей:
+  - `base_os`: подготовка ОС (packages/sysctl/swap/chrony)
+  - `proxy`: proxy-настройки профиля, dnf и systemd drop-ins
+  - `container_runtime`: установка и конфигурация runtime
+  - `kubernetes_core`: `kubeadm init/join` для control-plane/worker/metallb
+  - `networking`: применение CNI
+  - `metallb`: установка и конфигурация IP pool
+  - `storage_nfs`: NFS export + Kubernetes StorageClass через provisioner
+  - `security_hardening`: SELinux/firewalld
+  - `validation`: базовые проверки критериев приемки

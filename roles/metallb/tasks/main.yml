@@ -1,15 +1,64 @@
 # ## Задача: Роль metallb
 # - **Статус**: В процессе
 # - **Описание**: Установка и конфигурация MetalLB.
+- name: Resolve MetalLB variables for control-plane context
+  ansible.builtin.set_fact:
+    metallb_ref_host: "{{ groups['metallb'][0] }}"
+    resolved_metallb_mode: "{{ metallb_mode | default(hostvars[groups['metallb'][0]].metallb_mode | default('l2')) }}"
+    resolved_metallb_address_pools: "{{ metallb_address_pools | default(hostvars[groups['metallb'][0]].metallb_address_pools) }}"
+    resolved_metallb_node_labels: "{{ metallb_node_labels | default(hostvars[groups['metallb'][0]].metallb_node_labels | default([])) }}"
+
 - name: Validate MetalLB settings
   ansible.builtin.assert:
     that:
-      - metallb_mode in ['l2', 'bgp']
-      - metallb_address_pools is defined
-      - metallb_address_pools | length > 0
+      - groups['metallb'] | length > 0
+      - resolved_metallb_mode in ['l2', 'bgp']
+      - resolved_metallb_address_pools is defined
+      - resolved_metallb_address_pools | length > 0
     fail_msg: "MetalLB settings are incomplete"
 
-- name: MetalLB role skeleton
-  ansible.builtin.debug:
-    msg: "metallb role skeleton is in place"
+- name: Apply MetalLB base manifest
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ metallb_kubeconfig }}
+    apply -f {{ metallb_manifest_url }}
+  register: metallb_install
+  changed_when: "'created' in metallb_install.stdout or 'configured' in metallb_install.stdout"
+  environment:
+    HTTP_PROXY: "{{ http_proxy }}"
+    HTTPS_PROXY: "{{ https_proxy }}"
+    NO_PROXY: "{{ no_proxy | join(',') }}"
+
+- name: Wait for MetalLB controller rollout
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ metallb_kubeconfig }}
+    -n {{ metallb_namespace }} rollout status deployment/controller --timeout=300s
   changed_when: false
+
+- name: Wait for MetalLB speaker rollout
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ metallb_kubeconfig }}
+    -n {{ metallb_namespace }} rollout status daemonset/speaker --timeout=300s
+  changed_when: false
+
+- name: Render MetalLB pool configuration
+  ansible.builtin.template:
+    src: metallb-config.yaml.j2
+    dest: /tmp/metallb-config.yaml
+    mode: "0644"
+
+- name: Apply MetalLB pool configuration
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ metallb_kubeconfig }}
+    apply -f /tmp/metallb-config.yaml
+  register: metallb_pool_apply
+  changed_when: "'created' in metallb_pool_apply.stdout or 'configured' in metallb_pool_apply.stdout"
+
+- name: Apply labels to dedicated MetalLB nodes
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ metallb_kubeconfig }}
+    label node {{ item.0 }} {{ item.1 }} --overwrite
+  loop: "{{ groups['metallb'] | product(resolved_metallb_node_labels) | list }}"
+  changed_when: false
+  when:
+    - groups['metallb'] | length > 0
+    - resolved_metallb_node_labels | length > 0

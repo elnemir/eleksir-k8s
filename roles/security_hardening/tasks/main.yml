@@ -1,13 +1,63 @@
 # ## Задача: Роль security_hardening
 # - **Статус**: В процессе
 # - **Описание**: Применение политик безопасности ОС.
-- name: Validate SELinux mode value
+- name: Validate security variables
   ansible.builtin.assert:
     that:
       - selinux_target_mode in ['Enforcing', 'Permissive', 'Disabled']
-    fail_msg: "Invalid SELinux mode"
+      - firewall_allowed_tcp is defined
+      - firewall_allowed_udp is defined
+    fail_msg: "Security variables are incomplete"
 
-- name: Security hardening role skeleton
-  ansible.builtin.debug:
-    msg: "security_hardening role skeleton is in place"
-  changed_when: false
+- name: Ensure firewalld package is installed
+  ansible.builtin.package:
+    name: firewalld
+    state: present
+  when: firewalld_enabled | bool
+
+- name: Ensure firewalld service is running
+  ansible.builtin.service:
+    name: firewalld
+    enabled: true
+    state: started
+  when: firewalld_enabled | bool
+
+- name: Set SELinux mode
+  ansible.posix.selinux:
+    policy: targeted
+    state: "{{ selinux_target_mode }}"
+
+- name: Build firewalld TCP ports list
+  ansible.builtin.set_fact:
+    security_firewall_tcp_ports: "{{ firewall_allowed_tcp | map('string') | map('regex_replace', '$', '/tcp') | list }}"
+  when: firewalld_enabled | bool
+
+- name: Build firewalld UDP ports list
+  ansible.builtin.set_fact:
+    security_firewall_udp_ports: "{{ firewall_allowed_udp | map('string') | map('regex_replace', '$', '/udp') | list }}"
+  when: firewalld_enabled | bool
+
+- name: Configure firewalld TCP ports
+  ansible.posix.firewalld:
+    port: "{{ item }}"
+    permanent: true
+    immediate: true
+    state: enabled
+  loop: "{{ security_firewall_tcp_ports }}"
+  when: firewalld_enabled | bool
+
+- name: Configure firewalld UDP ports
+  ansible.posix.firewalld:
+    port: "{{ item }}"
+    permanent: true
+    immediate: true
+    state: enabled
+  loop: "{{ security_firewall_udp_ports }}"
+  when: firewalld_enabled | bool
+
+- name: Ensure firewalld is enabled persistently
+  ansible.posix.firewalld:
+    state: enabled
+    permanent: true
+    immediate: true
+  when: firewalld_enabled | bool

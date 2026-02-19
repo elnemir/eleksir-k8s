@@ -1,0 +1,19 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ resolved_nfs_storage_class.name }}
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "{{ resolved_nfs_storage_class.is_default | bool | lower }}"
+provisioner: {{ storage_nfs_provisioner_name }}
+reclaimPolicy: {{ resolved_nfs_storage_class.reclaim_policy }}
+allowVolumeExpansion: true
+mountOptions:
+{% if resolved_nfs_storage_class.mount_options | length == 0 %}
+  - nfsvers=4.1
+{% else %}
+{% for opt in resolved_nfs_storage_class.mount_options %}
+  - {{ opt }}
+{% endfor %}
+{% endif %}
+parameters:
+  pathPattern: "${.PVC.namespace}/${.PVC.name}"

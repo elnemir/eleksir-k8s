@@ -17,6 +17,9 @@ no_proxy:
   - localhost
   - 127.0.0.1
   - 10.0.0.0/8
+  - 10.255.106.0/26
+  - 10.245.0.0/16
+  - 10.246.0.0/16
   - .eleksir.net
   - .eleksir.finance
   - .cr.yandex
@@ -24,6 +27,8 @@ no_proxy:
 proxy_mode: local_on_each_node
 registry_mode: external_via_proxy
 rpm_mirror_mode: external_via_proxy
+container_runtime_name: containerd
+kubeadm_cri_socket: unix:///run/containerd/containerd.sock
 
 dns_servers:
   - 10.255.85.13

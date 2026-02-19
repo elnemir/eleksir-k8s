@@ -1,4 +1,6 @@
 # ## Задача: Роль storage_nfs handlers
 # - **Статус**: В процессе
 # - **Описание**: Обработчики роли storage_nfs.
----
+- name: Reload NFS exports
+  ansible.builtin.command: exportfs -ra
+  changed_when: false

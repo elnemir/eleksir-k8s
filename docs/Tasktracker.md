@@ -6,8 +6,8 @@
 
 ## Текущий статус проекта
 - Общий статус: **В процессе**
-- Текущий этап: **Заполнение ролей рабочей логикой развертывания**
-- Следующий этап: **Интеграционные проверки и идемпотентность**
+- Текущий этап: **Подготовка к интеграционным проверкам и идемпотентности**
+- Следующий этап: **Валидация на стенде и устранение дефектов**
 
 ## Бэклог и прогресс
 
@@ -17,14 +17,14 @@
 | T-002 | Аналитика | Собрать недостающие входные данные (сеть, прокси, DNS/NTP, vCenter, версии) | Критический | Завершена |
 | T-003 | Инвентори | Подготовить `inventories/prod/hosts.yml` с группами `control_plane`, `workers`, `metallb`, `nfs` | Критический | Завершена |
 | T-004 | Переменные | Сформировать `group_vars` для прокси, сети, k8s, MetalLB, NFS | Критический | Завершена |
-| T-005 | Базовая ОС | Реализовать роль `base_os` для RedOS 8.0.2 | Высокий | В процессе |
-| T-006 | Прокси | Реализовать роль `proxy` (dnf/systemd/runtime) | Критический | В процессе |
-| T-007 | Runtime | Реализовать роль `container_runtime` (containerd/CRI-O) | Критический | В процессе |
-| T-008 | Kubernetes | Реализовать роль `kubernetes_core` (init/join/control-plane/worker) | Критический | В процессе |
-| T-009 | CNI | Внедрить сетевой плагин и базовые политики | Высокий | В процессе |
-| T-010 | MetalLB | Развернуть MetalLB и адресные пулы | Критический | В процессе |
-| T-011 | NFS | Настроить NFS и StorageClass/PV/PVC | Критический | В процессе |
-| T-012 | Безопасность | Настроить firewalld и SELinux правила | Критический | В процессе |
+| T-005 | Базовая ОС | Реализовать роль `base_os` для RedOS 8.0.2 | Высокий | Завершена (без стендовой валидации) |
+| T-006 | Прокси | Реализовать роль `proxy` (dnf/systemd/runtime) | Критический | Завершена (без стендовой валидации) |
+| T-007 | Runtime | Реализовать роль `container_runtime` (containerd/CRI-O) | Критический | Завершена (без стендовой валидации) |
+| T-008 | Kubernetes | Реализовать роль `kubernetes_core` (init/join/control-plane/worker) | Критический | Завершена (без стендовой валидации) |
+| T-009 | CNI | Внедрить сетевой плагин и базовые политики | Высокий | Завершена (без стендовой валидации) |
+| T-010 | MetalLB | Развернуть MetalLB и адресные пулы | Критический | Завершена (без стендовой валидации) |
+| T-011 | NFS | Настроить NFS и StorageClass/PV/PVC | Критический | Завершена (без стендовой валидации) |
+| T-012 | Безопасность | Настроить firewalld и SELinux правила | Критический | Завершена (без стендовой валидации) |
 | T-013 | Идемпотентность | Проверить повторный прогон без нежелательных изменений | Высокий | Не начата |
 | T-014 | Качество | Настроить `ansible-lint`, `yamllint`, pre-commit | Средний | Не начата |
 | T-015 | Валидация | Добавить smoke-тесты и post-checks | Высокий | Не начата |
@@ -46,6 +46,17 @@
 - Создан набор playbook-файлов: `site.yml`, `bootstrap.yml`, `hardening.yml`, `storage.yml`, `validate.yml`.
 - Созданы роли-каркасы: `base_os`, `proxy`, `container_runtime`, `kubernetes_core`, `networking`, `metallb`, `security_hardening`, `storage_nfs`, `validation`.
 - Добавлены `ansible.cfg` и `requirements.yml`.
+
+## Реализованная логика ролей (2026-02-19)
+- `base_os`: пакеты, modules-load, sysctl, swap off, chrony.
+- `proxy`: `/etc/profile.d`, `dnf.conf`, systemd drop-in для `containerd/kubelet/crio`.
+- `container_runtime`: установка runtime, `containerd` config, `crictl`, сервис.
+- `kubernetes_core`: repo, пакеты, `kubeadm init`, генерация join-команд, join control-plane/worker/metallb.
+- `networking`: применение CNI manifest (calico/cilium/flannel), ожидание readiness.
+- `metallb`: установка компонентов, IP pool/L2 advertisement, labeling нод.
+- `storage_nfs`: экспорт NFS, сервисы, `nfs-subdir-external-provisioner`, StorageClass.
+- `security_hardening`: SELinux mode, firewalld и role-based порты.
+- `validation`: базовые post-checks по readiness, MetalLB controller и NFS StorageClass.
 
 ## Декомпозиция ближайшего этапа (сбор данных)
 - [x] Утвердить схему IP-адресов и список нод/ролей.

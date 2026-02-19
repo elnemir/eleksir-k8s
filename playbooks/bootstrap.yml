@@ -19,8 +19,8 @@
     - role: container_runtime
       tags: [runtime, k8s]
 
-- name: Bootstrap Kubernetes control-plane
-  hosts: control_plane
+- name: Bootstrap and join Kubernetes nodes
+  hosts: k8s_cluster
   become: true
   gather_facts: true
   roles:

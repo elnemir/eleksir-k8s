@@ -1,0 +1,20 @@
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: {{ resolved_metallb_address_pools[0].name }}
+  namespace: {{ metallb_namespace }}
+spec:
+  addresses:
+{% for address in resolved_metallb_address_pools[0].addresses %}
+    - {{ address }}
+{% endfor %}
+  autoAssign: {{ resolved_metallb_address_pools[0].auto_assign | default(true) | bool | lower }}
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: {{ resolved_metallb_address_pools[0].name }}-l2
+  namespace: {{ metallb_namespace }}
+spec:
+  ipAddressPools:
+    - {{ resolved_metallb_address_pools[0].name }}

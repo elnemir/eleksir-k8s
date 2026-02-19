@@ -1,15 +1,118 @@
 # ## Задача: Роль storage_nfs
 # - **Статус**: В процессе
 # - **Описание**: Подготовка NFS и интеграция с Kubernetes.
-- name: Validate NFS variables
+- name: Resolve NFS server host and control-plane reference
+  ansible.builtin.set_fact:
+    nfs_server_host: "{{ nfs_server | default(groups['nfs'][0]) }}"
+    primary_control_plane: "{{ groups['control_plane'][0] }}"
+
+- name: Resolve NFS variables for current host context
+  ansible.builtin.set_fact:
+    nfs_server_ip: "{{ hostvars[nfs_server_host].ansible_host | default(nfs_server_host) }}"
+    resolved_nfs_export_path: "{{ nfs_export_path | default(hostvars[nfs_server_host].nfs_export_path) }}"
+    resolved_nfs_export_cidr: "{{ nfs_export_cidr | default(hostvars[nfs_server_host].nfs_export_cidr) }}"
+    resolved_nfs_export_options: "{{ nfs_export_options | default(hostvars[nfs_server_host].nfs_export_options) }}"
+    resolved_nfs_storage_class: "{{ nfs_storage_class | default(hostvars[nfs_server_host].nfs_storage_class) }}"
+    resolved_nfs_performance: "{{ nfs_performance | default(hostvars[nfs_server_host].nfs_performance) }}"
+
+- name: Validate resolved NFS variables
   ansible.builtin.assert:
     that:
-      - nfs_export_path is defined
-      - nfs_storage_class.name is defined
-      - nfs_performance.min_iops | int > 0
+      - resolved_nfs_export_path is defined
+      - resolved_nfs_storage_class.name is defined
+      - resolved_nfs_performance.min_iops | int > 0
+      - groups['control_plane'] | length > 0
     fail_msg: "NFS variables are incomplete"
 
-- name: Storage NFS role skeleton
-  ansible.builtin.debug:
-    msg: "storage_nfs role skeleton is in place"
+- name: Ensure NFS packages are installed on NFS host
+  ansible.builtin.package:
+    name:
+      - nfs-utils
+      - rpcbind
+    state: present
+  when:
+    - storage_nfs_manage_server | bool
+    - inventory_hostname in groups['nfs']
+
+- name: Ensure NFS export directory exists
+  ansible.builtin.file:
+    path: "{{ resolved_nfs_export_path }}"
+    state: directory
+    mode: "0777"
+  when:
+    - storage_nfs_manage_server | bool
+    - inventory_hostname in groups['nfs']
+
+- name: Configure NFS export
+  ansible.builtin.lineinfile:
+    path: /etc/exports
+    regexp: "^{{ resolved_nfs_export_path | regex_escape }}\\s+"
+    line: "{{ resolved_nfs_export_path }} {{ resolved_nfs_export_cidr }}({{ resolved_nfs_export_options }})"
+    create: true
+  notify: Reload NFS exports
+  when:
+    - storage_nfs_manage_server | bool
+    - inventory_hostname in groups['nfs']
+
+- name: Ensure NFS services are enabled
+  ansible.builtin.service:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  loop:
+    - rpcbind
+    - nfs-server
+  when:
+    - storage_nfs_manage_server | bool
+    - inventory_hostname in groups['nfs']
+
+- name: Render NFS provisioner manifest
+  ansible.builtin.template:
+    src: nfs-provisioner.yaml.j2
+    dest: /tmp/nfs-provisioner.yaml
+    mode: "0644"
+  when:
+    - storage_nfs_manage_k8s | bool
+    - inventory_hostname == primary_control_plane
+
+- name: Apply NFS provisioner manifest
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ storage_nfs_kubeconfig }}
+    apply -f /tmp/nfs-provisioner.yaml
+  register: nfs_provisioner_apply
+  changed_when: "'created' in nfs_provisioner_apply.stdout or 'configured' in nfs_provisioner_apply.stdout"
+  environment:
+    HTTP_PROXY: "{{ http_proxy }}"
+    HTTPS_PROXY: "{{ https_proxy }}"
+    NO_PROXY: "{{ no_proxy | join(',') }}"
+  when:
+    - storage_nfs_manage_k8s | bool
+    - inventory_hostname == primary_control_plane
+
+- name: Wait for NFS provisioner rollout
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ storage_nfs_kubeconfig }}
+    -n {{ storage_nfs_namespace }} rollout status deployment/nfs-subdir-external-provisioner --timeout=300s
   changed_when: false
+  when:
+    - storage_nfs_manage_k8s | bool
+    - inventory_hostname == primary_control_plane
+
+- name: Render StorageClass manifest
+  ansible.builtin.template:
+    src: storageclass.yaml.j2
+    dest: /tmp/storageclass-nfs.yaml
+    mode: "0644"
+  when:
+    - storage_nfs_manage_k8s | bool
+    - inventory_hostname == primary_control_plane
+
+- name: Apply StorageClass manifest
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ storage_nfs_kubeconfig }}
+    apply -f /tmp/storageclass-nfs.yaml
+  register: nfs_sc_apply
+  changed_when: "'created' in nfs_sc_apply.stdout or 'configured' in nfs_sc_apply.stdout"
+  when:
+    - storage_nfs_manage_k8s | bool
+    - inventory_hostname == primary_control_plane

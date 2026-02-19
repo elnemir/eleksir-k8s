@@ -6,9 +6,59 @@
     that:
       - ansible_require_check_diff_support | bool
       - ingress_controller is defined
+      - groups['control_plane'] | length == 3
     fail_msg: "Acceptance baseline variables are incomplete"
 
-- name: Validation role skeleton
+- name: Get Kubernetes nodes state
+  ansible.builtin.command: kubectl --kubeconfig={{ validation_kubeconfig }} get nodes --no-headers
+  register: validation_nodes
+  changed_when: false
+
+- name: Calculate expected node count
+  ansible.builtin.set_fact:
+    validation_expected_node_count: >-
+      {{ (groups['control_plane'] | length) + (groups['workers'] | length) + (groups['metallb'] | length) }}
+
+- name: Ensure all nodes are Ready
+  ansible.builtin.assert:
+    that:
+      - validation_nodes.stdout_lines | length == validation_expected_node_count
+      - validation_nodes.stdout_lines | select('search', '\\sReady') | list | length == validation_nodes.stdout_lines | length
+    fail_msg: "Not all Kubernetes nodes are Ready"
+
+- name: Check MetalLB controller readiness
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ validation_kubeconfig }}
+    -n {{ validation_metallb_namespace }}
+    get deployment controller -o jsonpath='{.status.readyReplicas}'
+  register: validation_metallb_controller
+  changed_when: false
+
+- name: Ensure MetalLB controller has ready replicas
+  ansible.builtin.assert:
+    that:
+      - validation_metallb_controller.stdout | int > 0
+    fail_msg: "MetalLB controller is not ready"
+
+- name: Check NFS StorageClass existence
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ validation_kubeconfig }}
+    get storageclass {{ validation_nfs_storage_class_name }}
+  register: validation_storageclass
+  changed_when: false
+  when: validation_enable_storage_check | bool
+
+- name: Validate NFS StorageClass command output
+  ansible.builtin.assert:
+    that:
+      - validation_storageclass.rc == 0
+    fail_msg: "NFS StorageClass is missing"
+  when: validation_enable_storage_check | bool
+
+- name: Reminder for failover check
   ansible.builtin.debug:
-    msg: "validation role skeleton is in place"
+    msg: >-
+      Failover criterion requires operational test: temporarily stop one control-plane node
+      and confirm cluster remains healthy.
+  when: validation_enable_failover_check | bool
   changed_when: false

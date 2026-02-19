@@ -3,3 +3,5 @@
 # - **Описание**: Дефолтные параметры MetalLB.
 metallb_namespace: metallb-system
 metallb_mode: l2
+metallb_kubeconfig: /etc/kubernetes/admin.conf
+metallb_manifest_url: https://raw.githubusercontent.com/metallb/metallb/v0.14.8/config/manifests/metallb-native.yaml

@@ -3,3 +3,6 @@
 # - **Описание**: Дефолтные параметры post-deploy валидации.
 validation_enable_failover_check: true
 validation_enable_storage_check: true
+validation_kubeconfig: /etc/kubernetes/admin.conf
+validation_nfs_storage_class_name: "{{ nfs_storage_class.name | default('nfs-sp') }}"
+validation_metallb_namespace: metallb-system

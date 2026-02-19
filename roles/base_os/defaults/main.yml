@@ -5,6 +5,25 @@ base_os_packages:
   - curl
   - vim
   - wget
+  - tar
+  - unzip
+  - ca-certificates
+  - chrony
+  - conntrack-tools
+  - iproute-tc
+  - nfs-utils
+  - firewalld
+  - policycoreutils-python-utils
 
 base_os_disable_swap: true
 base_os_manage_time: true
+
+base_os_kernel_modules:
+  - overlay
+  - br_netfilter
+
+base_os_sysctl:
+  net.bridge.bridge-nf-call-ip6tables: 1
+  net.bridge.bridge-nf-call-iptables: 1
+  net.ipv4.ip_forward: 1
+  vm.swappiness: 0

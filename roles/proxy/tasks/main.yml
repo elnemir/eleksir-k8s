@@ -4,12 +4,52 @@
 - name: Validate proxy variables
   ansible.builtin.assert:
     that:
-      - http_proxy is match('^http://')
-      - https_proxy is match('^http://|^https://')
+      - proxy_mode in ['local_on_each_node', 'centralized']
+      - proxy_env.http_proxy is match('^http://|^https://')
+      - proxy_env.https_proxy is match('^http://|^https://')
       - no_proxy is iterable
     fail_msg: "Proxy variables are not valid"
 
-- name: Proxy role skeleton
-  ansible.builtin.debug:
-    msg: "proxy role skeleton is in place"
-  changed_when: false
+- name: Ensure systemd drop-in directories exist
+  ansible.builtin.file:
+    path: "/etc/systemd/system/{{ item }}.service.d"
+    state: directory
+    mode: "0755"
+  loop: "{{ proxy_systemd_services }}"
+
+- name: Configure proxy environment for system profile
+  ansible.builtin.template:
+    src: proxy.sh.j2
+    dest: /etc/profile.d/proxy.sh
+    mode: "0644"
+  when: proxy_manage_profile | bool
+
+- name: Configure DNF proxy settings
+  ansible.builtin.blockinfile:
+    path: /etc/dnf/dnf.conf
+    marker: "# {mark} ANSIBLE MANAGED PROXY"
+    block: |
+      proxy={{ proxy_env.http_proxy }}
+  when: proxy_manage_dnf | bool
+
+- name: Configure systemd proxy drop-in files
+  ansible.builtin.template:
+    src: systemd-proxy.conf.j2
+    dest: "/etc/systemd/system/{{ item }}.service.d/http-proxy.conf"
+    mode: "0644"
+  loop: "{{ proxy_systemd_services }}"
+  register: proxy_systemd_dropins
+  notify: Reload systemd
+
+- name: Gather service facts
+  ansible.builtin.service_facts:
+  when: proxy_systemd_dropins is changed
+
+- name: Restart managed services when present
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: restarted
+  loop: "{{ proxy_systemd_services }}"
+  when:
+    - proxy_systemd_dropins is changed
+    - (item + '.service') in ansible_facts.services

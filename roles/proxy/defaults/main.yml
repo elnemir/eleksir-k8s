@@ -1,7 +1,16 @@
 # ## Задача: Роль proxy
 # - **Статус**: В процессе
 # - **Описание**: Дефолтные параметры прокси-настроек.
+proxy_mode: local_on_each_node
+proxy_manage_profile: true
+proxy_manage_dnf: true
+
 proxy_env:
   http_proxy: "{{ http_proxy }}"
   https_proxy: "{{ https_proxy }}"
   no_proxy: "{{ no_proxy | join(',') }}"
+
+proxy_systemd_services:
+  - containerd
+  - kubelet
+  - crio
