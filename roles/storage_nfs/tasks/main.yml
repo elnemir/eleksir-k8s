@@ -1,0 +1,15 @@
+# ## Задача: Роль storage_nfs
+# - **Статус**: В процессе
+# - **Описание**: Подготовка NFS и интеграция с Kubernetes.
+- name: Validate NFS variables
+  ansible.builtin.assert:
+    that:
+      - nfs_export_path is defined
+      - nfs_storage_class.name is defined
+      - nfs_performance.min_iops | int > 0
+    fail_msg: "NFS variables are incomplete"
+
+- name: Storage NFS role skeleton
+  ansible.builtin.debug:
+    msg: "storage_nfs role skeleton is in place"
+  changed_when: false

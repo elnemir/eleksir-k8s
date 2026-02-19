@@ -1,0 +1,40 @@
+# ## Задача: Базовые переменные кластера
+# - **Статус**: В процессе
+# - **Описание**: Определить общие параметры Kubernetes и инфраструктуры.
+cluster_name: redos-k8s
+redos_release: "8.0.2"
+management_cidr: "10.255.106.0/26"
+
+kubernetes_version: "1.30.14"
+kubernetes_cni: calico
+control_plane_endpoint: "10.255.106.20"
+pod_subnet_cidr: "10.245.0.0/16"
+service_subnet_cidr: "10.246.0.0/16"
+
+http_proxy: "http://127.0.0.1:12334"
+https_proxy: "http://127.0.0.1:12334"
+no_proxy:
+  - localhost
+  - 127.0.0.1
+  - 10.0.0.0/8
+  - .eleksir.net
+  - .eleksir.finance
+  - .cr.yandex
+
+proxy_mode: local_on_each_node
+registry_mode: external_via_proxy
+rpm_mirror_mode: external_via_proxy
+
+dns_servers:
+  - 10.255.85.13
+  - 10.7.5.10
+  - 1.1.1.1
+  - 1.0.0.1
+  - 8.8.8.8
+  - 8.8.4.4
+
+ntp_servers:
+  - timeserver.ru
+
+ansible_require_check_diff_support: true
+ingress_controller: nginx

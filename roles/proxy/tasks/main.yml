@@ -1,0 +1,15 @@
+# ## Задача: Роль proxy
+# - **Статус**: В процессе
+# - **Описание**: Подготовка системных и пакетных proxy-параметров.
+- name: Validate proxy variables
+  ansible.builtin.assert:
+    that:
+      - http_proxy is match('^http://')
+      - https_proxy is match('^http://|^https://')
+      - no_proxy is iterable
+    fail_msg: "Proxy variables are not valid"
+
+- name: Proxy role skeleton
+  ansible.builtin.debug:
+    msg: "proxy role skeleton is in place"
+  changed_when: false

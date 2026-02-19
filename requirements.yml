@@ -1,0 +1,7 @@
+# ## Задача: Коллекции Ansible
+# - **Статус**: В процессе
+# - **Описание**: Минимальный набор коллекций для реализации плейбуков.
+collections:
+  - name: ansible.posix
+  - name: community.general
+  - name: kubernetes.core

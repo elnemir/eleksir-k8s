@@ -1,0 +1,5 @@
+# ## Задача: Роль validation
+# - **Статус**: В процессе
+# - **Описание**: Дефолтные параметры post-deploy валидации.
+validation_enable_failover_check: true
+validation_enable_storage_check: true

@@ -1,0 +1,5 @@
+# ## Задача: Роль storage_nfs
+# - **Статус**: В процессе
+# - **Описание**: Дефолтные параметры NFS и StorageClass.
+storage_nfs_manage_server: true
+storage_nfs_manage_k8s: true

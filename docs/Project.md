@@ -218,3 +218,27 @@ roles/
 
 ### 12.7 Открытые архитектурные уточнения (блокеры перед реализацией)
 - Финальные блокеры отсутствуют. Допускается переход к реализации Ansible-каркаса.
+
+## 13. Статус реализации архитектуры (2026-02-19)
+- Реализован каркас `inventory`:
+  - `inventories/prod/hosts.yml`
+  - `inventories/prod/group_vars/{all,control_plane,workers,metallb,nfs}.yml`
+- Реализован каркас оркестрации:
+  - `playbooks/site.yml`
+  - `playbooks/bootstrap.yml`
+  - `playbooks/hardening.yml`
+  - `playbooks/storage.yml`
+  - `playbooks/validate.yml`
+- Реализован каркас ролей:
+  - `roles/base_os`
+  - `roles/proxy`
+  - `roles/container_runtime`
+  - `roles/kubernetes_core`
+  - `roles/networking`
+  - `roles/metallb`
+  - `roles/security_hardening`
+  - `roles/storage_nfs`
+  - `roles/validation`
+- Добавлены инфраструктурные файлы:
+  - `ansible.cfg`
+  - `requirements.yml`

@@ -1,0 +1,32 @@
+# ## Задача: Переменные MetalLB-нод
+# - **Статус**: В процессе
+# - **Описание**: Настройки выделенных ingress-нод и MetalLB-пула.
+node_role: metallb
+
+metallb_mode: l2
+metallb_node_labels:
+  - "node-role.kubernetes.io/metallb=true"
+metallb_node_taints: []
+
+metallb_address_pools:
+  - name: pcidss-lan
+    protocol: layer2
+    addresses:
+      - 10.255.106.21-10.255.106.30
+    auto_assign: true
+
+firewall_allowed_tcp:
+  - 22
+  - 80
+  - 443
+  - 111
+  - 875
+  - 2049
+  - 20048
+
+firewall_allowed_udp:
+  - 111
+  - 875
+  - 8472
+  - 2049
+  - 20048

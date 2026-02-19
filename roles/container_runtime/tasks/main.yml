@@ -1,0 +1,13 @@
+# ## Задача: Роль container_runtime
+# - **Статус**: В процессе
+# - **Описание**: Подготовка container runtime для Kubernetes.
+- name: Validate runtime selection
+  ansible.builtin.assert:
+    that:
+      - container_runtime_name in ['containerd', 'crio']
+    fail_msg: "Supported runtimes: containerd, crio"
+
+- name: Container runtime role skeleton
+  ansible.builtin.debug:
+    msg: "container_runtime role skeleton is in place"
+  changed_when: false

@@ -1,0 +1,23 @@
+# ## Задача: Переменные worker-нод
+# - **Статус**: В процессе
+# - **Описание**: Настройки worker-нод и их политики безопасности.
+node_role: worker
+
+kube_node_labels:
+  - "node-role.kubernetes.io/worker="
+
+firewall_allowed_tcp:
+  - 22
+  - 10250
+  - 111
+  - 875
+  - 2049
+  - 20048
+  - 30000-32767
+
+firewall_allowed_udp:
+  - 111
+  - 875
+  - 8472
+  - 2049
+  - 20048

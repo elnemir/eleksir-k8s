@@ -1,0 +1,7 @@
+# ## Задача: Единая точка запуска плейбуков
+# - **Статус**: В процессе
+# - **Описание**: Объединить этапы развертывания в последовательный сценарий.
+- import_playbook: bootstrap.yml
+- import_playbook: hardening.yml
+- import_playbook: storage.yml
+- import_playbook: validate.yml

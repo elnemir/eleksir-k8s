@@ -1,0 +1,44 @@
+# ## Задача: Базовый bootstrap кластера
+# - **Статус**: В процессе
+# - **Описание**: Подготовить ноды, runtime, Kubernetes и сетевые компоненты.
+- name: Base OS preparation on all nodes
+  hosts: all
+  become: true
+  gather_facts: true
+  roles:
+    - role: base_os
+      tags: [base]
+    - role: proxy
+      tags: [base, proxy]
+
+- name: Install runtime on Kubernetes nodes
+  hosts: k8s_cluster
+  become: true
+  gather_facts: true
+  roles:
+    - role: container_runtime
+      tags: [runtime, k8s]
+
+- name: Bootstrap Kubernetes control-plane
+  hosts: control_plane
+  become: true
+  gather_facts: true
+  roles:
+    - role: kubernetes_core
+      tags: [k8s]
+
+- name: Configure CNI
+  hosts: control_plane[0]
+  become: true
+  gather_facts: true
+  roles:
+    - role: networking
+      tags: [network, k8s]
+
+- name: Configure MetalLB
+  hosts: control_plane[0]
+  become: true
+  gather_facts: true
+  roles:
+    - role: metallb
+      tags: [metallb, ingress]

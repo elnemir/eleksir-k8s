@@ -1,0 +1,18 @@
+# ## Задача: Настройка NFS storage
+# - **Статус**: В процессе
+# - **Описание**: Подготовить NFS и интеграцию StorageClass в Kubernetes.
+- name: Configure NFS server
+  hosts: nfs
+  become: true
+  gather_facts: true
+  roles:
+    - role: storage_nfs
+      tags: [storage, nfs]
+
+- name: Configure Kubernetes storage integration
+  hosts: control_plane[0]
+  become: true
+  gather_facts: true
+  roles:
+    - role: storage_nfs
+      tags: [storage, k8s]

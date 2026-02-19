@@ -1,0 +1,15 @@
+# ## Задача: Роль metallb
+# - **Статус**: В процессе
+# - **Описание**: Установка и конфигурация MetalLB.
+- name: Validate MetalLB settings
+  ansible.builtin.assert:
+    that:
+      - metallb_mode in ['l2', 'bgp']
+      - metallb_address_pools is defined
+      - metallb_address_pools | length > 0
+    fail_msg: "MetalLB settings are incomplete"
+
+- name: MetalLB role skeleton
+  ansible.builtin.debug:
+    msg: "metallb role skeleton is in place"
+  changed_when: false

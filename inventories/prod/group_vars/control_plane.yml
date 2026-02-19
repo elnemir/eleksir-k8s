@@ -1,0 +1,26 @@
+# ## Задача: Переменные control-plane
+# - **Статус**: В процессе
+# - **Описание**: Настройки control-plane нод и их политики безопасности.
+node_role: control-plane
+
+kube_node_labels:
+  - "node-role.kubernetes.io/control-plane="
+
+firewall_allowed_tcp:
+  - 22
+  - 6443
+  - 2379-2380
+  - 10250
+  - 10257
+  - 10259
+  - 111
+  - 875
+  - 2049
+  - 20048
+
+firewall_allowed_udp:
+  - 111
+  - 875
+  - 8472
+  - 2049
+  - 20048

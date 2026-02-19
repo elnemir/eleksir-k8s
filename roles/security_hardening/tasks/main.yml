@@ -1,0 +1,13 @@
+# ## Задача: Роль security_hardening
+# - **Статус**: В процессе
+# - **Описание**: Применение политик безопасности ОС.
+- name: Validate SELinux mode value
+  ansible.builtin.assert:
+    that:
+      - selinux_target_mode in ['Enforcing', 'Permissive', 'Disabled']
+    fail_msg: "Invalid SELinux mode"
+
+- name: Security hardening role skeleton
+  ansible.builtin.debug:
+    msg: "security_hardening role skeleton is in place"
+  changed_when: false

@@ -1,0 +1,10 @@
+# ## Задача: Применение hardening-политик
+# - **Статус**: В процессе
+# - **Описание**: Настроить firewalld и SELinux по ролям нод.
+- name: Apply security hardening
+  hosts: all
+  become: true
+  gather_facts: true
+  roles:
+    - role: security_hardening
+      tags: [security]

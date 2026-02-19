@@ -1,0 +1,16 @@
+# ## Задача: Роль kubernetes_core
+# - **Статус**: В процессе
+# - **Описание**: Управление установкой и bootstrap Kubernetes.
+- name: Validate Kubernetes core variables
+  ansible.builtin.assert:
+    that:
+      - kubernetes_version is defined
+      - control_plane_endpoint is defined
+      - pod_subnet_cidr is defined
+      - service_subnet_cidr is defined
+    fail_msg: "Kubernetes core variables are incomplete"
+
+- name: Kubernetes core role skeleton
+  ansible.builtin.debug:
+    msg: "kubernetes_core role skeleton is in place"
+  changed_when: false

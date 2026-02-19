@@ -1,0 +1,5 @@
+# ## Задача: Роль kubernetes_core
+# - **Статус**: В процессе
+# - **Описание**: Дефолтные параметры bootstrap Kubernetes.
+kubernetes_install_mode: auto
+kubeadm_config_path: /etc/kubernetes/kubeadm-config.yaml

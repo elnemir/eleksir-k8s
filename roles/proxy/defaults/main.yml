@@ -1,0 +1,7 @@
+# ## Задача: Роль proxy
+# - **Статус**: В процессе
+# - **Описание**: Дефолтные параметры прокси-настроек.
+proxy_env:
+  http_proxy: "{{ http_proxy }}"
+  https_proxy: "{{ https_proxy }}"
+  no_proxy: "{{ no_proxy | join(',') }}"

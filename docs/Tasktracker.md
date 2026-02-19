@@ -6,8 +6,8 @@
 
 ## Текущий статус проекта
 - Общий статус: **В процессе**
-- Текущий этап: **Подготовка к реализации Ansible-каркаса**
-- Следующий этап: **Формирование inventory и baseline переменных**
+- Текущий этап: **Заполнение ролей рабочей логикой развертывания**
+- Следующий этап: **Интеграционные проверки и идемпотентность**
 
 ## Бэклог и прогресс
 
@@ -15,16 +15,16 @@
 |---|---|---|---|---|
 | T-001 | Архитектура | Подготовить и согласовать `docs/Project.md` | Критический | Завершена |
 | T-002 | Аналитика | Собрать недостающие входные данные (сеть, прокси, DNS/NTP, vCenter, версии) | Критический | Завершена |
-| T-003 | Инвентори | Подготовить `inventories/prod/hosts.yml` с группами `control_plane`, `workers`, `metallb`, `nfs` | Критический | Не начата |
-| T-004 | Переменные | Сформировать `group_vars` для прокси, сети, k8s, MetalLB, NFS | Критический | Не начата |
-| T-005 | Базовая ОС | Реализовать роль `base_os` для RedOS 8.0.2 | Высокий | Не начата |
-| T-006 | Прокси | Реализовать роль `proxy` (dnf/systemd/runtime) | Критический | Не начата |
-| T-007 | Runtime | Реализовать роль `container_runtime` (containerd/CRI-O) | Критический | Не начата |
-| T-008 | Kubernetes | Реализовать роль `kubernetes_core` (init/join/control-plane/worker) | Критический | Не начата |
-| T-009 | CNI | Внедрить сетевой плагин и базовые политики | Высокий | Не начата |
-| T-010 | MetalLB | Развернуть MetalLB и адресные пулы | Критический | Не начата |
-| T-011 | NFS | Настроить NFS и StorageClass/PV/PVC | Критический | Не начата |
-| T-012 | Безопасность | Настроить firewalld и SELinux правила | Критический | Не начата |
+| T-003 | Инвентори | Подготовить `inventories/prod/hosts.yml` с группами `control_plane`, `workers`, `metallb`, `nfs` | Критический | Завершена |
+| T-004 | Переменные | Сформировать `group_vars` для прокси, сети, k8s, MetalLB, NFS | Критический | Завершена |
+| T-005 | Базовая ОС | Реализовать роль `base_os` для RedOS 8.0.2 | Высокий | В процессе |
+| T-006 | Прокси | Реализовать роль `proxy` (dnf/systemd/runtime) | Критический | В процессе |
+| T-007 | Runtime | Реализовать роль `container_runtime` (containerd/CRI-O) | Критический | В процессе |
+| T-008 | Kubernetes | Реализовать роль `kubernetes_core` (init/join/control-plane/worker) | Критический | В процессе |
+| T-009 | CNI | Внедрить сетевой плагин и базовые политики | Высокий | В процессе |
+| T-010 | MetalLB | Развернуть MetalLB и адресные пулы | Критический | В процессе |
+| T-011 | NFS | Настроить NFS и StorageClass/PV/PVC | Критический | В процессе |
+| T-012 | Безопасность | Настроить firewalld и SELinux правила | Критический | В процессе |
 | T-013 | Идемпотентность | Проверить повторный прогон без нежелательных изменений | Высокий | Не начата |
 | T-014 | Качество | Настроить `ansible-lint`, `yamllint`, pre-commit | Средний | Не начата |
 | T-015 | Валидация | Добавить smoke-тесты и post-checks | Высокий | Не начата |
@@ -39,6 +39,13 @@
 - Proxy: `local_on_each_node`, `http://127.0.0.1:12334`, расширенный `no_proxy`.
 - Management subnet: `10.255.106.0/26`.
 - MetalLB placement: label `node-role.kubernetes.io/metallb=true`, без taints.
+
+## Реализованный каркас (2026-02-19)
+- Создан `inventories/prod/hosts.yml` с группами `control_plane`, `workers`, `metallb`, `nfs`, `k8s_cluster`.
+- Созданы `group_vars` для `all`, `control_plane`, `workers`, `metallb`, `nfs`.
+- Создан набор playbook-файлов: `site.yml`, `bootstrap.yml`, `hardening.yml`, `storage.yml`, `validate.yml`.
+- Созданы роли-каркасы: `base_os`, `proxy`, `container_runtime`, `kubernetes_core`, `networking`, `metallb`, `security_hardening`, `storage_nfs`, `validation`.
+- Добавлены `ansible.cfg` и `requirements.yml`.
 
 ## Декомпозиция ближайшего этапа (сбор данных)
 - [x] Утвердить схему IP-адресов и список нод/ролей.

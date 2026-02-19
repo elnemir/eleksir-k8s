@@ -31,3 +31,24 @@
 - Обновлен `docs/qa.md`: блокеры закрыты, зафиксирован выбранный вариант 3.
 - Обновлен `docs/Tasktracker.md`: задача `T-002` переведена в `Завершена`, чек-лист сбора данных закрыт.
 - Обновлен `docs/Diary.md`: добавлена запись о завершении этапа сбора данных.
+
+## 2026-02-19 (старт реализации каркаса)
+### Изменено
+- Обновлен `docs/Tasktracker.md`: зафиксирован старт этапа реализации Ansible-каркаса.
+- Задачи `T-003` и `T-004` переведены в статус `В процессе`.
+
+## 2026-02-19 (реализация Ansible-каркаса)
+### Добавлено
+- Создан `inventories/prod/hosts.yml` с группами `control_plane`, `workers`, `metallb`, `nfs`, `k8s_cluster`.
+- Созданы файлы `inventories/prod/group_vars/{all,control_plane,workers,metallb,nfs}.yml`.
+- Созданы плейбуки `playbooks/{site,bootstrap,hardening,storage,validate}.yml`.
+- Созданы роли-каркасы с `defaults`, `tasks`, `handlers` для `base_os`, `proxy`, `container_runtime`, `kubernetes_core`, `networking`, `metallb`, `security_hardening`, `storage_nfs`, `validation`.
+- Добавлены `ansible.cfg` и `requirements.yml`.
+
+### Изменено
+- Обновлен `docs/Tasktracker.md`: задачи `T-003` и `T-004` переведены в `Завершена`.
+
+## 2026-02-19 (старт реализации ролей)
+### Изменено
+- Обновлен `docs/Tasktracker.md`: задачи `T-005`...`T-012` переведены в `В процессе`.
+- Зафиксирован переход от каркаса к реализации рабочей логики ролей.

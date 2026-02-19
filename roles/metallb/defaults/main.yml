@@ -1,0 +1,5 @@
+# ## Задача: Роль metallb
+# - **Статус**: В процессе
+# - **Описание**: Дефолтные параметры MetalLB.
+metallb_namespace: metallb-system
+metallb_mode: l2

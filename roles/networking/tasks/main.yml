@@ -1,0 +1,13 @@
+# ## Задача: Роль networking
+# - **Статус**: В процессе
+# - **Описание**: Применение CNI и сетевых политик.
+- name: Validate CNI selection
+  ansible.builtin.assert:
+    that:
+      - network_cni in ['calico', 'cilium', 'flannel']
+    fail_msg: "Unsupported CNI plugin"
+
+- name: Networking role skeleton
+  ansible.builtin.debug:
+    msg: "networking role skeleton is in place"
+  changed_when: false

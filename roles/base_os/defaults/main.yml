@@ -1,0 +1,10 @@
+# ## Задача: Роль base_os
+# - **Статус**: В процессе
+# - **Описание**: Дефолтные параметры подготовки ОС RedOS.
+base_os_packages:
+  - curl
+  - vim
+  - wget
+
+base_os_disable_swap: true
+base_os_manage_time: true

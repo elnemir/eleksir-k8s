@@ -1,0 +1,36 @@
+# ## Задача: Переменные NFS-сервера
+# - **Статус**: В процессе
+# - **Описание**: Определить параметры NFS, StorageClass и бэкапа.
+node_role: nfs
+
+nfs_server: k8s-nfs-01
+nfs_export_path: /srv/storage
+nfs_export_cidr: 10.255.106.0/26
+nfs_export_options: rw,sync,no_root_squash,no_subtree_check
+
+nfs_storage_class:
+  name: nfs-sp
+  reclaim_policy: Delete
+  is_default: true
+  mount_options: []
+
+nfs_performance:
+  min_iops: 2000
+  min_throughput_mb_s: 150
+  max_latency_ms: 5
+
+nfs_backup:
+  type: daily_snapshot
+  retention_days: 14
+
+firewall_allowed_tcp:
+  - 111
+  - 875
+  - 2049
+  - 20048
+
+firewall_allowed_udp:
+  - 111
+  - 875
+  - 2049
+  - 20048

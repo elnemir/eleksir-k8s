@@ -1,0 +1,14 @@
+# ## Задача: Роль base_os
+# - **Статус**: В процессе
+# - **Описание**: Базовая подготовка ОС перед установкой Kubernetes.
+- name: Validate RedOS release variable
+  ansible.builtin.assert:
+    that:
+      - redos_release is defined
+      - redos_release | length > 0
+    fail_msg: "Variable redos_release must be defined"
+
+- name: Base OS role skeleton
+  ansible.builtin.debug:
+    msg: "base_os role skeleton is in place"
+  changed_when: false

@@ -1,0 +1,14 @@
+# ## Задача: Роль validation
+# - **Статус**: В процессе
+# - **Описание**: Проверка критериев приемки кластера.
+- name: Validate acceptance criteria baseline
+  ansible.builtin.assert:
+    that:
+      - ansible_require_check_diff_support | bool
+      - ingress_controller is defined
+    fail_msg: "Acceptance baseline variables are incomplete"
+
+- name: Validation role skeleton
+  ansible.builtin.debug:
+    msg: "validation role skeleton is in place"
+  changed_when: false

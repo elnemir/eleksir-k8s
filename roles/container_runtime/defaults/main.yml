@@ -1,0 +1,5 @@
+# ## Задача: Роль container_runtime
+# - **Статус**: В процессе
+# - **Описание**: Дефолтные параметры container runtime.
+container_runtime_name: containerd
+container_runtime_manage_config: true
