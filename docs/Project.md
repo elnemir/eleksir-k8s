@@ -128,3 +128,93 @@ roles/
   - изменении архитектуры;
   - добавлении новых функциональных требований;
   - смене технологического стека или стандартов.
+
+## 12. Зафиксированные параметры среды (по состоянию на 2026-02-19)
+
+### 12.1 VMware
+- vCenter: `7.0.3`
+- ESXi: `7.0.3`
+- Режим подготовки VM: `clone_from_template`
+- Шаблон: `k8s-pcp-template`
+- Datacenter: `Eleksir`
+- Cluster: `North`
+- Datastore: `North_Datastore01_vol_02`
+- Portgroup: `10.255.106.0/26_424`
+- Ресурсы ВМ:
+  - `control-plane`: `2 vCPU`, `4 GB RAM`, `50 GB system disk`
+  - `worker`: `4 vCPU`, `8 GB RAM`, `50 GB system disk`
+  - `metallb`: `2 vCPU`, `4 GB RAM`, `50 GB system disk`
+
+### 12.2 Kubernetes и сеть
+- Kubernetes: `1.30.14`
+- Runtime: `containerd`
+- CNI: `calico`
+- Control plane endpoint: `10.255.106.20`
+- Management CIDR: `10.255.106.0/26`
+- Pod CIDR: `10.245.0.0/16`
+- Service CIDR: `10.246.0.0/16`
+- Узлы:
+  - `k8s-scp-01`: `10.255.106.10`
+  - `k8s-scp-02`: `10.255.106.11`
+  - `k8s-scp-03`: `10.255.106.12`
+  - `k8s-wkn-01`: `10.255.106.13`
+  - `k8s-wkn-02`: `10.255.106.14`
+  - `k8s-wkn-03`: `10.255.106.15`
+  - `k8s-mlb-01`: `10.255.106.16`
+  - `k8s-mlb-02`: `10.255.106.17`
+  - `k8s-mlb-03`: `10.255.106.18`
+  - `k8s-nfs-01`: `10.255.106.19`
+
+### 12.3 MetalLB и ingress
+- MetalLB mode: `l2`
+- Address pool: `10.255.106.21-10.255.106.30` (`pcidss-lan`)
+- Ingress controller: `nginx`
+- Выделенные ноды под MetalLB ingress: `k8s-mlb-01..03`
+- Labels на MetalLB-нодах: `node-role.kubernetes.io/metallb=true`
+- Taints на MetalLB-нодах: отсутствуют
+
+### 12.4 Proxy и репозитории
+- Proxy mode: `local_on_each_node`
+- `http_proxy`: `http://127.0.0.1:12334`
+- `https_proxy`: `http://127.0.0.1:12334`
+- `no_proxy`: `localhost,127.0.0.1,10.0.0.0/8,.eleksir.net,.eleksir.finance,.cr.yandex`
+- Пакеты RedOS: `external_via_proxy`
+- Registry/образы: `external_via_proxy`
+
+### 12.5 NFS
+- NFS OS: `RedOS 8.0.2`
+- Export path: `/srv/storage`
+- Export CIDR: `10.255.106.0/26`
+- Export options: `rw,sync,no_root_squash,no_subtree_check`
+- Performance requirements:
+  - min IOPS: `>= 2000`
+  - min throughput: `>= 150 MB/s`
+  - max latency: `<= 5 ms`
+- Backup/snapshot strategy:
+  - daily snapshot
+  - retention: `14 days`
+- StorageClass:
+  - name: `nfs-sp`
+  - reclaimPolicy: `Delete`
+  - default: `true`
+
+### 12.6 Security и эксплуатация
+- Ansible user: `enemirov`
+- SSH auth: `password`
+- Bastion: `no`
+- SELinux: `Enforcing`
+- Secrets store: `ansible-vault`
+- Ansible control node: `Debian 13`
+- ansible-core: `2.19.4`
+- Quality gate: `ansible-lint`
+- require_check_diff_support: `yes`
+- Acceptance criteria:
+  - Полный запуск `playbooks/site.yml` завершается успешно на чистом контуре.
+  - Повторный запуск плейбука не приводит к незапланированным изменениям (идемпотентность).
+  - Все ноды кластера в состоянии `Ready`, системные поды в `Running`.
+  - Сервис типа `LoadBalancer` получает IP из пула MetalLB и доступен по `80/443`.
+  - PVC через NFS StorageClass `nfs-sp` успешно создается и проходит RW-проверку.
+  - Проверка failover: кластер сохраняет работоспособность при недоступности одной control-plane ноды.
+
+### 12.7 Открытые архитектурные уточнения (блокеры перед реализацией)
+- Финальные блокеры отсутствуют. Допускается переход к реализации Ansible-каркаса.

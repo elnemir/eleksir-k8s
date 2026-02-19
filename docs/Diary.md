@@ -21,3 +21,48 @@
 - Отсутствуют обязательные входные параметры (сети, версии, политика прокси/no_proxy, детали NFS, порты и security baseline).
 - Не подтвержден стек Kubernetes (версия kubeadm/kubelet и container runtime).
 - Не определена стратегия источников пакетов/образов для полностью изолированного контура.
+
+## Дата: 2026-02-19 (сессия 2)
+### Наблюдения
+- Получены конкретные параметры VMware, сетевой схемы, версии Kubernetes, CNI, MetalLB, NFS и security baseline.
+- Подтверждена целевая модель: `kubeadm + containerd + calico + metallb(l2) + nginx ingress + nfs`.
+- Большинство входных данных закрыто, но остаются критичные неоднозначности по сети и прокси.
+
+### Решения
+- Зафиксированы параметры среды в `docs/Project.md` (раздел 12).
+- Обновлен прогресс в `docs/Tasktracker.md` (T-002 = 80%).
+- `docs/qa.md` переведен в формат "закрытые вопросы + блокеры + варианты закрытия".
+
+### Проблемы
+- Несоответствие `management_subnet_cidr` и фактической подсети узлов.
+- Не подтверждена топология прокси (`127.0.0.1` локально/централизованно).
+- Не заполнены `acceptance_criteria`, `performance_requirements`, `backup_snapshot_strategy`.
+
+## Дата: 2026-02-19 (сессия 3)
+### Наблюдения
+- Подтверждена management-подсеть `10.255.106.0/26`.
+- Подтверждена прокси-модель `local_on_each_node` и формат proxy URL со схемой.
+- Зафиксирован label для выделенных MetalLB-нод без taints.
+
+### Решения
+- Актуализированы `docs/Project.md`, `docs/qa.md` и `docs/Tasktracker.md`.
+- Список блокеров сужен до 4 незаполненных полей: NFS performance, NFS backup strategy, `require_check_diff_support`, `acceptance_criteria`.
+
+### Проблемы
+- Пользователь оставил пустыми целевые метрики NFS производительности.
+- Пользователь оставил пустой backup/snapshot strategy.
+- Пользователь не зафиксировал `require_check_diff_support` и `acceptance_criteria`.
+
+## Дата: 2026-02-19 (сессия 4)
+### Наблюдения
+- Выбран вариант 3 для закрытия блокеров: production baseline + расширенные acceptance criteria.
+- Сбор входных данных завершен, архитектурные блокеры сняты.
+
+### Решения
+- Зафиксированы NFS performance требования: `IOPS >= 2000`, `throughput >= 150 MB/s`, `latency <= 5 ms`.
+- Зафиксирована стратегия backup: `daily snapshot`, `retention 14 days`.
+- Зафиксирована политика `require_check_diff_support: yes`.
+- Зафиксирован расширенный набор критериев приемки (deploy, идемпотентность, health, MetalLB/ingress, NFS PVC, failover control-plane).
+
+### Проблемы
+- Критичные блокеры для начала реализации отсутствуют.

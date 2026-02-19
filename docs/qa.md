@@ -4,61 +4,103 @@
 
 # qa.md
 
-## 1. VMware и инфраструктура
-1. Какая версия vCenter и ESXi используется?
-2. Нужна ли автоматическая подготовка VM через Ansible (клонирование из шаблона) или только конфигурация уже созданных ВМ?
-3. Какие ресурсы (vCPU, RAM, disk) для каждой группы нод (`control-plane`, `worker`, `metallb`)?
-4. Есть ли требования к anti-affinity/DRS rules для control-plane?
+## 1. Закрытые вопросы (получены ответы)
 
-## 2. Сеть и DNS/NTP
-1. Какие подсети/VLAN используются для:
-   - management/SSH;
-   - pod network (CNI);
-   - service network;
-   - external IP pool MetalLB?
-2. Какие конкретные IP/hostname планируются для 9 k8s-нод и NFS-сервера?
-3. Какие DNS-серверы и search domain использовать на нодах?
-4. Какой NTP-источник доступен в изолированной сети?
+### 1.1 VMware и инфраструктура
+- vCenter: `7.0.3`
+- ESXi: `7.0.3`
+- Provisioning: `clone_from_template`
+- Template: `k8s-pcp-template`
+- Datacenter: `Eleksir`
+- Cluster: `North`
+- Datastore: `North_Datastore01_vol_02`
+- Portgroup: `10.255.106.0/26_424`
+- DRS anti-affinity для control-plane: `no`
+- Ресурсы:
+  - control-plane: `2 vCPU / 4 GB RAM / 50 GB`
+  - worker: `4 vCPU / 8 GB RAM / 50 GB`
+  - metallb: `2 vCPU / 4 GB RAM / 50 GB`
 
-## 3. Прокси и доступ к пакетам/образам
-1. Укажите `http_proxy`, `https_proxy`, `no_proxy` (целиком, включая pod/service CIDR и internal domains).
-2. Планируется ли локальный mirror для RPM-пакетов RedOS?
-3. Планируется ли локальный container registry mirror для образов Kubernetes/CNI/MetalLB?
-4. Нужна ли авторизация на proxy/registry и где хранить учетные данные (ansible-vault)?
+### 1.2 Сеть и DNS/NTP
+- Management subnet: `10.255.106.0/26`
+- Pod subnet: `10.245.0.0/16`
+- Service subnet: `10.246.0.0/16`
+- MetalLB external pool: `10.255.106.21-10.255.106.31`
+- Узлы:
+  - `k8s-scp-01` `10.255.106.10`
+  - `k8s-scp-02` `10.255.106.11`
+  - `k8s-scp-03` `10.255.106.12`
+  - `k8s-wkn-01` `10.255.106.13`
+  - `k8s-wkn-02` `10.255.106.14`
+  - `k8s-wkn-03` `10.255.106.15`
+  - `k8s-mlb-01` `10.255.106.16`
+  - `k8s-mlb-02` `10.255.106.17`
+  - `k8s-mlb-03` `10.255.106.18`
+  - `k8s-nfs-01` `10.255.106.19`
+- DNS servers: `10.255.85.13`, `10.7.5.10`, `1.1.1.1`, `1.0.0.1`, `8.8.8.8`, `8.8.4.4`
+- Search domains: пусто
+- NTP: `timeserver.ru`
 
-## 4. Kubernetes и runtime
-1. Какую версию Kubernetes необходимо установить?
-2. Какой container runtime выбрать: `containerd` или `CRI-O`?
-3. Какой CNI планируется: Calico, Cilium или другой?
-4. Нужны ли taints/labels для выделения 3 нод под MetalLB ingress?
+### 1.3 Proxy и репозитории
+- mode: `local_on_each_node`
+- `http_proxy`: `http://127.0.0.1:12334`
+- `https_proxy`: `http://127.0.0.1:12334`
+- `no_proxy`: `localhost,127.0.0.1,10.0.0.0/8,.eleksir.net,.eleksir.finance,.cr.yandex`
+- RPM mirror: `external_via_proxy`
+- Registry mirror: `external_via_proxy`
+- Proxy auth: `no`
+- Registry auth: `no`
+- Хранение credentials: `ansible-vault`
 
-## 5. MetalLB и ingress
-1. Какой диапазон(ы) IP выделяется под MetalLB?
-2. Какой режим MetalLB нужен: L2 или BGP?
-3. Если BGP: какие peer-роутеры, ASN, пароли/MD5, policy?
-4. Нужен ли конкретный ingress controller (nginx/traefik/haproxy) вместе с MetalLB?
+### 1.4 Kubernetes / MetalLB / NFS / Security / Ops
+- Kubernetes version: `1.30.14`
+- Runtime: `containerd`
+- CNI: `calico`
+- Control plane endpoint: `10.255.106.20`
+- MetalLB mode: `l2`
+- Address pool: `pcidss-lan`, range `10.255.106.21-10.255.106.30`
+- Ingress controller: `nginx`
+- MetalLB node placement:
+  - labels: `node-role.kubernetes.io/metallb=true`
+  - taints: отсутствуют
+- NFS:
+  - OS: `RedOS 8.0.2`
+  - export: `/srv/storage`
+  - clients: `10.255.106.0/26`
+  - options: `rw,sync,no_root_squash,no_subtree_check`
+  - storage class: `nfs-sp` (`Delete`, default=true)
+- Security:
+  - ansible user: `enemirov`
+  - ssh auth: `password`
+  - bastion: `no`
+  - selinux: `Enforcing`
+  - secrets store: `ansible-vault`
+- Operations:
+  - ansible control node: `Debian 13`
+  - ansible-core: `2.19.4`
+  - quality gate: `ansible-lint`
+  - require_check_diff_support: `yes`
+  - unified `site.yml`: `true`
+  - split playbooks: `true`
+  - tags strategy: `true`
+  - runbook required: `true`
+- NFS performance requirements:
+  - min IOPS: `>= 2000`
+  - min throughput: `>= 150 MB/s`
+  - max latency: `<= 5 ms`
+- NFS backup/snapshot strategy:
+  - daily snapshot
+  - retention: `14 days`
+- Acceptance criteria:
+  - Успешный полный deploy (`playbooks/site.yml`) на чистом контуре.
+  - Идемпотентный повторный запуск без незапланированных изменений.
+  - Все ноды `Ready`, системные поды `Running`.
+  - Проверка MetalLB + ingress (IP из пула и доступность 80/443).
+  - Проверка NFS PVC (bind + RW тест).
+  - Проверка failover одной control-plane ноды.
 
-## 6. NFS и хранилище
-1. На каком узле размещается NFS и какая ОС/версия на нем?
-2. Какой путь экспорта (`/srv/nfs/k8s` и т.п.) и модель прав доступа?
-3. Какие требования по производительности и отказоустойчивости NFS?
-4. Какие StorageClass-параметры нужны (reclaimPolicy, mountOptions, default class)?
-5. Нужен ли backup/snapshot strategy для данных NFS?
+## 2. Открытые вопросы (блокируют старт реализации)
+Блокеры отсутствуют.
 
-## 7. Безопасность и доступ
-1. Какие порты допустимо открыть на каждой роли нод (control-plane/worker/metallb/nfs)?
-2. SELinux должен оставаться `Enforcing` во всех средах?
-3. Нужны ли дополнительные SELinux booleans/modules для NFS/CNI/runtime?
-4. Какая модель доступа Ansible: отдельный sudo-пользователь, ключи SSH, bastion?
-5. Где хранить секреты и сертификаты (ansible-vault/внешний secret store)?
-
-## 8. Эксплуатация и CI/CD
-1. Где будет запускаться Ansible control node (OS, версия ansible-core)?
-2. Нужны ли `ansible-lint`, `yamllint`, `pre-commit` как обязательный quality gate?
-3. Нужна ли поддержка `--check` и `--diff` для всех ролей?
-4. Какие приемочные критерии считаются обязательными перед вводом в эксплуатацию?
-
-## 9. Формат результата
-1. Нужно ли подготовить единый `site.yml` + отдельные плейбуки по этапам (`bootstrap`, `security`, `storage`, `validate`)?
-2. Нужен ли режим частичного запуска через теги (`base`, `k8s`, `metallb`, `security`, `storage`)?
-3. Нужна ли отдельная документация runbook (порядок запуска, rollback, troubleshooting)?
+## 3. Варианты закрытия неоднозначностей
+Выбран вариант 3 (production baseline + расширенные критерии приемки).
