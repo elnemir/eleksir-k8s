@@ -63,3 +63,16 @@
 - Обновлен `playbooks/bootstrap.yml`: роль `kubernetes_core` запускается на всей группе `k8s_cluster`.
 - Обновлен `inventories/prod/group_vars/all.yml`: дополнен `no_proxy`, добавлены runtime-переменные.
 - Обновлен `docs/Tasktracker.md`: задачи `T-005`...`T-012` переведены в `Завершена (без стендовой валидации)`.
+
+## 2026-02-19 (доработка параметризации сети)
+### Изменено
+- В архитектурных требованиях зафиксирована параметризация включения proxy для неизолированных контуров.
+- В трекер добавлена задача `T-017`: hostname из inventory + переключаемый proxy.
+
+## 2026-02-19 (hostname + switchable proxy)
+### Изменено
+- Обновлена роль `base_os`: добавлена установка системного hostname по `inventory_hostname` и управление `/etc/hosts` из inventory.
+- Обновлен `group_vars/all.yml`: добавлен параметр `proxy_enabled` и условная карта `proxy_environment`.
+- Обновлен `playbooks/bootstrap.yml`: роль `proxy` теперь запускается только при `proxy_enabled=true`.
+- Обновлены роли `networking`, `metallb`, `storage_nfs`: proxy-переменные для `kubectl` применяются условно через `proxy_environment`.
+- Обновлен `docs/Tasktracker.md`: `T-017` переведена в `Завершена (без стендовой валидации)`.

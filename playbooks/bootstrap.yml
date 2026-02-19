@@ -10,6 +10,7 @@
       tags: [base]
     - role: proxy
       tags: [base, proxy]
+      when: proxy_enabled | bool
 
 - name: Install runtime on Kubernetes nodes
   hosts: k8s_cluster

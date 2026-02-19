@@ -29,6 +29,7 @@
 | T-014 | Качество | Настроить `ansible-lint`, `yamllint`, pre-commit | Средний | Не начата |
 | T-015 | Валидация | Добавить smoke-тесты и post-checks | Высокий | Не начата |
 | T-016 | Документация | Поддерживать `Project.md`, `Tasktracker.md`, `Diary.md`, `changelog.md` в актуальном состоянии | Высокий | В процессе |
+| T-017 | Унификация | Синхронизировать hostname узлов с именами из inventory + параметризовать включение proxy | Критический | Завершена (без стендовой валидации) |
 
 ## Собранные данные (2026-02-19)
 - VMware: `vCenter 7.0.3`, `ESXi 7.0.3`, `clone_from_template`, шаблон `k8s-pcp-template`.
@@ -57,6 +58,8 @@
 - `storage_nfs`: экспорт NFS, сервисы, `nfs-subdir-external-provisioner`, StorageClass.
 - `security_hardening`: SELinux mode, firewalld и role-based порты.
 - `validation`: базовые post-checks по readiness, MetalLB controller и NFS StorageClass.
+- `base_os`: добавлена синхронизация системного hostname с `inventory_hostname` и управление `/etc/hosts` по inventory.
+- Параметр `proxy_enabled` добавлен в `group_vars/all.yml`; роль `proxy` и proxy-env для `kubectl apply` стали условными.
 
 ## Декомпозиция ближайшего этапа (сбор данных)
 - [x] Утвердить схему IP-адресов и список нод/ролей.

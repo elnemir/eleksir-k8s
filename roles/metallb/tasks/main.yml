@@ -23,10 +23,7 @@
     apply -f {{ metallb_manifest_url }}
   register: metallb_install
   changed_when: "'created' in metallb_install.stdout or 'configured' in metallb_install.stdout"
-  environment:
-    HTTP_PROXY: "{{ http_proxy }}"
-    HTTPS_PROXY: "{{ https_proxy }}"
-    NO_PROXY: "{{ no_proxy | join(',') }}"
+  environment: "{{ proxy_environment }}"
 
 - name: Wait for MetalLB controller rollout
   ansible.builtin.command: >-

@@ -22,10 +22,7 @@
     apply -f {{ network_manifest_urls[network_cni] }}
   register: networking_apply
   changed_when: "'created' in networking_apply.stdout or 'configured' in networking_apply.stdout"
-  environment:
-    HTTP_PROXY: "{{ http_proxy }}"
-    HTTPS_PROXY: "{{ https_proxy }}"
-    NO_PROXY: "{{ no_proxy | join(',') }}"
+  environment: "{{ proxy_environment }}"
 
 - name: Wait for CNI DaemonSet rollout (calico)
   ansible.builtin.command: >-

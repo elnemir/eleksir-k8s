@@ -13,6 +13,7 @@ service_subnet_cidr: "10.246.0.0/16"
 
 http_proxy: "http://127.0.0.1:12334"
 https_proxy: "http://127.0.0.1:12334"
+proxy_enabled: true
 no_proxy:
   - localhost
   - 127.0.0.1
@@ -27,6 +28,7 @@ no_proxy:
 proxy_mode: local_on_each_node
 registry_mode: external_via_proxy
 rpm_mirror_mode: external_via_proxy
+proxy_environment: "{{ {'HTTP_PROXY': http_proxy, 'HTTPS_PROXY': https_proxy, 'NO_PROXY': (no_proxy | join(','))} if (proxy_enabled | bool) else {} }}"
 container_runtime_name: containerd
 kubeadm_cri_socket: unix:///run/containerd/containerd.sock
 

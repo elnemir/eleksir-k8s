@@ -81,10 +81,7 @@
     apply -f /tmp/nfs-provisioner.yaml
   register: nfs_provisioner_apply
   changed_when: "'created' in nfs_provisioner_apply.stdout or 'configured' in nfs_provisioner_apply.stdout"
-  environment:
-    HTTP_PROXY: "{{ http_proxy }}"
-    HTTPS_PROXY: "{{ https_proxy }}"
-    NO_PROXY: "{{ no_proxy | join(',') }}"
+  environment: "{{ proxy_environment }}"
   when:
     - storage_nfs_manage_k8s | bool
     - inventory_hostname == primary_control_plane

@@ -9,6 +9,21 @@
       - base_os_kernel_modules is iterable
     fail_msg: "Base OS variables are incomplete"
 
+- name: Set system hostname from inventory name
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}"
+  when: base_os_manage_hostname | bool
+
+- name: Manage /etc/hosts entries from inventory
+  ansible.builtin.blockinfile:
+    path: /etc/hosts
+    marker: "# {mark} ANSIBLE MANAGED INVENTORY HOSTS"
+    block: |
+      {% for host in groups['all'] %}
+      {{ hostvars[host].ansible_host | default(host) }} {{ host }}
+      {% endfor %}
+  when: base_os_manage_hosts_file | bool
+
 - name: Install baseline packages
   ansible.builtin.package:
     name: "{{ base_os_packages }}"

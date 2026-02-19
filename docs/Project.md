@@ -117,6 +117,7 @@ roles/
 - SELinux в режиме `Enforcing` (исключения только по согласованию).
 - Доступ Ansible через выделенного операционного пользователя с ограниченными правами + sudo.
 - Контроль источников пакетов/образов в условиях прокси и изолированного контура.
+- Прокси-конфигурация должна быть параметризуемой и отключаемой для неизолированных контуров.
 
 ## 10. Требования к производительности
 - Настройки sysctl и runtime под Kubernetes-нагрузку.
@@ -174,12 +175,14 @@ roles/
 - Taints на MetalLB-нодах: отсутствуют
 
 ### 12.4 Proxy и репозитории
+- `proxy_enabled`: `true` (если `false`, proxy-настройки пропускаются)
 - Proxy mode: `local_on_each_node`
 - `http_proxy`: `http://127.0.0.1:12334`
 - `https_proxy`: `http://127.0.0.1:12334`
 - `no_proxy`: `localhost,127.0.0.1,10.0.0.0/8,.eleksir.net,.eleksir.finance,.cr.yandex`
 - Пакеты RedOS: `external_via_proxy`
 - Registry/образы: `external_via_proxy`
+- Для неизолированной сети допускается установка `proxy_enabled=false`.
 
 ### 12.5 NFS
 - NFS OS: `RedOS 8.0.2`
@@ -252,3 +255,6 @@ roles/
   - `storage_nfs`: NFS export + Kubernetes StorageClass через provisioner
   - `security_hardening`: SELinux/firewalld
   - `validation`: базовые проверки критериев приемки
+- Дополнительные требования, принятые после первичной реализации:
+  - системные hostname должны синхронизироваться с именами узлов из inventory;
+  - необходимость настройки proxy должна управляться параметром (`proxy_enabled`).
