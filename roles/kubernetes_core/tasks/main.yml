@@ -5,6 +5,8 @@
   ansible.builtin.assert:
     that:
       - kubernetes_version is defined
+      - kubeadm_config_api_version is defined
+      - kubeadm_config_api_version | length > 0
       - control_plane_endpoint is defined
       - pod_subnet_cidr is defined
       - service_subnet_cidr is defined
@@ -43,7 +45,11 @@
   when: is_primary_control_plane | bool
 
 - name: Initialize Kubernetes cluster on primary control-plane
-  ansible.builtin.command: "kubeadm init --config {{ kubeadm_config_path }} --upload-certs"
+  ansible.builtin.command: >-
+    kubeadm init
+    --config {{ kubeadm_config_path }}
+    --upload-certs
+    {{ '--allow-experimental-api' if (kubeadm_init_allow_experimental_api | bool) else '' }}
   args:
     creates: /etc/kubernetes/admin.conf
   when: is_primary_control_plane | bool

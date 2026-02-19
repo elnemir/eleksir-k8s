@@ -155,6 +155,8 @@ roles/
 
 ### 12.2 Kubernetes и сеть
 - Kubernetes: `1.30.14`
+- kubeadm config API: `kubeadm.k8s.io/v1beta3` (параметризуемо через `kubeadm_config_api_version`)
+- kubeadm experimental flag: `kubeadm_init_allow_experimental_api=false` (включается только при необходимости)
 - Runtime: `containerd`
 - CNI: `calico`
 - Control plane endpoint: `10.255.106.20`

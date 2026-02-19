@@ -184,3 +184,16 @@
 - Обновлен `docs/runbook.md`: добавлена команда запуска `ansible-playbook ... --tags failover`.
 - Обновлен `docs/Project.md`: зафиксирован механизм on-demand failover-проверки по тегу.
 - Обновлен `docs/Tasktracker.md`: задача `T-026` переведена в `Завершена`.
+
+## 2026-02-19 (старт kubeadm config API compatibility fix)
+### Изменено
+- Обновлен `docs/Tasktracker.md`: добавлена задача `T-027` в статусе `В процессе`.
+
+## 2026-02-19 (kubeadm config API compatibility fix)
+### Изменено
+- Обновлен `roles/kubernetes_core/defaults/main.yml`: добавлены параметры `kubeadm_config_api_version` и `kubeadm_init_allow_experimental_api`.
+- Обновлен `roles/kubernetes_core/templates/kubeadm-config.yaml.j2`: `apiVersion` переведен на параметр `kubeadm_config_api_version`.
+- Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлена проверка переменной API-версии и опциональный флаг `--allow-experimental-api`.
+- Обновлен `inventories/prod/group_vars/all.yml`: зафиксированы безопасные значения `kubeadm_config_api_version: kubeadm.k8s.io/v1beta3` и `kubeadm_init_allow_experimental_api: false`.
+- Обновлены `docs/Project.md` и `docs/runbook.md`: добавлены эксплуатационные инструкции по совместимости kubeadm API.
+- Обновлен `docs/Tasktracker.md`: задача `T-027` переведена в `Завершена`.

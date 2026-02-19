@@ -308,3 +308,18 @@
 
 ### Проблемы
 - Важно сохранить безопасный default: failover-сценарий не должен запускаться без явного `--tags failover`.
+
+## Дата: 2026-02-19 (сессия 23)
+### Наблюдения
+- На стенде получен фатальный сбой `kubeadm init`: `experimental API spec: kubeadm.k8s.io/v1beta4 is not allowed`.
+- Ошибки `Join command is not available` на остальных узлах являются каскадными после неуспешного bootstrap primary control-plane.
+
+### Решения
+- Стартована задача `T-027` для фикса совместимости версии API в `kubeadm-config`.
+- В `kubernetes_core` API-версия kubeadm-конфига параметризована через `kubeadm_config_api_version`.
+- Дефолт переключен на совместимый `kubeadm.k8s.io/v1beta3`.
+- Добавлен опциональный флаг `kubeadm_init_allow_experimental_api` для редких случаев использования experimental API.
+
+### Проблемы
+- До фикса bootstrap Kubernetes не может пройти, а join-фаза блокируется.
+- Практическая проверка исправления требует повторного запуска `playbooks/bootstrap.yml` на control host.

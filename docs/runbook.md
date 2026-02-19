@@ -58,6 +58,8 @@ ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/reinstal
 - `control_plane_endpoint: 10.255.106.20`
 - `control_plane_endpoint_port: 8443`
 - `control_plane_vip_enabled: true`
+- `kubeadm_config_api_version: kubeadm.k8s.io/v1beta3`
+- `kubeadm_init_allow_experimental_api: false`
 
 ## 5. Режим A: Изолированная сеть (proxy включен)
 Убедитесь, что в `inventories/prod/group_vars/all.yml`:
@@ -188,6 +190,13 @@ kubectl --kubeconfig /etc/kubernetes/admin.conf -n metallb-system get all
 
 # Проверка NFS provisioner
 kubectl --kubeconfig /etc/kubernetes/admin.conf -n nfs-storage get all
+```
+
+Если на bootstrap возникает ошибка `experimental API spec ... is not allowed`:
+1. Убедиться, что используется `kubeadm_config_api_version: kubeadm.k8s.io/v1beta3`.
+2. Перезапустить bootstrap после фикса:
+```bash
+ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml
 ```
 
 ## 12. Опция data-диска для NFS

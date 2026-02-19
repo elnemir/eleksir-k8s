@@ -39,6 +39,7 @@
 | T-024 | Control Plane HA | Реализовать control-plane endpoint VIP через `keepalived + haproxy` | Критический | Завершена (без стендовой валидации) |
 | T-025 | Validation API HA | Добавить автоматическую проверку API VIP (`10.255.106.20:8443`) и базовый failover-check сценарий | Критический | Завершена (без стендовой валидации) |
 | T-026 | Validation Tagging | Добавить отдельный тег `failover` для запуска только failover-сценария валидации | Высокий | Завершена |
+| T-027 | Kubeadm Compat | Исправить совместимость `kubeadm` config API (`v1beta4` -> совместимый параметризуемый вариант) | Критический | Завершена |
 
 ## Собранные данные (2026-02-19)
 - VMware: `vCenter 7.0.3`, `ESXi 7.0.3`, `clone_from_template`, шаблон `k8s-pcp-template`.
@@ -78,6 +79,7 @@
 - Добавлена роль `control_plane_vip`: реализация API endpoint VIP через `keepalived + haproxy` на control-plane нодах.
 - Роль `validation` дополнена проверками API VIP (`/readyz`), состояния `keepalived/haproxy` и опциональным failover-test для control-plane VIP.
 - В `playbooks/validate.yml` добавлен отдельный on-demand путь запуска failover-проверки по тегу `failover`.
+- Исправлена совместимость bootstrap: kubeadm config API параметризован и по умолчанию переключен на `kubeadm.k8s.io/v1beta3`.
 
 ## Декомпозиция ближайшего этапа (сбор данных)
 - [x] Утвердить схему IP-адресов и список нод/ролей.
