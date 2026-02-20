@@ -222,6 +222,17 @@ sudo dnf -q makecache --refresh --disablerepo='*' --enablerepo=kubernetes
 ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml
 ```
 
+Если `kubeadm init` падает на `wait-control-plane` (`kubelet 10248`):
+1. В текущей версии роли включен авто-сбор диагностики (`kubelet/runtime state`, `journalctl -u kubelet`, `crictl ps`) в `rescue`.
+2. Проверить в выводе:
+   - что swap выключен;
+   - что runtime-сокет доступен (`/run/containerd/containerd.sock`);
+   - что `kubelet` в `active` и не падает по cgroup/конфигу.
+3. После исправления причины перезапустить:
+```bash
+ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml --tags k8s
+```
+
 ## 12. Опция data-диска для NFS
 Если нужен отдельный диск под `nfs_export_path`, настройте в `inventories/prod/group_vars/nfs.yml`:
 - `storage_nfs_data_disk_enabled: true`

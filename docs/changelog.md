@@ -221,3 +221,14 @@
 - Обновлен `inventories/prod/group_vars/all.yml`: зафиксированы параметры resilience для Kubernetes package install.
 - Обновлены `docs/Project.md` и `docs/runbook.md`: добавлены правила эксплуатации и troubleshooting для недоступности зеркал Kubernetes repo.
 - Обновлен `docs/Tasktracker.md`: задача `T-029` переведена в `Завершена`.
+
+## 2026-02-19 (старт kubeadm init diagnostics fix)
+### Изменено
+- Обновлен `docs/Tasktracker.md`: добавлена задача `T-030` в статусе `В процессе`.
+
+## 2026-02-19 (kubeadm init diagnostics fix)
+### Изменено
+- Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлены preflight-проверки перед `kubeadm init` (запуск runtime service, ожидание runtime socket, проверка выключенного swap).
+- Обновлен `roles/kubernetes_core/tasks/main.yml`: `kubeadm init` переведен в `block/rescue` с автоматическим сбором диагностики (`systemctl is-active kubelet/runtime`, `journalctl -u kubelet`, `crictl ps`).
+- Обновлен `docs/runbook.md`: добавлен troubleshooting-раздел для сбоя `wait-control-plane` (`127.0.0.1:10248`) и команды повторного запуска.
+- Обновлен `docs/Tasktracker.md`: задача `T-030` переведена в `Завершена (без стендовой валидации)`.

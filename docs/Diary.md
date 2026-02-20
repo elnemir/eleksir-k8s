@@ -353,3 +353,18 @@
 ### Проблемы
 - Без этой доработки bootstrap остается чувствительным к сетевой деградации/нестабильным зеркалам.
 - Для подтверждения фикса нужен повторный запуск `bootstrap` на control host.
+
+## Дата: 2026-02-19 (сессия 26)
+### Наблюдения
+- На `kubeadm init` получен сбой `wait-control-plane`: kubelet не становится healthy по `127.0.0.1:10248`.
+- Текущий вывод недостаточно структурирован для быстрого определения причины (swap/runtime/kubelet/cri).
+
+### Решения
+- Стартована задача `T-030`: добавить preflight-проверки перед `kubeadm init` и `rescue`-сбор диагностики при падении.
+- В `kubernetes_core` добавлены preflight-шаги на primary control-plane: запуск runtime-сервиса, ожидание runtime socket, явная проверка `swapoff`.
+- `kubeadm init` переведен в `block/rescue`: при падении автоматически собираются `kubelet/runtime state`, `journalctl -u kubelet`, `crictl ps -a` и выводятся в одной ошибке Ansible.
+- В runbook добавлен отдельный troubleshooting-сценарий для `wait-control-plane` с фокусом на swap/runtime/kubelet/cgroup.
+
+### Проблемы
+- Без авто-диагностики разбор причины требует ручного сбора логов на каждой ноде.
+- Требуется повторный запуск `playbooks/bootstrap.yml --tags k8s` на control host для подтверждения исправления на стенде.

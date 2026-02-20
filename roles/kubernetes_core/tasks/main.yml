@@ -34,6 +34,8 @@
     is_primary_control_plane: "{{ inventory_hostname == groups['control_plane'][0] }}"
     is_control_plane_node: "{{ inventory_hostname in groups['control_plane'] }}"
     is_worker_like_node: "{{ inventory_hostname in (groups['workers'] + groups['metallb']) }}"
+    kubernetes_runtime_service_name: "{{ 'containerd' if (container_runtime_name | default('containerd')) == 'containerd' else 'crio' }}"
+    kubernetes_runtime_socket_path: "{{ '/run/containerd/containerd.sock' if (container_runtime_name | default('containerd')) == 'containerd' else '/var/run/crio/crio.sock' }}"
 
 - name: Configure Kubernetes repository
   ansible.builtin.template:
@@ -74,14 +76,91 @@
     mode: "0644"
   when: is_primary_control_plane | bool
 
+- name: Ensure runtime service is running before kubeadm init
+  ansible.builtin.service:
+    name: "{{ kubernetes_runtime_service_name }}"
+    state: started
+    enabled: true
+  when: is_primary_control_plane | bool
+
+- name: Wait for runtime socket before kubeadm init
+  ansible.builtin.wait_for:
+    path: "{{ kubernetes_runtime_socket_path }}"
+    timeout: 60
+  when: is_primary_control_plane | bool
+
+- name: Check swap devices before kubeadm init
+  ansible.builtin.command: swapon --noheadings --raw
+  register: kubernetes_swap_check
+  changed_when: false
+  when: is_primary_control_plane | bool
+
+- name: Ensure swap is disabled before kubeadm init
+  ansible.builtin.assert:
+    that:
+      - (kubernetes_swap_check.stdout | default('') | trim) == ''
+    fail_msg: >-
+      Swap must be disabled before kubeadm init. Current swap entries:
+      {{ kubernetes_swap_check.stdout | default('none') }}
+  when: is_primary_control_plane | bool
+
 - name: Initialize Kubernetes cluster on primary control-plane
-  ansible.builtin.command: >-
-    kubeadm init
-    --config {{ kubeadm_config_path }}
-    --upload-certs
-    {{ '--allow-experimental-api' if (kubeadm_init_allow_experimental_api | bool) else '' }}
-  args:
-    creates: /etc/kubernetes/admin.conf
+  block:
+    - name: Run kubeadm init
+      ansible.builtin.command: >-
+        kubeadm init
+        --config {{ kubeadm_config_path }}
+        --upload-certs
+        {{ '--allow-experimental-api' if (kubeadm_init_allow_experimental_api | bool) else '' }}
+      args:
+        creates: /etc/kubernetes/admin.conf
+  rescue:
+    - name: Collect kubelet service state
+      ansible.builtin.command: systemctl is-active kubelet
+      register: kubernetes_kubelet_state
+      changed_when: false
+      failed_when: false
+
+    - name: Collect runtime service state
+      ansible.builtin.command: "systemctl is-active {{ kubernetes_runtime_service_name }}"
+      register: kubernetes_runtime_state
+      changed_when: false
+      failed_when: false
+
+    - name: Collect kubelet logs tail
+      ansible.builtin.command: journalctl -u kubelet -n 120 --no-pager
+      register: kubernetes_kubelet_logs
+      changed_when: false
+      failed_when: false
+
+    - name: Collect CRI containers summary when crictl exists
+      ansible.builtin.shell: |
+        if command -v crictl >/dev/null 2>&1; then
+          crictl --runtime-endpoint {{ kubeadm_cri_socket }} ps -a | grep -E 'kube|etcd' || true
+        else
+          echo "crictl not installed"
+        fi
+      args:
+        executable: /bin/bash
+      register: kubernetes_cri_ps
+      changed_when: false
+      failed_when: false
+
+    - name: Fail with kubeadm init diagnostics
+      ansible.builtin.fail:
+        msg: |
+          kubeadm init failed on {{ inventory_hostname }}.
+          kubeadm stderr:
+          {{ ansible_failed_result.stderr | default('') }}
+
+          kubelet state: {{ kubernetes_kubelet_state.stdout | default('unknown') }}
+          {{ kubernetes_runtime_service_name }} state: {{ kubernetes_runtime_state.stdout | default('unknown') }}
+
+          CRI summary:
+          {{ kubernetes_cri_ps.stdout | default('') }}
+
+          kubelet logs (tail 120):
+          {{ kubernetes_kubelet_logs.stdout | default('') }}
   when: is_primary_control_plane | bool
 
 - name: Ensure kube config exists for root
