@@ -283,3 +283,10 @@
 - Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлен precheck `wait_for` до API VIP перед join на всех non-primary нодах.
 - Обновлен `roles/kubernetes_core/tasks/main.yml`: для `Join secondary control-plane nodes` и `Join worker and metallb nodes` добавлены retry/delay с `until`, а также `throttle: 1` для последовательного join.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-038`.
+
+## 2026-02-24 (kubeadm join endpoint fallback)
+### Изменено
+- Обновлен `roles/kubernetes_core/defaults/main.yml`: добавлены параметры fallback endpoint для `kubeadm join` (`kubeadm_join_endpoint_fallback_enabled`, `kubeadm_join_fallback_port`).
+- Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлена логика выбора endpoint для join (`VIP` при доступности, fallback на `primary_control_plane:6443` при недоступности VIP).
+- Обновлен `roles/kubernetes_core/tasks/main.yml`: join-команды переведены на использование выбранного endpoint через адресную подмену `kubeadm join <endpoint>`.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-039`.

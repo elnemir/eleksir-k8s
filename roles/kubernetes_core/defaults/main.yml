@@ -35,3 +35,5 @@ kubeadm_join_endpoint_check_retries: 24
 kubeadm_join_endpoint_check_delay: 5
 kubeadm_join_retries: 3
 kubeadm_join_delay: 20
+kubeadm_join_endpoint_fallback_enabled: true
+kubeadm_join_fallback_port: 6443
