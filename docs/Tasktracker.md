@@ -52,6 +52,7 @@
 | T-037 | SELinux Mode Input Normalization | Нормализовать `selinux_target_mode` к lowercase в `security_hardening`, сохранив совместимость со значениями вида `Enforcing` | Высокий | Завершена (без стендовой валидации) |
 | T-038 | Kubeadm Join Resilience Hardening | Добавить precheck endpoint + retry и последовательный join для control-plane/worker узлов | Критический | Завершена (без стендовой валидации) |
 | T-039 | Kubeadm Join Endpoint Fallback | Добавить fallback `primary_control_plane:6443` для `kubeadm join` при недоступности VIP endpoint | Критический | Завершена (без стендовой валидации) |
+| T-040 | SELinux Temporary Disable | Временно отключить SELinux на всех узлах для диагностики нестабильности join/VIP | Высокий | Завершена (без стендовой валидации) |
 
 ## Собранные данные (2026-02-19)
 - VMware: `vCenter 7.0.3`, `ESXi 7.0.3`, `clone_from_template`, шаблон `k8s-pcp-template`.
@@ -107,6 +108,7 @@
 - В `kubernetes_core` join-таски переведены на retry (`until` + `retries/delay`) и последовательное выполнение (`throttle: 1`) для снижения ошибок `context deadline exceeded`/`rate limiter`.
 - В роли `kubernetes_core` добавлен выбор endpoint для `kubeadm join`: сначала `controlPlaneEndpoint`, при недоступности — fallback на `primary_control_plane:6443`.
 - Join-команды выполняются через адресную подмену `kubeadm join <endpoint>`, что позволяет прозрачно использовать fallback без пересоздания токена.
+- В `inventories/prod/group_vars/all.yml` добавлен `selinux_target_mode: Disabled` как временный диагностический режим для всех узлов (требуется reboot для полного применения).
 
 ## Декомпозиция ближайшего этапа (сбор данных)
 - [x] Утвердить схему IP-адресов и список нод/ролей.

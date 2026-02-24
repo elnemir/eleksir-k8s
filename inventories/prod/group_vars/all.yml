@@ -60,6 +60,7 @@ ntp_servers:
 
 ansible_require_check_diff_support: true
 ingress_controller: nginx
+selinux_target_mode: Disabled
 validation_ingress_namespace: ingress-nginx
 validation_ingress_service_name: ingress-nginx-controller
 validation_ingress_expected_vip: "10.255.106.21"

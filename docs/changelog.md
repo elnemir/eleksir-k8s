@@ -290,3 +290,8 @@
 - Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлена логика выбора endpoint для join (`VIP` при доступности, fallback на `primary_control_plane:6443` при недоступности VIP).
 - Обновлен `roles/kubernetes_core/tasks/main.yml`: join-команды переведены на использование выбранного endpoint через адресную подмену `kubeadm join <endpoint>`.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-039`.
+
+## 2026-02-24 (temporary SELinux disable for cluster-wide diagnostics)
+### Изменено
+- Обновлен `inventories/prod/group_vars/all.yml`: добавлен `selinux_target_mode: Disabled` для применения режима SELinux `disabled` на всех узлах как временный диагностический обход.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-040`.
