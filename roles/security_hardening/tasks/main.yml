@@ -4,7 +4,7 @@
 - name: Validate security variables
   ansible.builtin.assert:
     that:
-      - selinux_target_mode in ['Enforcing', 'Permissive', 'Disabled']
+      - (selinux_target_mode | lower) in ['enforcing', 'permissive', 'disabled']
       - firewall_allowed_tcp is defined
       - firewall_allowed_udp is defined
       - firewall_allowed_protocols is defined
@@ -26,7 +26,7 @@
 - name: Set SELinux mode
   ansible.posix.selinux:
     policy: targeted
-    state: "{{ selinux_target_mode }}"
+    state: "{{ selinux_target_mode | lower }}"
 
 - name: Build firewalld TCP ports list
   ansible.builtin.set_fact:

@@ -270,3 +270,9 @@
 - Обновлен `roles/control_plane_vip/tasks/main.yml`: добавлена idempotent-настройка SELinux boolean `haproxy_connect_any` (persisted) на control-plane нодах при включенном SELinux.
 - Обновлен `roles/control_plane_vip/tasks/main.yml`: добавлен безопасный post-check `https://<controlPlaneEndpoint>:<port>/readyz`, выполняемый только при наличии `admin.conf` (после инициализации control-plane).
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-036`.
+
+## 2026-02-24 (security_hardening SELinux mode normalization)
+### Изменено
+- Обновлен `roles/security_hardening/tasks/main.yml`: валидация `selinux_target_mode` переведена на case-insensitive проверку через lowercase.
+- Обновлен `roles/security_hardening/tasks/main.yml`: для модуля `ansible.posix.selinux` добавлена нормализация `state` в lowercase, чтобы исключить сбой при значениях вида `Enforcing`.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-037`.
