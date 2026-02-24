@@ -14,3 +14,9 @@ control_plane_vip_priority_base: 150
 control_plane_vip_priority_step: 10
 control_plane_vip_haproxy_cfg_path: /etc/haproxy/haproxy.cfg
 control_plane_vip_check_script_path: /usr/local/bin/check-haproxy.sh
+control_plane_vip_manage_selinux_haproxy_connect_any: true
+control_plane_vip_selinux_haproxy_connect_any: true
+control_plane_vip_postcheck_enabled: true
+control_plane_vip_postcheck_timeout: 5
+control_plane_vip_postcheck_retries: 20
+control_plane_vip_postcheck_delay: 3

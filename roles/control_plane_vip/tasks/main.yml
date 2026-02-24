@@ -47,6 +47,18 @@
     - control_plane_vip_enabled | bool
     - inventory_hostname in groups['control_plane']
 
+- name: Ensure SELinux boolean haproxy_connect_any is configured
+  ansible.posix.seboolean:
+    name: haproxy_connect_any
+    state: "{{ control_plane_vip_selinux_haproxy_connect_any | bool }}"
+    persistent: true
+  when:
+    - control_plane_vip_enabled | bool
+    - inventory_hostname in groups['control_plane']
+    - control_plane_vip_manage_selinux_haproxy_connect_any | bool
+    - ansible_facts.selinux is defined
+    - ansible_facts.selinux.status == 'enabled'
+
 - name: Enable non-local bind for VIP listener
   ansible.builtin.sysctl:
     name: net.ipv4.ip_nonlocal_bind
@@ -105,3 +117,39 @@
   when:
     - control_plane_vip_enabled | bool
     - inventory_hostname in groups['control_plane']
+
+- name: Flush control-plane VIP handlers before optional post-check
+  ansible.builtin.meta: flush_handlers
+  when:
+    - control_plane_vip_enabled | bool
+    - inventory_hostname in groups['control_plane']
+
+- name: Check admin kubeconfig presence before VIP readyz post-check
+  ansible.builtin.stat:
+    path: /etc/kubernetes/admin.conf
+  register: control_plane_vip_admin_conf
+  when:
+    - control_plane_vip_enabled | bool
+    - inventory_hostname in groups['control_plane']
+    - control_plane_vip_postcheck_enabled | bool
+
+- name: Verify control-plane VIP readyz when cluster is already initialized
+  ansible.builtin.uri:
+    url: "https://{{ control_plane_vip_address }}:{{ control_plane_vip_port }}/readyz"
+    method: GET
+    validate_certs: false
+    return_content: true
+    status_code: 200
+    timeout: "{{ control_plane_vip_postcheck_timeout | int }}"
+  register: control_plane_vip_readyz
+  until:
+    - control_plane_vip_readyz.status == 200
+    - "'ok' in (control_plane_vip_readyz.content | default(''))"
+  retries: "{{ control_plane_vip_postcheck_retries | int }}"
+  delay: "{{ control_plane_vip_postcheck_delay | int }}"
+  when:
+    - control_plane_vip_enabled | bool
+    - inventory_hostname in groups['control_plane']
+    - control_plane_vip_postcheck_enabled | bool
+    - control_plane_vip_admin_conf is defined
+    - control_plane_vip_admin_conf.stat.exists

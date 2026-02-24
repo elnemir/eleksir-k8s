@@ -263,3 +263,10 @@
 ### Изменено
 - Обновлен `inventories/prod/group_vars/all.yml`: в `no_proxy` добавлены явные IP `10.255.106.20`, `10.255.106.10`, `10.255.106.11`, `10.255.106.12` для обхода HTTP(S)-proxy при обращении Kubernetes-компонентов к API endpoint/control-plane нодам.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-035`.
+
+## 2026-02-24 (control-plane VIP SELinux hardening)
+### Изменено
+- Обновлен `roles/control_plane_vip/defaults/main.yml`: добавлены параметры управления SELinux-настройкой для HAProxy и условным VIP post-check (`control_plane_vip_manage_selinux_haproxy_connect_any`, `control_plane_vip_selinux_haproxy_connect_any`, `control_plane_vip_postcheck_*`).
+- Обновлен `roles/control_plane_vip/tasks/main.yml`: добавлена idempotent-настройка SELinux boolean `haproxy_connect_any` (persisted) на control-plane нодах при включенном SELinux.
+- Обновлен `roles/control_plane_vip/tasks/main.yml`: добавлен безопасный post-check `https://<controlPlaneEndpoint>:<port>/readyz`, выполняемый только при наличии `admin.conf` (после инициализации control-plane).
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-036`.

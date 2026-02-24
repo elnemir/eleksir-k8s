@@ -48,6 +48,7 @@
 | T-033 | Ansible Callback Cleanup | Удалить `stdout_callback = yaml` из `ansible.cfg` для совместимости с актуальным Ansible | Высокий | Завершена |
 | T-034 | Kubeadm Stale-State Guard | Добавить precheck/обработку частично инициализированного control-plane перед повторным `kubeadm init` | Критический | Завершена (без стендовой валидации) |
 | T-035 | Proxy NO_PROXY Hardening | Добавить явные IP control-plane endpoint/нод в `no_proxy` для исключения обращения kubelet через proxy | Критический | Завершена (без стендовой валидации) |
+| T-036 | Control Plane VIP SELinux Hardening | Добавить idempotent-настройку `haproxy_connect_any` и безопасный post-check VIP в роли `control_plane_vip` | Критический | Завершена (без стендовой валидации) |
 
 ## Собранные данные (2026-02-19)
 - VMware: `vCenter 7.0.3`, `ESXi 7.0.3`, `clone_from_template`, шаблон `k8s-pcp-template`.
@@ -96,6 +97,8 @@
 - В `ansible.cfg` удален `stdout_callback = yaml` как устаревшая настройка для актуальной версии Ansible.
 - В роли `kubernetes_core` добавлен guard частично-инициализированного состояния (`/etc/kubernetes/manifests`, `/var/lib/etcd`) с опциональным auto-reset через `kubeadm_init_auto_reset_on_stale_state`.
 - В `inventories/prod/group_vars/all.yml` в `no_proxy` добавлены явные IP `controlPlaneEndpoint` и control-plane нод для исключения доступа Kubernetes-компонентов к API через HTTP(S)-proxy.
+- В роли `control_plane_vip` добавлена idempotent-настройка SELinux boolean `haproxy_connect_any` (persisted) на control-plane нодах при включенном SELinux.
+- В роли `control_plane_vip` добавлен условный post-check API VIP (`/readyz`) после применения конфигурации, выполняемый только при наличии `admin.conf`.
 
 ## Декомпозиция ближайшего этапа (сбор данных)
 - [x] Утвердить схему IP-адресов и список нод/ролей.
