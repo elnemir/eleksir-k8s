@@ -28,6 +28,14 @@
     - role: control_plane_vip
       tags: [vip, k8s, control-plane]
 
+- name: Apply security hardening on Kubernetes nodes
+  hosts: k8s_cluster
+  become: true
+  gather_facts: true
+  roles:
+    - role: security_hardening
+      tags: [security, k8s]
+
 - name: Bootstrap and join Kubernetes nodes
   hosts: k8s_cluster
   become: true

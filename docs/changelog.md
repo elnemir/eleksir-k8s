@@ -309,3 +309,8 @@
 - Обновлен `roles/kubernetes_core/tasks/main.yml`: в `rescue` добавлен сбор сетевой диагностики на joining-ноде (`ip route get`, TCP probe `bash /dev/tcp`, `curl /readyz`).
 - Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлен итоговый `fail` с агрегированным диагностическим выводом для ускорения root-cause анализа.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-042`.
+
+## 2026-02-24 (bootstrap sequencing: security_hardening before kubernetes_core)
+### Изменено
+- Обновлен `playbooks/bootstrap.yml`: добавлен отдельный play применения роли `security_hardening` на `k8s_cluster` перед запуском `kubernetes_core`.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-043`.
