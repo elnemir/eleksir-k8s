@@ -25,8 +25,51 @@
   environment: "{{ proxy_environment }}"
 
 - name: Wait for CNI DaemonSet rollout (calico)
-  ansible.builtin.command: >-
-    kubectl --kubeconfig={{ network_kubeconfig }}
-    -n kube-system rollout status daemonset/calico-node --timeout=300s
+  block:
+    - name: Wait for calico-node DaemonSet rollout
+      ansible.builtin.command: >-
+        kubectl --kubeconfig={{ network_kubeconfig }}
+        -n kube-system rollout status daemonset/calico-node --timeout={{ network_cni_rollout_timeout }}
+      register: networking_calico_rollout
+      changed_when: false
+      retries: "{{ network_cni_rollout_retries | int }}"
+      delay: "{{ network_cni_rollout_delay | int }}"
+      until: networking_calico_rollout.rc == 0
+  rescue:
+    - name: Collect kube-system pods diagnostics after calico rollout timeout
+      ansible.builtin.command: >-
+        kubectl --kubeconfig={{ network_kubeconfig }}
+        -n kube-system get pods -o wide
+      register: networking_calico_pods_diag
+      changed_when: false
+      failed_when: false
+
+    - name: Collect calico-node DaemonSet description after rollout timeout
+      ansible.builtin.command: >-
+        kubectl --kubeconfig={{ network_kubeconfig }}
+        -n kube-system describe daemonset calico-node
+      register: networking_calico_ds_diag
+      changed_when: false
+      failed_when: false
+
+    - name: Collect kube-system events after calico rollout timeout
+      ansible.builtin.command: >-
+        kubectl --kubeconfig={{ network_kubeconfig }}
+        -n kube-system get events --sort-by=.lastTimestamp
+      register: networking_calico_events_diag
+      changed_when: false
+      failed_when: false
+
+    - name: Fail with calico rollout diagnostics
+      ansible.builtin.fail:
+        msg: |
+          Calico DaemonSet rollout timed out.
+          rollout rc={{ networking_calico_rollout.rc | default('n/a') }}
+          rollout stderr={{ networking_calico_rollout.stderr | default('') | trim }}
+          kube-system pods:
+          {{ networking_calico_pods_diag.stdout | default('') | trim }}
+          calico-node describe:
+          {{ networking_calico_ds_diag.stdout | default('') | trim }}
+          kube-system events:
+          {{ networking_calico_events_diag.stdout | default('') | trim }}
   when: network_cni == 'calico'
-  changed_when: false

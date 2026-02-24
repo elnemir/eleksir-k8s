@@ -314,3 +314,10 @@
 ### Изменено
 - Обновлен `playbooks/bootstrap.yml`: добавлен отдельный play применения роли `security_hardening` на `k8s_cluster` перед запуском `kubernetes_core`.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-043`.
+
+## 2026-02-24 (networking calico rollout diagnostics hardening)
+### Изменено
+- Обновлен `roles/networking/defaults/main.yml`: добавлены параметры ожидания rollout CNI (`network_cni_rollout_timeout`, `network_cni_rollout_retries`, `network_cni_rollout_delay`).
+- Обновлен `roles/networking/tasks/main.yml`: ожидание `calico-node` rollout переведено на retry (`until`) с параметризуемым timeout.
+- Обновлен `roles/networking/tasks/main.yml`: добавлен `block/rescue` со сбором диагностик (`get pods`, `describe ds calico-node`, `get events`) и агрегированным fail-сообщением при таймауте rollout.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-044`.
