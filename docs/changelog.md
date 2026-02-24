@@ -276,3 +276,10 @@
 - Обновлен `roles/security_hardening/tasks/main.yml`: валидация `selinux_target_mode` переведена на case-insensitive проверку через lowercase.
 - Обновлен `roles/security_hardening/tasks/main.yml`: для модуля `ansible.posix.selinux` добавлена нормализация `state` в lowercase, чтобы исключить сбой при значениях вида `Enforcing`.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-037`.
+
+## 2026-02-24 (kubeadm join resilience hardening)
+### Изменено
+- Обновлен `roles/kubernetes_core/defaults/main.yml`: добавлены параметры проверки доступности `controlPlaneEndpoint` перед `kubeadm join` и параметры retry/delay для join.
+- Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлен precheck `wait_for` до API VIP перед join на всех non-primary нодах.
+- Обновлен `roles/kubernetes_core/tasks/main.yml`: для `Join secondary control-plane nodes` и `Join worker and metallb nodes` добавлены retry/delay с `until`, а также `throttle: 1` для последовательного join.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-038`.

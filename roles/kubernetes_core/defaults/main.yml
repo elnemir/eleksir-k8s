@@ -30,3 +30,8 @@ kubeadm_init_endpoint_check_timeout: 5
 kubeadm_init_endpoint_check_retries: 12
 kubeadm_init_endpoint_check_delay: 5
 kubeadm_init_auto_reset_on_stale_state: false
+kubeadm_join_endpoint_check_timeout: 5
+kubeadm_join_endpoint_check_retries: 24
+kubeadm_join_endpoint_check_delay: 5
+kubeadm_join_retries: 3
+kubeadm_join_delay: 20

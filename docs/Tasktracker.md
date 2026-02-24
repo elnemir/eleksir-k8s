@@ -50,6 +50,7 @@
 | T-035 | Proxy NO_PROXY Hardening | Добавить явные IP control-plane endpoint/нод в `no_proxy` для исключения обращения kubelet через proxy | Критический | Завершена (без стендовой валидации) |
 | T-036 | Control Plane VIP SELinux Hardening | Добавить idempotent-настройку `haproxy_connect_any` и безопасный post-check VIP в роли `control_plane_vip` | Критический | Завершена (без стендовой валидации) |
 | T-037 | SELinux Mode Input Normalization | Нормализовать `selinux_target_mode` к lowercase в `security_hardening`, сохранив совместимость со значениями вида `Enforcing` | Высокий | Завершена (без стендовой валидации) |
+| T-038 | Kubeadm Join Resilience Hardening | Добавить precheck endpoint + retry и последовательный join для control-plane/worker узлов | Критический | Завершена (без стендовой валидации) |
 
 ## Собранные данные (2026-02-19)
 - VMware: `vCenter 7.0.3`, `ESXi 7.0.3`, `clone_from_template`, шаблон `k8s-pcp-template`.
@@ -101,6 +102,8 @@
 - В роли `control_plane_vip` добавлена idempotent-настройка SELinux boolean `haproxy_connect_any` (persisted) на control-plane нодах при включенном SELinux.
 - В роли `control_plane_vip` добавлен условный post-check API VIP (`/readyz`) после применения конфигурации, выполняемый только при наличии `admin.conf`.
 - В роли `security_hardening` добавлена case-insensitive валидация `selinux_target_mode` и нормализация значения `state` в lowercase перед вызовом `ansible.posix.selinux`.
+- В роли `kubernetes_core` добавлен precheck доступности `controlPlaneEndpoint` перед `kubeadm join` на non-primary нодах.
+- В `kubernetes_core` join-таски переведены на retry (`until` + `retries/delay`) и последовательное выполнение (`throttle: 1`) для снижения ошибок `context deadline exceeded`/`rate limiter`.
 
 ## Декомпозиция ближайшего этапа (сбор данных)
 - [x] Утвердить схему IP-адресов и список нод/ролей.
