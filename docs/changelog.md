@@ -245,3 +245,8 @@
 - Обновлен `roles/kubernetes_core/tasks/main.yml`: в `rescue` добавлен probe доступности backend control-plane узлов на `:6443`.
 - Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлен явный `fail` для случая, когда `controlPlaneEndpoint` доступен, но ни один backend API не отвечает, с диагностическим сообщением по VIP/HAProxy-цепочке.
 - Обновлен `docs/Tasktracker.md`: задача `T-032` переведена в `Завершена (без стендовой валидации)`.
+
+## 2026-02-24 (ansible callback cleanup)
+### Изменено
+- Обновлен `ansible.cfg`: удален параметр `stdout_callback = yaml` как избыточный для актуальных версий Ansible.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-033`.
