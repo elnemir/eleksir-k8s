@@ -250,3 +250,11 @@
 ### Изменено
 - Обновлен `ansible.cfg`: удален параметр `stdout_callback = yaml` как избыточный для актуальных версий Ansible.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-033`.
+
+## 2026-02-24 (kubeadm stale-state guard)
+### Изменено
+- Обновлен `roles/kubernetes_core/defaults/main.yml`: добавлен параметр `kubeadm_init_auto_reset_on_stale_state` (по умолчанию `false`).
+- Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлен precheck частично-инициализированного состояния control-plane перед `kubeadm init` (`/etc/kubernetes/manifests/kube-apiserver.yaml`, содержимое `/var/lib/etcd`) при неуспешном `/readyz`.
+- Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлена опциональная автоочистка stale-state (`kubeadm reset -f`, удаление stale manifests и `/var/lib/etcd`) при `kubeadm_init_auto_reset_on_stale_state=true`.
+- Обновлен `roles/kubernetes_core/tasks/main.yml`: при обнаружении stale-state и отключенной автоочистке play завершается явным fail с инструкцией по remediation.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-034`.

@@ -29,3 +29,4 @@ kubeadm_init_verbosity: 5
 kubeadm_init_endpoint_check_timeout: 5
 kubeadm_init_endpoint_check_retries: 12
 kubeadm_init_endpoint_check_delay: 5
+kubeadm_init_auto_reset_on_stale_state: false

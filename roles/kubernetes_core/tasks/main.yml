@@ -122,6 +122,94 @@
   failed_when: false
   when: is_primary_control_plane | bool
 
+- name: Check stale kubeadm manifests before kubeadm init
+  ansible.builtin.stat:
+    path: /etc/kubernetes/manifests/kube-apiserver.yaml
+  register: kubernetes_kubeadm_apiserver_manifest
+  when:
+    - is_primary_control_plane | bool
+    - (kubernetes_existing_cluster_readyz.rc | default(1)) != 0
+
+- name: Check stale etcd data directory before kubeadm init
+  ansible.builtin.find:
+    paths: /var/lib/etcd
+    recurse: false
+    file_type: any
+  register: kubernetes_kubeadm_etcd_dir_entries
+  failed_when: false
+  changed_when: false
+  when:
+    - is_primary_control_plane | bool
+    - (kubernetes_existing_cluster_readyz.rc | default(1)) != 0
+
+- name: Detect stale kubeadm state before kubeadm init
+  ansible.builtin.set_fact:
+    kubernetes_kubeadm_stale_state: >-
+      {{
+        (kubernetes_kubeadm_apiserver_manifest.stat.exists | default(false))
+        or ((kubernetes_kubeadm_etcd_dir_entries.matched | default(0) | int) > 0)
+      }}
+  when:
+    - is_primary_control_plane | bool
+    - (kubernetes_existing_cluster_readyz.rc | default(1)) != 0
+
+- name: Auto-reset stale kubeadm state before kubeadm init
+  block:
+    - name: Stop kubelet before kubeadm reset
+      ansible.builtin.service:
+        name: kubelet
+        state: stopped
+
+    - name: Run kubeadm reset for stale init state
+      ansible.builtin.command: kubeadm reset -f
+      register: kubernetes_kubeadm_reset
+      changed_when: kubernetes_kubeadm_reset.rc == 0
+
+    - name: Remove stale static pod manifests after reset
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/kubernetes/manifests/kube-apiserver.yaml
+        - /etc/kubernetes/manifests/kube-controller-manager.yaml
+        - /etc/kubernetes/manifests/kube-scheduler.yaml
+        - /etc/kubernetes/manifests/etcd.yaml
+
+    - name: Remove stale etcd data directory after reset
+      ansible.builtin.file:
+        path: /var/lib/etcd
+        state: absent
+  when:
+    - is_primary_control_plane | bool
+    - (kubernetes_existing_cluster_readyz.rc | default(1)) != 0
+    - kubernetes_kubeadm_stale_state | default(false)
+    - kubeadm_init_auto_reset_on_stale_state | bool
+
+- name: Fail when stale kubeadm state is found and auto-reset is disabled
+  ansible.builtin.fail:
+    msg: >-
+      Stale kubeadm state detected on {{ inventory_hostname }}:
+      kube-apiserver manifest exists={{ kubernetes_kubeadm_apiserver_manifest.stat.exists | default(false) }},
+      /var/lib/etcd entries={{ kubernetes_kubeadm_etcd_dir_entries.matched | default(0) }}.
+      The cluster API is not healthy (`/readyz` check failed), so repeated `kubeadm init` will fail preflight.
+      Run destructive reinstall playbook or set `kubeadm_init_auto_reset_on_stale_state=true`.
+  when:
+    - is_primary_control_plane | bool
+    - (kubernetes_existing_cluster_readyz.rc | default(1)) != 0
+    - kubernetes_kubeadm_stale_state | default(false)
+    - not (kubeadm_init_auto_reset_on_stale_state | bool)
+
+- name: Ensure kubelet is started after stale-state auto-reset
+  ansible.builtin.service:
+    name: kubelet
+    state: started
+    enabled: true
+  when:
+    - is_primary_control_plane | bool
+    - (kubernetes_existing_cluster_readyz.rc | default(1)) != 0
+    - kubernetes_kubeadm_stale_state | default(false)
+    - kubeadm_init_auto_reset_on_stale_state | bool
+
 - name: Initialize Kubernetes cluster on primary control-plane
   block:
     - name: Run kubeadm init

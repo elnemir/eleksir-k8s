@@ -46,6 +46,7 @@
 | T-031 | Kubeadm Init Hardening | Добавить precheck доступности controlPlaneEndpoint и исправить idempotency `kubeadm init` по `readyz` | Критический | Завершена (без стендовой валидации) |
 | T-032 | VIP Backend Guard | Добавить явный guard для `kubeadm init`: endpoint доступен, но backend `:6443` недоступны | Критический | Завершена (без стендовой валидации) |
 | T-033 | Ansible Callback Cleanup | Удалить `stdout_callback = yaml` из `ansible.cfg` для совместимости с актуальным Ansible | Высокий | Завершена |
+| T-034 | Kubeadm Stale-State Guard | Добавить precheck/обработку частично инициализированного control-plane перед повторным `kubeadm init` | Критический | Завершена (без стендовой валидации) |
 
 ## Собранные данные (2026-02-19)
 - VMware: `vCenter 7.0.3`, `ESXi 7.0.3`, `clone_from_template`, шаблон `k8s-pcp-template`.
@@ -92,6 +93,7 @@
 - В роли `kubernetes_core` добавлены precheck доступности `controlPlaneEndpoint` перед `kubeadm init`, переключение idempotency на проверку `kubectl ... /readyz`, а также параметризованная детализация логов `kubeadm init`.
 - В роли `kubernetes_core` добавлен явный guard в `rescue`: если `controlPlaneEndpoint` доступен, но все backend `control-plane` на `:6443` недоступны, play завершается с целевым сообщением о проблеме VIP/HAProxy-цепочки.
 - В `ansible.cfg` удален `stdout_callback = yaml` как устаревшая настройка для актуальной версии Ansible.
+- В роли `kubernetes_core` добавлен guard частично-инициализированного состояния (`/etc/kubernetes/manifests`, `/var/lib/etcd`) с опциональным auto-reset через `kubeadm_init_auto_reset_on_stale_state`.
 
 ## Декомпозиция ближайшего этапа (сбор данных)
 - [x] Утвердить схему IP-адресов и список нод/ролей.
