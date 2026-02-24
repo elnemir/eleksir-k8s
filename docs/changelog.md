@@ -258,3 +258,8 @@
 - Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлена опциональная автоочистка stale-state (`kubeadm reset -f`, удаление stale manifests и `/var/lib/etcd`) при `kubeadm_init_auto_reset_on_stale_state=true`.
 - Обновлен `roles/kubernetes_core/tasks/main.yml`: при обнаружении stale-state и отключенной автоочистке play завершается явным fail с инструкцией по remediation.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-034`.
+
+## 2026-02-24 (proxy no_proxy hardening for API VIP)
+### Изменено
+- Обновлен `inventories/prod/group_vars/all.yml`: в `no_proxy` добавлены явные IP `10.255.106.20`, `10.255.106.10`, `10.255.106.11`, `10.255.106.12` для обхода HTTP(S)-proxy при обращении Kubernetes-компонентов к API endpoint/control-plane нодам.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-035`.
