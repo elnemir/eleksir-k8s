@@ -396,27 +396,44 @@
   retries: "{{ kubeadm_join_endpoint_check_retries | int }}"
   delay: "{{ kubeadm_join_endpoint_check_delay | int }}"
   ignore_errors: "{{ kubeadm_join_endpoint_fallback_enabled | bool }}"
-  when: not (is_primary_control_plane | bool)
+  when:
+    - not (is_primary_control_plane | bool)
+    - not (kubeadm_join_force_primary_endpoint | bool)
 
 - name: Select endpoint for kubeadm join
   ansible.builtin.set_fact:
     kubeadm_join_selected_endpoint: >-
       {{
-        kubeadm_join_endpoint_vip
-        if (kubeadm_join_vip_wait is succeeded)
-        else kubeadm_join_endpoint_fallback
+        kubeadm_join_endpoint_fallback
+        if (kubeadm_join_force_primary_endpoint | bool)
+        else
+          (
+            kubeadm_join_endpoint_vip
+            if (kubeadm_join_vip_wait is succeeded)
+            else kubeadm_join_endpoint_fallback
+          )
       }}
     kubeadm_join_selected_host: >-
       {{
-        control_plane_endpoint
-        if (kubeadm_join_vip_wait is succeeded)
-        else hostvars[primary_control_plane].ansible_host
+        hostvars[primary_control_plane].ansible_host
+        if (kubeadm_join_force_primary_endpoint | bool)
+        else
+          (
+            control_plane_endpoint
+            if (kubeadm_join_vip_wait is succeeded)
+            else hostvars[primary_control_plane].ansible_host
+          )
       }}
     kubeadm_join_selected_port: >-
       {{
-        (control_plane_endpoint_port | int)
-        if (kubeadm_join_vip_wait is succeeded)
-        else (kubeadm_join_fallback_port | int)
+        (kubeadm_join_fallback_port | int)
+        if (kubeadm_join_force_primary_endpoint | bool)
+        else
+          (
+            (control_plane_endpoint_port | int)
+            if (kubeadm_join_vip_wait is succeeded)
+            else (kubeadm_join_fallback_port | int)
+          )
       }}
   when: not (is_primary_control_plane | bool)
 

@@ -295,3 +295,10 @@
 ### Изменено
 - Обновлен `inventories/prod/group_vars/all.yml`: добавлен `selinux_target_mode: Disabled` для применения режима SELinux `disabled` на всех узлах как временный диагностический обход.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-040`.
+
+## 2026-02-24 (kubeadm join forced primary endpoint mode)
+### Изменено
+- Обновлен `roles/kubernetes_core/defaults/main.yml`: добавлен параметр `kubeadm_join_force_primary_endpoint` для принудительного join через `primary_control_plane:6443`.
+- Обновлен `roles/kubernetes_core/tasks/main.yml`: probe VIP для join отключается при `kubeadm_join_force_primary_endpoint=true`, endpoint выбирается сразу как fallback на primary.
+- Обновлен `inventories/prod/group_vars/all.yml`: включен `kubeadm_join_force_primary_endpoint: true` для устранения задержек на VIP precheck в текущем контуре.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-041`.
