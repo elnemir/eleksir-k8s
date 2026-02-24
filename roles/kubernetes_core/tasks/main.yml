@@ -438,14 +438,50 @@
   when: not (is_primary_control_plane | bool)
 
 - name: Wait for selected kubeadm join endpoint to become reachable
-  ansible.builtin.wait_for:
-    host: "{{ kubeadm_join_selected_host }}"
-    port: "{{ kubeadm_join_selected_port | int }}"
-    timeout: "{{ kubeadm_join_endpoint_check_timeout | int }}"
-  register: kubeadm_join_selected_endpoint_wait
-  until: kubeadm_join_selected_endpoint_wait is succeeded
-  retries: "{{ kubeadm_join_endpoint_check_retries | int }}"
-  delay: "{{ kubeadm_join_endpoint_check_delay | int }}"
+  block:
+    - name: Probe selected kubeadm join endpoint
+      ansible.builtin.wait_for:
+        host: "{{ kubeadm_join_selected_host }}"
+        port: "{{ kubeadm_join_selected_port | int }}"
+        timeout: "{{ kubeadm_join_endpoint_check_timeout | int }}"
+      register: kubeadm_join_selected_endpoint_wait
+      until: kubeadm_join_selected_endpoint_wait is succeeded
+      retries: "{{ kubeadm_join_endpoint_check_retries | int }}"
+      delay: "{{ kubeadm_join_endpoint_check_delay | int }}"
+  rescue:
+    - name: Collect route diagnostics to selected join endpoint
+      ansible.builtin.command: "ip route get {{ kubeadm_join_selected_host }}"
+      register: kubeadm_join_route_diag
+      changed_when: false
+      failed_when: false
+
+    - name: Collect TCP probe diagnostics to selected join endpoint
+      ansible.builtin.shell: >-
+        timeout {{ kubeadm_join_endpoint_check_timeout | int }}
+        bash -c '</dev/tcp/{{ kubeadm_join_selected_host }}/{{ kubeadm_join_selected_port | int }}'
+      register: kubeadm_join_tcp_diag
+      changed_when: false
+      failed_when: false
+
+    - name: Collect readyz diagnostics to selected join endpoint
+      ansible.builtin.command: >-
+        curl -k --connect-timeout {{ kubeadm_join_endpoint_check_timeout | int }}
+        https://{{ kubeadm_join_selected_host }}:{{ kubeadm_join_selected_port | int }}/readyz
+      register: kubeadm_join_readyz_diag
+      changed_when: false
+      failed_when: false
+
+    - name: Fail with aggregated join endpoint diagnostics
+      ansible.builtin.fail:
+        msg: |
+          Selected kubeadm join endpoint is unreachable from node {{ inventory_hostname }}.
+          Selected endpoint: {{ kubeadm_join_selected_endpoint }}
+          Route probe rc={{ kubeadm_join_route_diag.rc | default('n/a') }}:
+          {{ (kubeadm_join_route_diag.stdout | default('') | trim) if (kubeadm_join_route_diag.stdout | default('') | trim | length > 0) else (kubeadm_join_route_diag.stderr | default('') | trim) }}
+          TCP probe rc={{ kubeadm_join_tcp_diag.rc | default('n/a') }}:
+          {{ (kubeadm_join_tcp_diag.stdout | default('') | trim) if (kubeadm_join_tcp_diag.stdout | default('') | trim | length > 0) else (kubeadm_join_tcp_diag.stderr | default('') | trim) }}
+          readyz probe rc={{ kubeadm_join_readyz_diag.rc | default('n/a') }}:
+          {{ (kubeadm_join_readyz_diag.stdout | default('') | trim) if (kubeadm_join_readyz_diag.stdout | default('') | trim | length > 0) else (kubeadm_join_readyz_diag.stderr | default('') | trim) }}
   when: not (is_primary_control_plane | bool)
 
 - name: Join secondary control-plane nodes

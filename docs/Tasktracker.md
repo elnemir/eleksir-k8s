@@ -54,6 +54,7 @@
 | T-039 | Kubeadm Join Endpoint Fallback | Добавить fallback `primary_control_plane:6443` для `kubeadm join` при недоступности VIP endpoint | Критический | Завершена (без стендовой валидации) |
 | T-040 | SELinux Temporary Disable | Временно отключить SELinux на всех узлах для диагностики нестабильности join/VIP | Высокий | Завершена (без стендовой валидации) |
 | T-041 | Kubeadm Join Forced Primary Endpoint | Принудительно выполнять `kubeadm join` через `primary_control_plane:6443` без VIP precheck в проблемном контуре | Критический | Завершена (без стендовой валидации) |
+| T-042 | Join Endpoint Diagnostics | Добавить auto-диагностику сети при падении `wait_for` выбранного `kubeadm join` endpoint | Высокий | Завершена (без стендовой валидации) |
 
 ## Собранные данные (2026-02-19)
 - VMware: `vCenter 7.0.3`, `ESXi 7.0.3`, `clone_from_template`, шаблон `k8s-pcp-template`.
@@ -112,6 +113,7 @@
 - В `inventories/prod/group_vars/all.yml` добавлен `selinux_target_mode: Disabled` как временный диагностический режим для всех узлов (требуется reboot для полного применения).
 - В роли `kubernetes_core` добавлен режим `kubeadm_join_force_primary_endpoint`, отключающий VIP probe и принудительно выбирающий endpoint `primary_control_plane:6443` для join.
 - В `inventories/prod/group_vars/all.yml` включен `kubeadm_join_force_primary_endpoint: true` для текущего troubleshooting-контура.
+- В `roles/kubernetes_core/tasks/main.yml` добавлен `block/rescue` и авто-диагностика сети на joining-ноде при недоступности выбранного endpoint (`ip route get`, TCP probe, `curl /readyz`) с агрегированным fail-сообщением.
 
 ## Декомпозиция ближайшего этапа (сбор данных)
 - [x] Утвердить схему IP-адресов и список нод/ролей.

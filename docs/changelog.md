@@ -302,3 +302,10 @@
 - Обновлен `roles/kubernetes_core/tasks/main.yml`: probe VIP для join отключается при `kubeadm_join_force_primary_endpoint=true`, endpoint выбирается сразу как fallback на primary.
 - Обновлен `inventories/prod/group_vars/all.yml`: включен `kubeadm_join_force_primary_endpoint: true` для устранения задержек на VIP precheck в текущем контуре.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-041`.
+
+## 2026-02-24 (kubeadm join endpoint failure diagnostics)
+### Изменено
+- Обновлен `roles/kubernetes_core/tasks/main.yml`: ожидание доступности выбранного join endpoint переведено в `block/rescue`.
+- Обновлен `roles/kubernetes_core/tasks/main.yml`: в `rescue` добавлен сбор сетевой диагностики на joining-ноде (`ip route get`, TCP probe `bash /dev/tcp`, `curl /readyz`).
+- Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлен итоговый `fail` с агрегированным диагностическим выводом для ускорения root-cause анализа.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-042`.
