@@ -104,6 +104,24 @@
       {{ kubernetes_swap_check.stdout | default('none') }}
   when: is_primary_control_plane | bool
 
+- name: Ensure control-plane endpoint listener is reachable before kubeadm init
+  ansible.builtin.wait_for:
+    host: "{{ control_plane_endpoint }}"
+    port: "{{ control_plane_endpoint_port | int }}"
+    timeout: "{{ kubeadm_init_endpoint_check_timeout | int }}"
+  register: kubernetes_control_plane_endpoint_check
+  retries: "{{ kubeadm_init_endpoint_check_retries | int }}"
+  delay: "{{ kubeadm_init_endpoint_check_delay | int }}"
+  until: kubernetes_control_plane_endpoint_check is succeeded
+  when: is_primary_control_plane | bool
+
+- name: Check existing cluster readiness before kubeadm init
+  ansible.builtin.command: kubectl --kubeconfig /etc/kubernetes/admin.conf get --raw=/readyz
+  register: kubernetes_existing_cluster_readyz
+  changed_when: false
+  failed_when: false
+  when: is_primary_control_plane | bool
+
 - name: Initialize Kubernetes cluster on primary control-plane
   block:
     - name: Run kubeadm init
@@ -112,8 +130,9 @@
         --config {{ kubeadm_config_path }}
         --upload-certs
         {{ '--allow-experimental-api' if (kubeadm_init_allow_experimental_api | bool) else '' }}
-      args:
-        creates: /etc/kubernetes/admin.conf
+        {{ ('--v=' ~ (kubeadm_init_verbosity | int | string)) if (kubeadm_init_verbose | bool) else '' }}
+      when:
+        - (kubernetes_existing_cluster_readyz.rc | default(1)) != 0
   rescue:
     - name: Collect kubelet service state
       ansible.builtin.command: systemctl is-active kubelet
@@ -128,7 +147,7 @@
       failed_when: false
 
     - name: Collect kubelet logs tail
-      ansible.builtin.command: journalctl -u kubelet -n 120 --no-pager
+      ansible.builtin.command: journalctl -u kubelet -n 300 --no-pager
       register: kubernetes_kubelet_logs
       changed_when: false
       failed_when: false
@@ -146,12 +165,52 @@
       changed_when: false
       failed_when: false
 
+    - name: Probe control-plane backend reachability for VIP diagnostics
+      ansible.builtin.wait_for:
+        host: "{{ hostvars[item].ansible_host | default(item) }}"
+        port: 6443
+        timeout: 2
+      loop: "{{ groups['control_plane'] }}"
+      register: kubernetes_control_plane_backend_checks
+      changed_when: false
+      failed_when: false
+
+    - name: Fail explicitly when VIP endpoint is reachable but all API backends are down
+      ansible.builtin.fail:
+        msg: >-
+          controlPlaneEndpoint {{ control_plane_endpoint }}:{{ control_plane_endpoint_port | int }}
+          is reachable, but no control-plane backend responds on port 6443.
+          This usually means HAProxy/keepalived VIP path is up while kube-apiserver backends are unavailable.
+          Reachable backends: {{
+            (
+              kubernetes_control_plane_backend_checks.results
+              | selectattr('failed', 'equalto', false)
+              | map(attribute='item')
+              | list
+            ) | join(', ')
+            | default('none', true)
+          }}.
+      when:
+        - (control_plane_endpoint_port | int) != 6443
+        - kubernetes_control_plane_endpoint_check is defined
+        - kubernetes_control_plane_endpoint_check is succeeded
+        - >
+          (
+            kubernetes_control_plane_backend_checks.results
+            | selectattr('failed', 'equalto', false)
+            | list
+            | length
+          ) == 0
+
     - name: Fail with kubeadm init diagnostics
       ansible.builtin.fail:
         msg: |
           kubeadm init failed on {{ inventory_hostname }}.
           kubeadm stderr:
           {{ ansible_failed_result.stderr | default('') }}
+
+          controlPlaneEndpoint check: {{ control_plane_endpoint }}:{{ control_plane_endpoint_port | int }}
+          pre-init readyz rc: {{ kubernetes_existing_cluster_readyz.rc | default('n/a') }}
 
           kubelet state: {{ kubernetes_kubelet_state.stdout | default('unknown') }}
           {{ kubernetes_runtime_service_name }} state: {{ kubernetes_runtime_state.stdout | default('unknown') }}

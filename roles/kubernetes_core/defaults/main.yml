@@ -24,3 +24,8 @@ kubeadm_cri_socket: "unix:///run/containerd/containerd.sock"
 kubernetes_admin_user: "{{ ansible_user | default('root') }}"
 kubeadm_config_api_version: "kubeadm.k8s.io/v1beta3"
 kubeadm_init_allow_experimental_api: false
+kubeadm_init_verbose: false
+kubeadm_init_verbosity: 5
+kubeadm_init_endpoint_check_timeout: 5
+kubeadm_init_endpoint_check_retries: 12
+kubeadm_init_endpoint_check_delay: 5

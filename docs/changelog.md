@@ -232,3 +232,16 @@
 - Обновлен `roles/kubernetes_core/tasks/main.yml`: `kubeadm init` переведен в `block/rescue` с автоматическим сбором диагностики (`systemctl is-active kubelet/runtime`, `journalctl -u kubelet`, `crictl ps`).
 - Обновлен `docs/runbook.md`: добавлен troubleshooting-раздел для сбоя `wait-control-plane` (`127.0.0.1:10248`) и команды повторного запуска.
 - Обновлен `docs/Tasktracker.md`: задача `T-030` переведена в `Завершена (без стендовой валидации)`.
+
+## 2026-02-24 (kubeadm init endpoint/idempotency hardening)
+### Изменено
+- Обновлен `roles/kubernetes_core/defaults/main.yml`: добавлены параметры управления precheck endpoint (`kubeadm_init_endpoint_check_*`) и управляемой детализацией логов `kubeadm` (`kubeadm_init_verbose`, `kubeadm_init_verbosity`).
+- Обновлен `roles/kubernetes_core/tasks/main.yml`: перед `kubeadm init` добавлена проверка доступности `controlPlaneEndpoint` (`wait_for` по `host:port`) с retry.
+- Обновлен `roles/kubernetes_core/tasks/main.yml`: idempotency `kubeadm init` переведена с `creates` на проверку фактической готовности API (`kubectl ... /readyz`) для исключения ложного пропуска после частичного init.
+- Обновлен `roles/kubernetes_core/tasks/main.yml`: расширена диагностика `rescue` (увеличен tail `kubelet` logs, добавлен контекст pre-init проверок в fail message).
+
+## 2026-02-24 (kubeadm init VIP backend guard)
+### Изменено
+- Обновлен `roles/kubernetes_core/tasks/main.yml`: в `rescue` добавлен probe доступности backend control-plane узлов на `:6443`.
+- Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлен явный `fail` для случая, когда `controlPlaneEndpoint` доступен, но ни один backend API не отвечает, с диагностическим сообщением по VIP/HAProxy-цепочке.
+- Обновлен `docs/Tasktracker.md`: задача `T-032` переведена в `Завершена (без стендовой валидации)`.
