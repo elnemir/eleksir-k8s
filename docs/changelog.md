@@ -451,3 +451,12 @@
 - Обновлен `roles/base_os/defaults/main.yml`: добавлен переключатель `base_os_disable_zram0` для управляемого отключения `zram0`.
 - Обновлен `roles/base_os/tasks/main.yml`: добавлено устойчивое отключение `zram0` на RedOS 8 (mask zram units, zram-generator override, `swapoff /dev/zram0`, проверка отсутствия zram в `swapon`).
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-064`.
+
+## 2026-02-25 (networkmanager dns + kubelet resolvconf alignment)
+### Изменено
+- Обновлен `roles/base_os/defaults/main.yml`: добавлены параметры управления DNS через `NetworkManager` для RedOS 8 (`base_os_manage_networkmanager_dns`, `base_os_networkmanager_ignore_auto_dns`).
+- Обновлен `roles/base_os/tasks/main.yml`: добавлена idempotent-настройка активного профиля `NetworkManager` через `nmcli` (DNS из `dns_servers`, optional `ignore-auto-dns`, `connection up`).
+- Обновлен `roles/kubernetes_core/defaults/main.yml`: добавлен параметр `kubelet_resolv_conf_path` (по умолчанию `/run/systemd/resolve/resolv.conf`).
+- Обновлен `roles/kubernetes_core/templates/kubeadm-config.yaml.j2`: в `KubeletConfiguration` добавлен `resolvConf`.
+- Обновлен `roles/validation/defaults/main.yml` и `roles/validation/tasks/main.yml`: добавлена проверка `resolvConf` в `/var/lib/kubelet/config.yaml` на всех узлах `k8s_cluster`.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-065`.

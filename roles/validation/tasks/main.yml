@@ -41,6 +41,38 @@
       - validation_nodes.stdout_lines | select('search', '\\sReady') | list | length == validation_nodes.stdout_lines | length
     fail_msg: "Not all Kubernetes nodes are Ready"
 
+- name: Read kubelet resolvConf from all k8s nodes
+  ansible.builtin.command: >-
+    awk '/^resolvConf:/{print $2}' /var/lib/kubelet/config.yaml
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['k8s_cluster'] }}"
+  register: validation_kubelet_resolv_conf_values
+  changed_when: false
+  failed_when: false
+  when: validation_enable_kubelet_resolv_conf_check | bool
+
+- name: Ensure kubelet resolvConf is aligned on all k8s nodes
+  ansible.builtin.assert:
+    that:
+      - (validation_kubelet_resolv_conf_values.results | rejectattr('rc', 'equalto', 0) | list | length) == 0
+      - >-
+        (
+          validation_kubelet_resolv_conf_values.results
+          | rejectattr('stdout', 'equalto', validation_kubelet_resolv_conf_expected)
+          | list
+          | length
+        ) == 0
+    fail_msg: >-
+      kubelet resolvConf mismatch detected. Expected={{ validation_kubelet_resolv_conf_expected }}.
+      Actual: {{
+        validation_kubelet_resolv_conf_values.results
+        | map(attribute='item')
+        | zip(validation_kubelet_resolv_conf_values.results | map(attribute='stdout'))
+        | map('join', '=')
+        | join(', ')
+      }}.
+  when: validation_enable_kubelet_resolv_conf_check | bool
+
 - name: Validate control-plane API VIP variables
   ansible.builtin.assert:
     that:

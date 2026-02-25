@@ -77,6 +77,7 @@
 | T-062 | Ingress Helm Bootstrap | Добавить автоустановку `helm` в роли `ingress_nginx` при отсутствии бинаря | Высокий | Завершена |
 | T-063 | Ingress Helm Path Hardening | Перевести проверку/вызов `helm` в `ingress_nginx` на абсолютный путь и убрать зависимость от shell PATH | Высокий | Завершена |
 | T-064 | Base OS ZRAM Disable | Добавить устойчивое отключение `zram0` на RedOS 8 (runtime + persist) в роли `base_os` | Высокий | Завершена |
+| T-065 | NM DNS and Kubelet ResolvConf | Настроить DNS через `NetworkManager` и зафиксировать `kubelet resolvConf` на `/run/systemd/resolve/resolv.conf` с валидацией на всех k8s-нодах | Критический | Завершена |
 
 ## Собранные данные (2026-02-19)
 - VMware: `vCenter 7.0.3`, `ESXi 7.0.3`, `clone_from_template`, шаблон `k8s-pcp-template`.
@@ -160,6 +161,7 @@
 - Роль `ingress_nginx` сделана самодостаточной: при отсутствии `helm` выполняется автоматическая установка бинаря с retry и контролем целостности архива.
 - В роли `ingress_nginx` устранена зависимость от `command -v helm`: использованы `stat` и абсолютный путь `/usr/local/bin/helm` для проверки и выполнения команд.
 - В роли `base_os` добавлено управляемое отключение `zram0` на RedOS 8: mask системных zram-юнитов, override для `zram-generator`, `swapoff /dev/zram0` и проверка, что активный swap не содержит `zram`.
+- Добавлена интеграция с `NetworkManager` для DNS (`nmcli`) и выравнивание `kubelet resolvConf` на `/run/systemd/resolve/resolv.conf` с автоматической проверкой на всех узлах `k8s_cluster` в роли `validation`.
 
 ## Декомпозиция ближайшего этапа (сбор данных)
 - [x] Утвердить схему IP-адресов и список нод/ролей.

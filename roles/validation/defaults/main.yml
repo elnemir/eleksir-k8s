@@ -22,3 +22,5 @@ validation_control_plane_endpoint_port: "{{ control_plane_endpoint_port | defaul
 validation_api_readyz_path: /readyz
 validation_api_vip_kubectl_insecure_skip_tls_verify: true
 validation_failover_wait_seconds: 15
+validation_enable_kubelet_resolv_conf_check: true
+validation_kubelet_resolv_conf_expected: /run/systemd/resolve/resolv.conf

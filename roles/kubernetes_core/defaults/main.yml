@@ -21,6 +21,7 @@ kubernetes_repo_baseurl: "https://pkgs.k8s.io/core:/stable:/{{ kubernetes_repo_c
 kubernetes_repo_gpgkey: "{{ kubernetes_repo_baseurl }}repodata/repomd.xml.key"
 
 kubeadm_cri_socket: "unix:///run/containerd/containerd.sock"
+kubelet_resolv_conf_path: /run/systemd/resolve/resolv.conf
 kubernetes_admin_user: "{{ ansible_user | default('root') }}"
 kubeadm_config_api_version: "kubeadm.k8s.io/v1beta3"
 kubeadm_init_allow_experimental_api: false

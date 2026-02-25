@@ -20,6 +20,8 @@ base_os_disable_zram0: true
 base_os_manage_time: true
 base_os_manage_hostname: true
 base_os_manage_hosts_file: true
+base_os_manage_networkmanager_dns: true
+base_os_networkmanager_ignore_auto_dns: true
 
 base_os_kernel_modules:
   - overlay

@@ -29,6 +29,85 @@
     name: "{{ base_os_packages }}"
     state: present
 
+- name: Get active NetworkManager connection for primary interface
+  ansible.builtin.command: >-
+    nmcli -t -f NAME,DEVICE connection show --active
+  register: base_os_nmcli_active_connections
+  changed_when: false
+  failed_when: false
+  when:
+    - base_os_manage_networkmanager_dns | bool
+    - dns_servers | default([]) | length > 0
+
+- name: Resolve active NetworkManager profile name
+  ansible.builtin.set_fact:
+    base_os_nm_profile_name: >-
+      {{
+        (
+          base_os_nmcli_active_connections.stdout_lines
+          | default([])
+          | select('search', ':(%s)$' % (ansible_default_ipv4.interface | default('')))
+          | map('regex_replace', ':(.+)$', '')
+          | list
+          | first
+        ) | default('')
+      }}
+  when:
+    - base_os_manage_networkmanager_dns | bool
+    - dns_servers | default([]) | length > 0
+
+- name: Ensure active NetworkManager profile was detected
+  ansible.builtin.assert:
+    that:
+      - base_os_nm_profile_name | default('') | length > 0
+    fail_msg: >-
+      Unable to detect active NetworkManager profile for interface
+      {{ ansible_default_ipv4.interface | default('unknown') }}.
+  when:
+    - base_os_manage_networkmanager_dns | bool
+    - dns_servers | default([]) | length > 0
+
+- name: Read current NetworkManager DNS settings
+  ansible.builtin.command: >-
+    nmcli -g ipv4.dns,ipv4.ignore-auto-dns connection show "{{ base_os_nm_profile_name }}"
+  register: base_os_nm_dns_current
+  changed_when: false
+  when:
+    - base_os_manage_networkmanager_dns | bool
+    - dns_servers | default([]) | length > 0
+    - base_os_nm_profile_name | default('') | length > 0
+
+- name: Calculate desired NetworkManager DNS settings
+  ansible.builtin.set_fact:
+    base_os_nm_dns_desired_servers: "{{ dns_servers | join(',') }}"
+    base_os_nm_dns_desired_ignore_auto: "{{ 'yes' if (base_os_networkmanager_ignore_auto_dns | bool) else 'no' }}"
+  when:
+    - base_os_manage_networkmanager_dns | bool
+    - dns_servers | default([]) | length > 0
+    - base_os_nm_profile_name | default('') | length > 0
+
+- name: Configure DNS servers via NetworkManager profile
+  ansible.builtin.command: >-
+    nmcli connection modify "{{ base_os_nm_profile_name }}"
+    ipv4.dns "{{ dns_servers | join(' ') }}"
+    ipv4.ignore-auto-dns {{ 'yes' if (base_os_networkmanager_ignore_auto_dns | bool) else 'no' }}
+  register: base_os_nm_dns_config
+  changed_when: true
+  when:
+    - base_os_manage_networkmanager_dns | bool
+    - dns_servers | default([]) | length > 0
+    - base_os_nm_profile_name | default('') | length > 0
+    - (base_os_nm_dns_current.stdout_lines | default(['', '']))[0] != base_os_nm_dns_desired_servers
+      or (base_os_nm_dns_current.stdout_lines | default(['', '']))[1] != base_os_nm_dns_desired_ignore_auto
+
+- name: Apply NetworkManager profile after DNS update
+  ansible.builtin.command: >-
+    nmcli connection up "{{ base_os_nm_profile_name }}"
+  register: base_os_nm_dns_apply
+  changed_when: true
+  when:
+    - base_os_nm_dns_config is changed
+
 - name: Configure kernel modules for Kubernetes
   ansible.builtin.copy:
     dest: /etc/modules-load.d/k8s.conf
