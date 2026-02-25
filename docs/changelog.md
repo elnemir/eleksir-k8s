@@ -439,3 +439,9 @@
 - Обновлен `roles/ingress_nginx/defaults/main.yml`: добавлены параметры автоустановки `helm` (версия, архитектура, retry/delay, минимальный размер архива, временный каталог).
 - Обновлен `roles/ingress_nginx/tasks/main.yml`: роль больше не падает при отсутствии `helm`; добавлена автоматическая установка `helm` (download/extract/install) перед `helm repo/upgrade`.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-062`.
+
+## 2026-02-25 (ingress helm path check hardening)
+### Изменено
+- Обновлен `roles/ingress_nginx/defaults/main.yml`: добавлен параметр `ingress_nginx_helm_binary_path` (`/usr/local/bin/helm`).
+- Обновлен `roles/ingress_nginx/tasks/main.yml`: проверка наличия `helm` переведена на `stat`/абсолютный путь вместо `command -v`, команды `helm` вызываются через абсолютный путь с явным `PATH`.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-063`.

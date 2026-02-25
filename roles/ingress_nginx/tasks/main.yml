@@ -14,29 +14,28 @@
       - ingress_nginx_controller_node_selector_value | length > 0
     fail_msg: "Ingress-nginx settings are incomplete"
 
-- name: Ensure helm binary is available
-  ansible.builtin.command: command -v helm
-  register: ingress_nginx_helm_binary
-  changed_when: false
-  failed_when: false
+- name: Check helm binary presence
+  ansible.builtin.stat:
+    path: "{{ ingress_nginx_helm_binary_path }}"
+  register: ingress_nginx_helm_binary_stat
 
 - name: Resolve architecture for ingress-nginx helm bootstrap
   ansible.builtin.set_fact:
     ingress_nginx_helm_arch: "{{ ingress_nginx_helm_arch_map.get(ansible_architecture, 'amd64') }}"
-  when: (ingress_nginx_helm_binary.rc | default(1)) != 0
+  when: not (ingress_nginx_helm_binary_stat.stat.exists | default(false))
 
 - name: Ensure temporary directory for ingress-nginx helm bootstrap exists
   ansible.builtin.file:
     path: "{{ ingress_nginx_helm_tmp_dir }}"
     state: directory
     mode: "0755"
-  when: (ingress_nginx_helm_binary.rc | default(1)) != 0
+  when: not (ingress_nginx_helm_binary_stat.stat.exists | default(false))
 
 - name: Check helm archive presence before bootstrap download
   ansible.builtin.stat:
     path: "{{ ingress_nginx_helm_tmp_dir }}/helm-{{ ingress_nginx_helm_version }}-linux-{{ ingress_nginx_helm_arch }}.tar.gz"
   register: ingress_nginx_helm_archive_stat_before
-  when: (ingress_nginx_helm_binary.rc | default(1)) != 0
+  when: not (ingress_nginx_helm_binary_stat.stat.exists | default(false))
 
 - name: Download helm archive for ingress-nginx bootstrap
   ansible.builtin.get_url:
@@ -50,7 +49,7 @@
   until: ingress_nginx_helm_archive_download is succeeded
   environment: "{{ proxy_environment | default({}) }}"
   when:
-    - (ingress_nginx_helm_binary.rc | default(1)) != 0
+    - not (ingress_nginx_helm_binary_stat.stat.exists | default(false))
     - not (
         (ingress_nginx_helm_archive_stat_before.stat.exists | default(false))
         and ((ingress_nginx_helm_archive_stat_before.stat.size | default(0) | int) >= (ingress_nginx_helm_archive_min_size_bytes | int))
@@ -60,7 +59,7 @@
   ansible.builtin.stat:
     path: "{{ ingress_nginx_helm_tmp_dir }}/helm-{{ ingress_nginx_helm_version }}-linux-{{ ingress_nginx_helm_arch }}.tar.gz"
   register: ingress_nginx_helm_archive_stat_after
-  when: (ingress_nginx_helm_binary.rc | default(1)) != 0
+  when: not (ingress_nginx_helm_binary_stat.stat.exists | default(false))
 
 - name: Ensure helm archive is valid for ingress-nginx bootstrap
   ansible.builtin.assert:
@@ -71,44 +70,49 @@
       Helm archive is missing or too small for ingress bootstrap:
       {{ ingress_nginx_helm_tmp_dir }}/helm-{{ ingress_nginx_helm_version }}-linux-{{ ingress_nginx_helm_arch }}.tar.gz
       size={{ ingress_nginx_helm_archive_stat_after.stat.size | default(0) }} bytes.
-  when: (ingress_nginx_helm_binary.rc | default(1)) != 0
+  when: not (ingress_nginx_helm_binary_stat.stat.exists | default(false))
 
 - name: Extract helm archive for ingress-nginx bootstrap
   ansible.builtin.unarchive:
     src: "{{ ingress_nginx_helm_tmp_dir }}/helm-{{ ingress_nginx_helm_version }}-linux-{{ ingress_nginx_helm_arch }}.tar.gz"
     dest: "{{ ingress_nginx_helm_tmp_dir }}"
     remote_src: true
-  when: (ingress_nginx_helm_binary.rc | default(1)) != 0
+  when: not (ingress_nginx_helm_binary_stat.stat.exists | default(false))
 
 - name: Install helm binary for ingress-nginx bootstrap
   ansible.builtin.copy:
     src: "{{ ingress_nginx_helm_tmp_dir }}/linux-{{ ingress_nginx_helm_arch }}/helm"
-    dest: /usr/local/bin/helm
+    dest: "{{ ingress_nginx_helm_binary_path }}"
     remote_src: true
     mode: "0755"
-  when: (ingress_nginx_helm_binary.rc | default(1)) != 0
+  when: not (ingress_nginx_helm_binary_stat.stat.exists | default(false))
 
 - name: Re-check helm binary availability
-  ansible.builtin.command: command -v helm
-  register: ingress_nginx_helm_binary_after_bootstrap
-  changed_when: false
-  failed_when: ingress_nginx_helm_binary_after_bootstrap.rc != 0
+  ansible.builtin.stat:
+    path: "{{ ingress_nginx_helm_binary_path }}"
+  register: ingress_nginx_helm_binary_stat_after_bootstrap
+
+- name: Ensure helm binary is available after bootstrap
+  ansible.builtin.assert:
+    that:
+      - ingress_nginx_helm_binary_stat_after_bootstrap.stat.exists | default(false)
+    fail_msg: "Helm binary is missing after bootstrap at {{ ingress_nginx_helm_binary_path }}"
 
 - name: Ensure ingress-nginx helm repository is configured
   ansible.builtin.command: >-
-    helm repo add {{ ingress_nginx_chart_repo_name }} {{ ingress_nginx_chart_repo_url }}
+    {{ ingress_nginx_helm_binary_path }} repo add {{ ingress_nginx_chart_repo_name }} {{ ingress_nginx_chart_repo_url }}
   register: ingress_nginx_repo_add
   changed_when: "'has been added' in (ingress_nginx_repo_add.stdout | default(''))"
   failed_when: >-
     ingress_nginx_repo_add.rc != 0
     and 'already exists' not in (ingress_nginx_repo_add.stderr | default(''))
-  environment: "{{ proxy_environment | default({}) }}"
+  environment: "{{ (proxy_environment | default({})) | combine({'PATH': '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'}) }}"
 
 - name: Refresh helm repositories
-  ansible.builtin.command: helm repo update
+  ansible.builtin.command: "{{ ingress_nginx_helm_binary_path }} repo update"
   register: ingress_nginx_repo_update
   changed_when: false
-  environment: "{{ proxy_environment | default({}) }}"
+  environment: "{{ (proxy_environment | default({})) | combine({'PATH': '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'}) }}"
 
 - name: Render ingress-nginx values
   ansible.builtin.template:
@@ -118,7 +122,7 @@
 
 - name: Deploy ingress-nginx release in node-IP mode
   ansible.builtin.command: >-
-    helm upgrade --install {{ ingress_nginx_release_name }} {{ ingress_nginx_chart_ref }}
+    {{ ingress_nginx_helm_binary_path }} upgrade --install {{ ingress_nginx_release_name }} {{ ingress_nginx_chart_ref }}
     --kubeconfig {{ ingress_nginx_kubeconfig }}
     --namespace {{ ingress_nginx_namespace }}
     --create-namespace
@@ -128,7 +132,7 @@
   changed_when: >-
     'Installing it now' in (ingress_nginx_release.stdout | default(''))
     or 'has been upgraded' in (ingress_nginx_release.stdout | default(''))
-  environment: "{{ proxy_environment | default({}) }}"
+  environment: "{{ (proxy_environment | default({})) | combine({'PATH': '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'}) }}"
 
 - name: Wait for ingress-nginx controller rollout
   ansible.builtin.command: >-

@@ -7,6 +7,7 @@ ingress_nginx_namespace: ingress-nginx
 ingress_nginx_chart_repo_name: ingress-nginx
 ingress_nginx_chart_repo_url: https://kubernetes.github.io/ingress-nginx
 ingress_nginx_chart_ref: ingress-nginx/ingress-nginx
+ingress_nginx_helm_binary_path: /usr/local/bin/helm
 ingress_nginx_values_path: /tmp/ingress-nginx-values.yaml
 ingress_nginx_wait_timeout: 600s
 ingress_nginx_controller_kind: DaemonSet

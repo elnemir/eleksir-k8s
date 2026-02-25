@@ -75,6 +75,7 @@
 | T-060 | Validation Node-IP Mode | Перевести ingress validation с `LoadBalancer` на `node_ip` режим (DaemonSet readiness + размещение controller на ingress-нодах) с обратной совместимостью | Критический | Завершена |
 | T-061 | Helm Tooling Download Resilience | Добавить устойчивую загрузку архивов `helm`/`helmfile` (reuse existing file, retries, archive-size guard) в `kubernetes_core` | Высокий | Завершена |
 | T-062 | Ingress Helm Bootstrap | Добавить автоустановку `helm` в роли `ingress_nginx` при отсутствии бинаря | Высокий | Завершена |
+| T-063 | Ingress Helm Path Hardening | Перевести проверку/вызов `helm` в `ingress_nginx` на абсолютный путь и убрать зависимость от shell PATH | Высокий | Завершена |
 
 ## Собранные данные (2026-02-19)
 - VMware: `vCenter 7.0.3`, `ESXi 7.0.3`, `clone_from_template`, шаблон `k8s-pcp-template`.
@@ -156,6 +157,7 @@
 - Роль `validation` переведена на проверку ingress в `node_ip` режиме (готовность ingress controller `DaemonSet` и проверка размещения controller-подов на выделенных ingress-нодах), при сохранении legacy-пути для `LoadBalancer`.
 - В роли `kubernetes_core` усилена загрузка `helm`/`helmfile`: добавлены pre/post `stat`, условная повторная загрузка (`force: false`) с retry и контроль минимального размера архивов для защиты от частичных/битых скачиваний.
 - Роль `ingress_nginx` сделана самодостаточной: при отсутствии `helm` выполняется автоматическая установка бинаря с retry и контролем целостности архива.
+- В роли `ingress_nginx` устранена зависимость от `command -v helm`: использованы `stat` и абсолютный путь `/usr/local/bin/helm` для проверки и выполнения команд.
 
 ## Декомпозиция ближайшего этапа (сбор данных)
 - [x] Утвердить схему IP-адресов и список нод/ролей.
