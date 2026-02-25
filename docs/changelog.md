@@ -427,3 +427,9 @@
 - Обновлен `roles/validation/tasks/main.yml`: добавлена валидация ingress в режиме `node_ip` (готовность `daemonset`, размещение controller-подов на выделенных ingress-нодах), при сохранении режима `loadbalancer` для обратной совместимости.
 - Обновлен `inventories/prod/group_vars/all.yml`: ingress-check снова включен и переведен в режим `node_ip`.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-060`.
+
+## 2026-02-25 (helm tooling download resilience hardening)
+### Изменено
+- Обновлен `roles/kubernetes_core/defaults/main.yml`: добавлены параметры retry/delay и минимального размера архива для загрузки CLI tooling (`helm`/`helmfile`).
+- Обновлен `roles/kubernetes_core/tasks/main.yml`: загрузка архивов `helm`/`helmfile` переведена на устойчивую схему (проверка существующего файла, `force: false`, retry, post-check размера архива).
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-061`.

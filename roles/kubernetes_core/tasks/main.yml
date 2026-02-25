@@ -530,11 +530,49 @@
     - kubernetes_install_helm_tools_on_control_plane | bool
 
 - name: Download Helm archive
+  ansible.builtin.stat:
+    path: "{{ kubernetes_cli_tools_tmp_dir }}/helm-{{ kubernetes_helm_version }}-linux-{{ kubernetes_cli_tools_arch }}.tar.gz"
+  register: kubernetes_helm_archive_stat_before
+  when:
+    - is_control_plane_node | bool
+    - kubernetes_install_helm_tools_on_control_plane | bool
+
+- name: Download Helm archive
   ansible.builtin.get_url:
     url: "https://get.helm.sh/helm-{{ kubernetes_helm_version }}-linux-{{ kubernetes_cli_tools_arch }}.tar.gz"
     dest: "{{ kubernetes_cli_tools_tmp_dir }}/helm-{{ kubernetes_helm_version }}-linux-{{ kubernetes_cli_tools_arch }}.tar.gz"
     mode: "0644"
+    force: false
+  register: kubernetes_helm_archive_download
+  retries: "{{ kubernetes_cli_tools_download_retries | int }}"
+  delay: "{{ kubernetes_cli_tools_download_delay | int }}"
+  until: kubernetes_helm_archive_download is succeeded
   environment: "{{ proxy_environment | default({}) }}"
+  when:
+    - is_control_plane_node | bool
+    - kubernetes_install_helm_tools_on_control_plane | bool
+    - not (
+        (kubernetes_helm_archive_stat_before.stat.exists | default(false))
+        and ((kubernetes_helm_archive_stat_before.stat.size | default(0) | int) >= (kubernetes_cli_tools_archive_min_size_bytes | int))
+      )
+
+- name: Validate Helm archive availability
+  ansible.builtin.stat:
+    path: "{{ kubernetes_cli_tools_tmp_dir }}/helm-{{ kubernetes_helm_version }}-linux-{{ kubernetes_cli_tools_arch }}.tar.gz"
+  register: kubernetes_helm_archive_stat_after
+  when:
+    - is_control_plane_node | bool
+    - kubernetes_install_helm_tools_on_control_plane | bool
+
+- name: Ensure Helm archive was downloaded successfully
+  ansible.builtin.assert:
+    that:
+      - kubernetes_helm_archive_stat_after.stat.exists | default(false)
+      - (kubernetes_helm_archive_stat_after.stat.size | default(0) | int) >= (kubernetes_cli_tools_archive_min_size_bytes | int)
+    fail_msg: >-
+      Helm archive is missing or too small after download:
+      {{ kubernetes_cli_tools_tmp_dir }}/helm-{{ kubernetes_helm_version }}-linux-{{ kubernetes_cli_tools_arch }}.tar.gz
+      size={{ kubernetes_helm_archive_stat_after.stat.size | default(0) }} bytes.
   when:
     - is_control_plane_node | bool
     - kubernetes_install_helm_tools_on_control_plane | bool
@@ -558,12 +596,50 @@
     - is_control_plane_node | bool
     - kubernetes_install_helm_tools_on_control_plane | bool
 
+- name: Check Helmfile archive presence before download
+  ansible.builtin.stat:
+    path: "{{ kubernetes_cli_tools_tmp_dir }}/helmfile_{{ kubernetes_helmfile_version_no_v }}_linux_{{ kubernetes_cli_tools_arch }}.tar.gz"
+  register: kubernetes_helmfile_archive_stat_before
+  when:
+    - is_control_plane_node | bool
+    - kubernetes_install_helm_tools_on_control_plane | bool
+
 - name: Download Helmfile archive
   ansible.builtin.get_url:
     url: "https://github.com/helmfile/helmfile/releases/download/{{ kubernetes_helmfile_version }}/helmfile_{{ kubernetes_helmfile_version_no_v }}_linux_{{ kubernetes_cli_tools_arch }}.tar.gz"
     dest: "{{ kubernetes_cli_tools_tmp_dir }}/helmfile_{{ kubernetes_helmfile_version_no_v }}_linux_{{ kubernetes_cli_tools_arch }}.tar.gz"
     mode: "0644"
+    force: false
+  register: kubernetes_helmfile_archive_download
+  retries: "{{ kubernetes_cli_tools_download_retries | int }}"
+  delay: "{{ kubernetes_cli_tools_download_delay | int }}"
+  until: kubernetes_helmfile_archive_download is succeeded
   environment: "{{ proxy_environment | default({}) }}"
+  when:
+    - is_control_plane_node | bool
+    - kubernetes_install_helm_tools_on_control_plane | bool
+    - not (
+        (kubernetes_helmfile_archive_stat_before.stat.exists | default(false))
+        and ((kubernetes_helmfile_archive_stat_before.stat.size | default(0) | int) >= (kubernetes_cli_tools_archive_min_size_bytes | int))
+      )
+
+- name: Validate Helmfile archive availability
+  ansible.builtin.stat:
+    path: "{{ kubernetes_cli_tools_tmp_dir }}/helmfile_{{ kubernetes_helmfile_version_no_v }}_linux_{{ kubernetes_cli_tools_arch }}.tar.gz"
+  register: kubernetes_helmfile_archive_stat_after
+  when:
+    - is_control_plane_node | bool
+    - kubernetes_install_helm_tools_on_control_plane | bool
+
+- name: Ensure Helmfile archive was downloaded successfully
+  ansible.builtin.assert:
+    that:
+      - kubernetes_helmfile_archive_stat_after.stat.exists | default(false)
+      - (kubernetes_helmfile_archive_stat_after.stat.size | default(0) | int) >= (kubernetes_cli_tools_archive_min_size_bytes | int)
+    fail_msg: >-
+      Helmfile archive is missing or too small after download:
+      {{ kubernetes_cli_tools_tmp_dir }}/helmfile_{{ kubernetes_helmfile_version_no_v }}_linux_{{ kubernetes_cli_tools_arch }}.tar.gz
+      size={{ kubernetes_helmfile_archive_stat_after.stat.size | default(0) }} bytes.
   when:
     - is_control_plane_node | bool
     - kubernetes_install_helm_tools_on_control_plane | bool

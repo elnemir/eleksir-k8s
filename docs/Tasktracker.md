@@ -73,6 +73,7 @@
 | T-058 | Temporary Ingress Validation Disable | Временно отключить ingress VIP-проверку в `group_vars` до развёртывания ingress namespace/service | Средний | Завершена |
 | T-059 | Ingress HostNetwork Automation | Добавить автоматическое развёртывание `ingress-nginx` в `DaemonSet + hostNetwork` на выделенных ingress-нодах в `bootstrap` | Критический | Завершена |
 | T-060 | Validation Node-IP Mode | Перевести ingress validation с `LoadBalancer` на `node_ip` режим (DaemonSet readiness + размещение controller на ingress-нодах) с обратной совместимостью | Критический | Завершена |
+| T-061 | Helm Tooling Download Resilience | Добавить устойчивую загрузку архивов `helm`/`helmfile` (reuse existing file, retries, archive-size guard) в `kubernetes_core` | Высокий | Завершена |
 
 ## Собранные данные (2026-02-19)
 - VMware: `vCenter 7.0.3`, `ESXi 7.0.3`, `clone_from_template`, шаблон `k8s-pcp-template`.
@@ -152,6 +153,7 @@
 - В `inventories/prod/group_vars/all.yml` временно отключена ingress VIP-проверка (`validation_enable_ingress_vip_check: false`) до появления `ingress-nginx/ingress-nginx-controller` в кластере.
 - Добавлена роль `ingress_nginx` и этап в `bootstrap` для автоматического деплоя ingress в режиме `DaemonSet + hostNetwork` на нодах с меткой `node-role.kubernetes.io/metallb=true`.
 - Роль `validation` переведена на проверку ingress в `node_ip` режиме (готовность ingress controller `DaemonSet` и проверка размещения controller-подов на выделенных ingress-нодах), при сохранении legacy-пути для `LoadBalancer`.
+- В роли `kubernetes_core` усилена загрузка `helm`/`helmfile`: добавлены pre/post `stat`, условная повторная загрузка (`force: false`) с retry и контроль минимального размера архивов для защиты от частичных/битых скачиваний.
 
 ## Декомпозиция ближайшего этапа (сбор данных)
 - [x] Утвердить схему IP-адресов и список нод/ролей.

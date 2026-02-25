@@ -43,6 +43,9 @@ kubernetes_helm_version: "v3.16.4"
 kubernetes_helmfile_version: "v0.168.0"
 kubernetes_helmfile_version_no_v: "{{ kubernetes_helmfile_version | regex_replace('^v', '') }}"
 kubernetes_cli_tools_tmp_dir: /tmp/kubernetes-cli-tools
+kubernetes_cli_tools_download_retries: 4
+kubernetes_cli_tools_download_delay: 5
+kubernetes_cli_tools_archive_min_size_bytes: 1048576
 kubernetes_cli_tools_arch_map:
   x86_64: amd64
   amd64: amd64
