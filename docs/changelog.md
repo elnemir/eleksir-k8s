@@ -420,3 +420,10 @@
 - Добавлена роль `roles/ingress_nginx` для автоматического развертывания `ingress-nginx` в режиме `DaemonSet + hostNetwork` на выделенных ingress-нодах (`k8s-mlb-*`).
 - Обновлен `playbooks/bootstrap.yml`: добавлен этап деплоя ingress после настройки MetalLB.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-059`.
+
+## 2026-02-25 (validation switched to ingress node-ip mode)
+### Изменено
+- Обновлен `roles/validation/defaults/main.yml`: добавлен режим проверки ingress (`validation_ingress_validation_mode`) и параметры проверки `DaemonSet`/controller-подов.
+- Обновлен `roles/validation/tasks/main.yml`: добавлена валидация ingress в режиме `node_ip` (готовность `daemonset`, размещение controller-подов на выделенных ingress-нодах), при сохранении режима `loadbalancer` для обратной совместимости.
+- Обновлен `inventories/prod/group_vars/all.yml`: ingress-check снова включен и переведен в режим `node_ip`.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-060`.

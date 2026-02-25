@@ -13,6 +13,10 @@ validation_metallb_namespace: metallb-system
 validation_ingress_namespace: ingress-nginx
 validation_ingress_service_name: ingress-nginx-controller
 validation_ingress_expected_vip: ""
+validation_ingress_validation_mode: node_ip
+validation_ingress_controller_daemonset_name: ingress-nginx-controller
+validation_ingress_controller_label_selector: app.kubernetes.io/component=controller
+validation_ingress_require_controller_on_all_metallb_nodes: true
 validation_control_plane_endpoint_host: "{{ control_plane_endpoint }}"
 validation_control_plane_endpoint_port: "{{ control_plane_endpoint_port | default(6443) }}"
 validation_api_readyz_path: /readyz

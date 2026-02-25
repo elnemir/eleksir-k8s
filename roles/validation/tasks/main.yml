@@ -222,6 +222,13 @@
       - validation_metallb_controller.stdout | int > 0
     fail_msg: "MetalLB controller is not ready"
 
+- name: Validate ingress validation mode
+  ansible.builtin.assert:
+    that:
+      - validation_ingress_validation_mode in ['loadbalancer', 'node_ip']
+    fail_msg: "Unsupported ingress validation mode: {{ validation_ingress_validation_mode }}"
+  when: validation_enable_ingress_vip_check | bool
+
 - name: Read ingress service type and VIP details
   ansible.builtin.command: >-
     kubectl --kubeconfig={{ validation_kubeconfig }}
@@ -231,7 +238,9 @@
   register: validation_ingress_service
   changed_when: false
   failed_when: false
-  when: validation_enable_ingress_vip_check | bool
+  when:
+    - validation_enable_ingress_vip_check | bool
+    - validation_ingress_validation_mode == 'loadbalancer'
 
 - name: Parse ingress service details
   ansible.builtin.set_fact:
@@ -241,7 +250,9 @@
       {{ ((validation_ingress_service.stdout.split('|') if (validation_ingress_service.stdout | length > 0) else []) + ['', '', ''])[1] }}
     validation_ingress_service_hostname: >-
       {{ ((validation_ingress_service.stdout.split('|') if (validation_ingress_service.stdout | length > 0) else []) + ['', '', ''])[2] }}
-  when: validation_enable_ingress_vip_check | bool
+  when:
+    - validation_enable_ingress_vip_check | bool
+    - validation_ingress_validation_mode == 'loadbalancer'
 
 - name: Show ingress service lookup diagnostics when command fails
   ansible.builtin.debug:
@@ -252,6 +263,7 @@
       stderr={{ validation_ingress_service.stderr | default('') }}.
   when:
     - validation_enable_ingress_vip_check | bool
+    - validation_ingress_validation_mode == 'loadbalancer'
     - (validation_ingress_service.rc | default(1)) != 0
   changed_when: false
 
@@ -268,7 +280,9 @@
       hostname={{ validation_ingress_service_hostname | default('') }},
       rc={{ validation_ingress_service.rc | default(-1) }},
       stderr={{ validation_ingress_service.stderr | default('') }}.
-  when: validation_enable_ingress_vip_check | bool
+  when:
+    - validation_enable_ingress_vip_check | bool
+    - validation_ingress_validation_mode == 'loadbalancer'
 
 - name: Validate expected ingress VIP when fixed VIP is configured
   ansible.builtin.assert:
@@ -277,7 +291,93 @@
     fail_msg: >-
       Expected ingress VIP {{ validation_ingress_expected_vip }} but got {{ validation_ingress_service_ip | default('') }}
       for {{ validation_ingress_namespace }}/{{ validation_ingress_service_name }}.
-  when: validation_enable_ingress_vip_check | bool
+  when:
+    - validation_enable_ingress_vip_check | bool
+    - validation_ingress_validation_mode == 'loadbalancer'
+
+- name: Read ingress controller daemonset rollout status (node-ip mode)
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ validation_kubeconfig }}
+    -n {{ validation_ingress_namespace }}
+    get daemonset {{ validation_ingress_controller_daemonset_name }}
+    -o jsonpath='{.status.desiredNumberScheduled}|{.status.numberReady}|{.status.numberAvailable}'
+  register: validation_ingress_daemonset_status
+  changed_when: false
+  failed_when: false
+  when:
+    - validation_enable_ingress_vip_check | bool
+    - validation_ingress_validation_mode == 'node_ip'
+
+- name: Parse ingress controller daemonset status
+  ansible.builtin.set_fact:
+    validation_ingress_daemonset_desired: >-
+      {{ ((validation_ingress_daemonset_status.stdout.split('|') if (validation_ingress_daemonset_status.stdout | default('') | length > 0) else []) + ['0', '0', '0'])[0] | int }}
+    validation_ingress_daemonset_ready: >-
+      {{ ((validation_ingress_daemonset_status.stdout.split('|') if (validation_ingress_daemonset_status.stdout | default('') | length > 0) else []) + ['0', '0', '0'])[1] | int }}
+    validation_ingress_daemonset_available: >-
+      {{ ((validation_ingress_daemonset_status.stdout.split('|') if (validation_ingress_daemonset_status.stdout | default('') | length > 0) else []) + ['0', '0', '0'])[2] | int }}
+  when:
+    - validation_enable_ingress_vip_check | bool
+    - validation_ingress_validation_mode == 'node_ip'
+
+- name: Validate ingress controller daemonset readiness (node-ip mode)
+  ansible.builtin.assert:
+    that:
+      - validation_ingress_daemonset_status.rc == 0
+      - validation_ingress_daemonset_desired > 0
+      - validation_ingress_daemonset_ready == validation_ingress_daemonset_desired
+      - validation_ingress_daemonset_available == validation_ingress_daemonset_desired
+    fail_msg: >-
+      Ingress controller daemonset validation failed for
+      {{ validation_ingress_namespace }}/{{ validation_ingress_controller_daemonset_name }}.
+      desired={{ validation_ingress_daemonset_desired | default(0) }},
+      ready={{ validation_ingress_daemonset_ready | default(0) }},
+      available={{ validation_ingress_daemonset_available | default(0) }},
+      rc={{ validation_ingress_daemonset_status.rc | default(-1) }},
+      stderr={{ validation_ingress_daemonset_status.stderr | default('') }}.
+  when:
+    - validation_enable_ingress_vip_check | bool
+    - validation_ingress_validation_mode == 'node_ip'
+
+- name: Read ingress controller pod nodes (node-ip mode)
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ validation_kubeconfig }}
+    -n {{ validation_ingress_namespace }}
+    get pods -l {{ validation_ingress_controller_label_selector }}
+    -o jsonpath='{range .items[*]}{.spec.nodeName}{"\n"}{end}'
+  register: validation_ingress_controller_nodes_raw
+  changed_when: false
+  failed_when: false
+  when:
+    - validation_enable_ingress_vip_check | bool
+    - validation_ingress_validation_mode == 'node_ip'
+
+- name: Parse ingress controller pod nodes (node-ip mode)
+  ansible.builtin.set_fact:
+    validation_ingress_controller_nodes: >-
+      {{ validation_ingress_controller_nodes_raw.stdout_lines | default([]) | map('trim') | reject('equalto', '') | unique | list }}
+  when:
+    - validation_enable_ingress_vip_check | bool
+    - validation_ingress_validation_mode == 'node_ip'
+
+- name: Validate ingress controller node placement (node-ip mode)
+  ansible.builtin.assert:
+    that:
+      - validation_ingress_controller_nodes_raw.rc == 0
+      - validation_ingress_controller_nodes | length > 0
+      - (validation_ingress_controller_nodes | difference(groups['metallb'])) | length == 0
+      - >-
+        (not (validation_ingress_require_controller_on_all_metallb_nodes | bool))
+        or ((groups['metallb'] | difference(validation_ingress_controller_nodes)) | length == 0)
+    fail_msg: >-
+      Ingress controller node placement validation failed.
+      controller_nodes={{ validation_ingress_controller_nodes | default([]) | join(',') }},
+      metallb_nodes={{ groups['metallb'] | default([]) | join(',') }},
+      rc={{ validation_ingress_controller_nodes_raw.rc | default(-1) }},
+      stderr={{ validation_ingress_controller_nodes_raw.stderr | default('') }}.
+  when:
+    - validation_enable_ingress_vip_check | bool
+    - validation_ingress_validation_mode == 'node_ip'
 
 - name: Check NFS StorageClass existence
   ansible.builtin.command: >-
