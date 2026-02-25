@@ -243,6 +243,18 @@
       {{ ((validation_ingress_service.stdout.split('|') if (validation_ingress_service.stdout | length > 0) else []) + ['', '', ''])[2] }}
   when: validation_enable_ingress_vip_check | bool
 
+- name: Show ingress service lookup diagnostics when command fails
+  ansible.builtin.debug:
+    msg: >-
+      Ingress service lookup failed for {{ validation_ingress_namespace }}/{{ validation_ingress_service_name }}:
+      rc={{ validation_ingress_service.rc | default(-1) }},
+      stdout={{ validation_ingress_service.stdout | default('') }},
+      stderr={{ validation_ingress_service.stderr | default('') }}.
+  when:
+    - validation_enable_ingress_vip_check | bool
+    - (validation_ingress_service.rc | default(1)) != 0
+  changed_when: false
+
 - name: Validate ingress service exposure and external address
   ansible.builtin.assert:
     that:
@@ -254,7 +266,8 @@
       type={{ validation_ingress_service_type | default('') }},
       ip={{ validation_ingress_service_ip | default('') }},
       hostname={{ validation_ingress_service_hostname | default('') }},
-      rc={{ validation_ingress_service.rc | default(-1) }}.
+      rc={{ validation_ingress_service.rc | default(-1) }},
+      stderr={{ validation_ingress_service.stderr | default('') }}.
   when: validation_enable_ingress_vip_check | bool
 
 - name: Validate expected ingress VIP when fixed VIP is configured

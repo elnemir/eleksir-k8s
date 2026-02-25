@@ -402,3 +402,9 @@
 - Обновлен `docs/qa.md`: синхронизированы фактические параметры окружения (диапазон MetalLB, текущий SELinux-режим в диагностическом контуре).
 - Обновлен `docs/Diary.md`: добавлены записи по последним инцидентам и решениям (`T-054/T-055`) с фиксацией текущего состояния.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-056`.
+
+## 2026-02-25 (validation ingress diagnostics hardening)
+### Изменено
+- Обновлен `roles/validation/tasks/main.yml`: перед assert ingress-проверки добавлен диагностический вывод при `kubectl get svc` с `rc != 0` (rc/stdout/stderr).
+- Обновлен `roles/validation/tasks/main.yml`: расширено fail-сообщение ingress assert с добавлением `stderr` для ускорения root-cause анализа.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-057`.
