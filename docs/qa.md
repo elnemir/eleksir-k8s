@@ -26,7 +26,7 @@
 - Management subnet: `10.255.106.0/26`
 - Pod subnet: `10.245.0.0/16`
 - Service subnet: `10.246.0.0/16`
-- MetalLB external pool: `10.255.106.21-10.255.106.31`
+- MetalLB external pool: `10.255.106.21-10.255.106.30`
 - Узлы:
   - `k8s-scp-01` `10.255.106.10`
   - `k8s-scp-02` `10.255.106.11`
@@ -76,7 +76,7 @@
   - ansible user: `enemirov`
   - ssh auth: `password`
   - bastion: `no`
-  - selinux: `Enforcing`
+- selinux: `Disabled` (временный диагностический режим в текущем контуре; целевое состояние после стабилизации — `Enforcing`)
   - secrets store: `ansible-vault`
 - Operations:
   - ansible control node: `Debian 13`

@@ -368,3 +368,21 @@
 ### Проблемы
 - Без авто-диагностики разбор причины требует ручного сбора логов на каждой ноде.
 - Требуется повторный запуск `playbooks/bootstrap.yml --tags k8s` на control host для подтверждения исправления на стенде.
+
+## Дата: 2026-02-24/25 (сессия 27, bootstrap/networking/metallb/proxy stabilization)
+### Наблюдения
+- Серия взаимосвязанных сбоев в bootstrap/join была обусловлена комбинацией сетевой доступности, SELinux/firewalld, CNI backend и webhook-достижимости.
+- Для текущего диагностического контура применен временный `selinux_target_mode: Disabled`; подтверждена необходимость возврата к `Enforcing` после стабилизации.
+- Для failover-валидации обнаружен edge-case: шаблонизация `delegate_to` могла падать до вычисления `when`.
+
+### Решения
+- Усилены роли `kubernetes_core`, `networking`, `metallb` (precheck/retry/rescue-диагностика, endpoint fallback/force-primary mode, Calico VXLAN, webhook delete/recreate + proxy environment).
+- Добавлена установка `helm` и `helmfile` на control-plane в `kubernetes_core`.
+- Добавлен отдельный operational playbook `playbooks/manage_proxy.yml` и поддержка `proxy_state=present|absent` в роли `proxy`.
+- В `validation` последовательно реализованы:
+  - безопасная прединициализация `validation_failover_source_host` (`T-054`);
+  - fallback в `delegate_to` через `default(inventory_hostname)` для исключения ошибки шаблонизации (`T-055`).
+
+### Проблемы
+- Нужен финальный стендовый цикл подтверждения: `bootstrap -> validate -> failover --tags failover` и проверка стабильности без ручных workaround.
+- После завершения диагностики требуется плановый возврат SELinux к `Enforcing` с подтверждением совместимости ролей.

@@ -81,6 +81,7 @@ playbooks/
   storage.yml
   validate.yml
   reinstall_cluster_and_nfs.yml
+  manage_proxy.yml
 roles/
   base_os/
   proxy/
@@ -166,9 +167,11 @@ roles/
   - установка базового runtime выполняется без жесткой зависимости на пакет `cri-tools`;
   - установка `cri-tools` управляется параметрами `container_runtime_install_cri_tools` и `container_runtime_cri_tools_package`.
 - CNI: `calico`
+- Calico backend mode: `vxlan` (`IPIP=Never`, `VXLAN=Always`, `CLUSTER_TYPE=k8s`)
 - Control plane endpoint: `10.255.106.20`
 - Control plane endpoint port: `8443`
 - Control-plane API HA: `keepalived + haproxy` на control-plane нодах
+- kubeadm join mode (текущий troubleshooting-контур): `kubeadm_join_force_primary_endpoint=true` (join через `primary_control_plane:6443`)
 - Management CIDR: `10.255.106.0/26`
 - Pod CIDR: `10.245.0.0/16`
 - Service CIDR: `10.246.0.0/16`
@@ -221,6 +224,7 @@ roles/
 - Пакеты RedOS: `external_via_proxy`
 - Registry/образы: `external_via_proxy`
 - Для неизолированной сети допускается установка `proxy_enabled=false`.
+- Для оперативного переключения proxy-режима без полного bootstrap используется отдельный playbook `playbooks/manage_proxy.yml` с `proxy_state=present|absent`.
 
 ### 12.5 NFS
 - NFS OS: `RedOS 8.0.2`
@@ -250,7 +254,7 @@ roles/
 - Ansible user: `enemirov`
 - SSH auth: `password`
 - Bastion: `no`
-- SELinux: `Enforcing`
+- SELinux: `Disabled` (временный диагностический режим для текущего контура; целевой baseline остается `Enforcing` после завершения сетевой диагностики)
 - Secrets store: `ansible-vault`
 - Ansible control node: `Debian 13`
 - ansible-core: `2.19.4`
@@ -312,3 +316,5 @@ roles/
   - должен существовать отдельный деструктивный сценарий полной переустановки (`cluster_and_nfs`).
   - для NFS должна поддерживаться опциональная подготовка выделенного data-диска.
   - control-plane endpoint должен быть реализован как HA VIP через `keepalived + haproxy`.
+  - должен быть отдельный operational playbook для переключения proxy-режима (`manage_proxy.yml`).
+  - failover-сценарий validation должен быть устойчив к отсутствию `validation_failover_source_host` (safe init + `delegate_to` fallback).

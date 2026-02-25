@@ -68,6 +68,7 @@
 | T-053 | Runbook Proxy Operations | Добавить в runbook раздел по оперативному переключению proxy-режима через `playbooks/manage_proxy.yml` | Средний | Завершена |
 | T-054 | Validation Failover Source Guard | Устранить падение failover-проверки при undefined `validation_failover_source_host` через безопасную инициализацию и guards | Высокий | Завершена |
 | T-055 | Validation Delegate Fallback Guard | Исключить падение шаблонизации `delegate_to` в failover-блоке через безопасный fallback `default(inventory_hostname)` | Высокий | Завершена |
+| T-056 | Documentation Full Sync | Полностью синхронизировать `Project.md`, `runbook.md`, `qa.md`, `Diary.md` с актуальным состоянием ролей и эксплуатационных сценариев | Высокий | Завершена |
 
 ## Собранные данные (2026-02-19)
 - VMware: `vCenter 7.0.3`, `ESXi 7.0.3`, `clone_from_template`, шаблон `k8s-pcp-template`.
@@ -142,6 +143,7 @@
 - В `docs/runbook.md` добавлены эксплуатационные команды переключения proxy (`present/absent`) через `playbooks/manage_proxy.yml` и базовые проверки результата.
 - В роли `validation` добавлена безопасная прединициализация `validation_failover_source_host` и защитные `when`-условия для failover-операций `keepalived`, чтобы исключить `undefined` в `delegate_to`.
 - В роли `validation` для failover-операций `keepalived` добавлен fallback в `delegate_to` через `validation_failover_source_host | default(inventory_hostname)`, чтобы исключить падение до вычисления `when`.
+- Выполнена полная синхронизация эксплуатационной и архитектурной документации (`Project.md`, `runbook.md`, `qa.md`, `Diary.md`) с текущим фактическим состоянием кластера и последних фиксов validation failover.
 
 ## Декомпозиция ближайшего этапа (сбор данных)
 - [x] Утвердить схему IP-адресов и список нод/ролей.

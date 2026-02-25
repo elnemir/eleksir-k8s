@@ -394,3 +394,11 @@
 ### Изменено
 - Обновлен `roles/validation/tasks/main.yml`: для failover-операций `keepalived` применен безопасный fallback в `delegate_to` через `validation_failover_source_host | default(inventory_hostname)` для исключения ошибок шаблонизации при undefined-переменной.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-055`.
+
+## 2026-02-25 (full documentation synchronization)
+### Изменено
+- Обновлен `docs/Project.md`: синхронизированы текущие архитектурные параметры (Calico VXLAN, временный режим SELinux `Disabled`, playbook `manage_proxy.yml`, актуальные операционные особенности validation failover).
+- Обновлен `docs/runbook.md`: добавлен troubleshooting-блок для failover-валидации и рекомендуемая команда запуска с явным флагом `validation_enable_control_plane_vip_failover_test=true`.
+- Обновлен `docs/qa.md`: синхронизированы фактические параметры окружения (диапазон MetalLB, текущий SELinux-режим в диагностическом контуре).
+- Обновлен `docs/Diary.md`: добавлены записи по последним инцидентам и решениям (`T-054/T-055`) с фиксацией текущего состояния.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-056`.

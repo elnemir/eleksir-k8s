@@ -176,6 +176,13 @@ ansible-playbook -i inventories/prod/hosts.yml playbooks/validate.yml \
 ansible-playbook -i inventories/prod/hosts.yml playbooks/validate.yml --tags failover
 ```
 
+Рекомендованный запуск failover в текущем контуре (явно включить проверку):
+```bash
+ansible-playbook -i inventories/prod/hosts.yml playbooks/validate.yml \
+  --tags failover \
+  -e validation_enable_control_plane_vip_failover_test=true
+```
+
 ## 11. Полезные команды диагностики
 ```bash
 # Kubernetes
@@ -233,6 +240,16 @@ ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml
 ```bash
 ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml --tags k8s
 ```
+
+Если failover-валидация падала с `validation_failover_source_host is undefined`:
+1. Убедиться, что используется актуальная версия роли `validation` с guard/fallback для `delegate_to`.
+2. Запускать failover по команде с явным флагом:
+```bash
+ansible-playbook -i inventories/prod/hosts.yml playbooks/validate.yml \
+  --tags failover \
+  -e validation_enable_control_plane_vip_failover_test=true
+```
+3. Проверить, что в конце play `failed=0`, а `keepalived` на source-host возвращен в `started`.
 
 ## 12. Опция data-диска для NFS
 Если нужен отдельный диск под `nfs_export_path`, настройте в `inventories/prod/group_vars/nfs.yml`:
