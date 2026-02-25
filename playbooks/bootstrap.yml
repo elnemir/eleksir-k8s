@@ -59,3 +59,11 @@
   roles:
     - role: metallb
       tags: [metallb, ingress]
+
+- name: Deploy ingress-nginx in node-IP mode
+  hosts: control_plane[0]
+  become: true
+  gather_facts: true
+  roles:
+    - role: ingress_nginx
+      tags: [ingress, k8s]

@@ -1,0 +1,65 @@
+# ## Задача: Роль ingress_nginx
+# - **Статус**: В процессе
+# - **Описание**: Установка ingress-nginx в режиме DaemonSet + hostNetwork на ingress-нодах.
+- name: Validate ingress-nginx settings
+  ansible.builtin.assert:
+    that:
+      - groups['metallb'] | length > 0
+      - ingress_nginx_release_name | length > 0
+      - ingress_nginx_namespace | length > 0
+      - ingress_nginx_chart_repo_name | length > 0
+      - ingress_nginx_chart_repo_url | length > 0
+      - ingress_nginx_chart_ref | length > 0
+      - ingress_nginx_controller_node_selector_key | length > 0
+      - ingress_nginx_controller_node_selector_value | length > 0
+    fail_msg: "Ingress-nginx settings are incomplete"
+
+- name: Ensure helm binary is available
+  ansible.builtin.command: command -v helm
+  register: ingress_nginx_helm_binary
+  changed_when: false
+  failed_when: ingress_nginx_helm_binary.rc != 0
+
+- name: Ensure ingress-nginx helm repository is configured
+  ansible.builtin.command: >-
+    helm repo add {{ ingress_nginx_chart_repo_name }} {{ ingress_nginx_chart_repo_url }}
+  register: ingress_nginx_repo_add
+  changed_when: "'has been added' in (ingress_nginx_repo_add.stdout | default(''))"
+  failed_when: >-
+    ingress_nginx_repo_add.rc != 0
+    and 'already exists' not in (ingress_nginx_repo_add.stderr | default(''))
+  environment: "{{ proxy_environment | default({}) }}"
+
+- name: Refresh helm repositories
+  ansible.builtin.command: helm repo update
+  register: ingress_nginx_repo_update
+  changed_when: false
+  environment: "{{ proxy_environment | default({}) }}"
+
+- name: Render ingress-nginx values
+  ansible.builtin.template:
+    src: values.yaml.j2
+    dest: "{{ ingress_nginx_values_path }}"
+    mode: "0644"
+
+- name: Deploy ingress-nginx release in node-IP mode
+  ansible.builtin.command: >-
+    helm upgrade --install {{ ingress_nginx_release_name }} {{ ingress_nginx_chart_ref }}
+    --kubeconfig {{ ingress_nginx_kubeconfig }}
+    --namespace {{ ingress_nginx_namespace }}
+    --create-namespace
+    -f {{ ingress_nginx_values_path }}
+    --wait --timeout {{ ingress_nginx_wait_timeout }}
+  register: ingress_nginx_release
+  changed_when: >-
+    'Installing it now' in (ingress_nginx_release.stdout | default(''))
+    or 'has been upgraded' in (ingress_nginx_release.stdout | default(''))
+  environment: "{{ proxy_environment | default({}) }}"
+
+- name: Wait for ingress-nginx controller rollout
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ ingress_nginx_kubeconfig }}
+    -n {{ ingress_nginx_namespace }}
+    rollout status daemonset/{{ ingress_nginx_release_name }}-controller
+    --timeout={{ ingress_nginx_wait_timeout }}
+  changed_when: false

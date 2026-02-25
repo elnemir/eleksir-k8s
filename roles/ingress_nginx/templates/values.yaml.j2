@@ -1,0 +1,13 @@
+controller:
+  kind: {{ ingress_nginx_controller_kind }}
+  hostNetwork: {{ ingress_nginx_controller_host_network | bool | lower }}
+  dnsPolicy: {{ ingress_nginx_controller_dns_policy }}
+  nodeSelector:
+    {{ ingress_nginx_controller_node_selector_key }}: "{{ ingress_nginx_controller_node_selector_value }}"
+  hostPort:
+    enabled: {{ ingress_nginx_controller_hostport_enabled | bool | lower }}
+    ports:
+      http: {{ ingress_nginx_controller_hostport_http | int }}
+      https: {{ ingress_nginx_controller_hostport_https | int }}
+  service:
+    enabled: {{ ingress_nginx_controller_service_enabled | bool | lower }}

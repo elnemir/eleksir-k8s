@@ -1,0 +1,20 @@
+# ## Задача: Роль ingress_nginx
+# - **Статус**: В процессе
+# - **Описание**: Дефолтные параметры развертывания ingress-nginx в node-IP режиме.
+ingress_nginx_kubeconfig: /etc/kubernetes/admin.conf
+ingress_nginx_release_name: ingress-nginx
+ingress_nginx_namespace: ingress-nginx
+ingress_nginx_chart_repo_name: ingress-nginx
+ingress_nginx_chart_repo_url: https://kubernetes.github.io/ingress-nginx
+ingress_nginx_chart_ref: ingress-nginx/ingress-nginx
+ingress_nginx_values_path: /tmp/ingress-nginx-values.yaml
+ingress_nginx_wait_timeout: 600s
+ingress_nginx_controller_kind: DaemonSet
+ingress_nginx_controller_host_network: true
+ingress_nginx_controller_dns_policy: ClusterFirstWithHostNet
+ingress_nginx_controller_node_selector_key: node-role.kubernetes.io/metallb
+ingress_nginx_controller_node_selector_value: "true"
+ingress_nginx_controller_hostport_enabled: true
+ingress_nginx_controller_hostport_http: 80
+ingress_nginx_controller_hostport_https: 443
+ingress_nginx_controller_service_enabled: false
