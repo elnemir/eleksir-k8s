@@ -329,3 +329,11 @@
 - Обновлен `roles/networking/tasks/main.yml`: добавлен условный `rollout restart` для `daemonset/calico-node` и `deployment/calico-kube-controllers` при изменении сетевых параметров Calico.
 - Обновлен `inventories/prod/group_vars/all.yml`: включен режим Calico VXLAN (`network_calico_backend: vxlan`, `network_calico_ipv4pool_ipip: Never`, `network_calico_ipv4pool_vxlan: Always`).
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-045`.
+
+## 2026-02-25 (calico vxlan full migration without bird checks)
+### Изменено
+- Обновлен `roles/networking/defaults/main.yml`: добавлен параметр `network_calico_cluster_type` для управления `CLUSTER_TYPE` в `calico-node`.
+- Обновлен `roles/networking/tasks/main.yml`: при `network_calico_backend=vxlan` добавлен patch `CLUSTER_TYPE=k8s` для `daemonset/calico-node`.
+- Обновлен `roles/networking/tasks/main.yml`: при VXLAN добавлен patch health checks `calico-node` на felix-only (`-felix-live`, `-felix-ready`) для удаления зависимости от BIRD.
+- Обновлен `inventories/prod/group_vars/all.yml`: добавлен `network_calico_cluster_type: "k8s"` для production-контура.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-046`.

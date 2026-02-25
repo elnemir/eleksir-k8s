@@ -42,6 +42,26 @@
   changed_when: "'(no change)' not in (networking_calico_ds_patch.stdout | default(''))"
   when: network_cni == 'calico'
 
+- name: Configure Calico node cluster type for selected backend
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ network_kubeconfig }}
+    -n kube-system patch daemonset calico-node --type strategic
+    -p '{"spec":{"template":{"spec":{"containers":[{"name":"calico-node","env":[{"name":"CLUSTER_TYPE","value":"{{ network_calico_cluster_type }}"}]}]}}}}'
+  register: networking_calico_cluster_type_patch
+  changed_when: "'(no change)' not in (networking_calico_cluster_type_patch.stdout | default(''))"
+  when: network_cni == 'calico'
+
+- name: Configure Calico node health checks for VXLAN mode
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ network_kubeconfig }}
+    -n kube-system patch daemonset calico-node --type strategic
+    -p '{"spec":{"template":{"spec":{"containers":[{"name":"calico-node","livenessProbe":{"exec":{"command":["/bin/calico-node","-felix-live"]}},"readinessProbe":{"exec":{"command":["/bin/calico-node","-felix-ready"]}}}]}}}}'
+  register: networking_calico_probe_patch
+  changed_when: "'(no change)' not in (networking_calico_probe_patch.stdout | default(''))"
+  when:
+    - network_cni == 'calico'
+    - network_calico_backend == 'vxlan'
+
 - name: Restart Calico components when backend settings changed
   ansible.builtin.command: >-
     kubectl --kubeconfig={{ network_kubeconfig }}
@@ -51,6 +71,8 @@
     - network_cni == 'calico'
     - ("(no change)" not in (networking_calico_config_patch.stdout | default('')))
       or ("(no change)" not in (networking_calico_ds_patch.stdout | default('')))
+      or ("(no change)" not in (networking_calico_cluster_type_patch.stdout | default('')))
+      or ("(no change)" not in (networking_calico_probe_patch.stdout | default('(no change)')))
 
 - name: Wait for CNI DaemonSet rollout (calico)
   block:
