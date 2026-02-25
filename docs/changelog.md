@@ -365,3 +365,21 @@
 ### Изменено
 - Обновлен `roles/metallb/tasks/main.yml`: в шаг восстановления webhook-конфигурации добавлен `environment: "{{ proxy_environment | default({}) }}"` для корректного доступа к `metallb_manifest_url` в проксируемом контуре.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-050`.
+
+## 2026-02-25 (control-plane helm and helmfile installation)
+### Изменено
+- Обновлен `roles/kubernetes_core/defaults/main.yml`: добавлены параметры управления установкой `helm`/`helmfile` и версий release-артефактов для control-plane нод.
+- Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлена установка `helm` и `helmfile` из официальных release-архивов (с учетом архитектуры и `proxy_environment`) только на control-plane нодах.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-051`.
+
+## 2026-02-25 (proxy management playbook)
+### Изменено
+- Обновлен `roles/proxy/defaults/main.yml`: добавлен параметр `proxy_state` с поддержкой режимов `present/absent`.
+- Обновлен `roles/proxy/tasks/main.yml`: роль переведена на режимы включения/отключения proxy (создание/удаление profile, dnf block и systemd drop-in с reload/restart сервисов).
+- Добавлен `playbooks/manage_proxy.yml`: отдельный эксплуатационный playbook управления proxy-режимом на всех нодах (`-e proxy_state=present|absent`).
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-052`.
+
+## 2026-02-25 (runbook update for proxy mode management)
+### Изменено
+- Обновлен `docs/runbook.md`: добавлен раздел оперативного переключения proxy-режима через `playbooks/manage_proxy.yml` с командами включения/отключения.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-053`.

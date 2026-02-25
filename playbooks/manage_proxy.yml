@@ -1,0 +1,12 @@
+# ## Задача: Управление proxy-режимом
+# - **Статус**: В процессе
+# - **Описание**: Оперативное включение/отключение proxy-конфигурации на узлах.
+- name: Manage proxy mode on all nodes
+  hosts: all
+  become: true
+  gather_facts: true
+  vars:
+    proxy_state: "{{ proxy_state | default('present') }}"
+  roles:
+    - role: proxy
+      tags: [proxy, proxy-manage]

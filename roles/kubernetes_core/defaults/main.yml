@@ -38,3 +38,13 @@ kubeadm_join_delay: 20
 kubeadm_join_endpoint_fallback_enabled: true
 kubeadm_join_fallback_port: 6443
 kubeadm_join_force_primary_endpoint: false
+kubernetes_install_helm_tools_on_control_plane: true
+kubernetes_helm_version: "v3.16.4"
+kubernetes_helmfile_version: "v0.168.0"
+kubernetes_helmfile_version_no_v: "{{ kubernetes_helmfile_version | regex_replace('^v', '') }}"
+kubernetes_cli_tools_tmp_dir: /tmp/kubernetes-cli-tools
+kubernetes_cli_tools_arch_map:
+  x86_64: amd64
+  amd64: amd64
+  aarch64: arm64
+  arm64: arm64

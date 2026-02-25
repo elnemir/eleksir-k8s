@@ -4,9 +4,10 @@
 - name: Validate proxy variables
   ansible.builtin.assert:
     that:
+      - proxy_state in ['present', 'absent']
       - proxy_mode in ['local_on_each_node', 'centralized']
-      - proxy_env.http_proxy is match('^http://|^https://')
-      - proxy_env.https_proxy is match('^http://|^https://')
+      - (proxy_state == 'absent') or (proxy_env.http_proxy is match('^http://|^https://'))
+      - (proxy_state == 'absent') or (proxy_env.https_proxy is match('^http://|^https://'))
       - no_proxy is iterable
     fail_msg: "Proxy variables are not valid"
 
@@ -22,7 +23,17 @@
     src: proxy.sh.j2
     dest: /etc/profile.d/proxy.sh
     mode: "0644"
-  when: proxy_manage_profile | bool
+  when:
+    - proxy_manage_profile | bool
+    - proxy_state == 'present'
+
+- name: Remove proxy environment from system profile
+  ansible.builtin.file:
+    path: /etc/profile.d/proxy.sh
+    state: absent
+  when:
+    - proxy_manage_profile | bool
+    - proxy_state == 'absent'
 
 - name: Configure DNF proxy settings
   ansible.builtin.blockinfile:
@@ -30,7 +41,19 @@
     marker: "# {mark} ANSIBLE MANAGED PROXY"
     block: |
       proxy={{ proxy_env.http_proxy }}
-  when: proxy_manage_dnf | bool
+    state: present
+  when:
+    - proxy_manage_dnf | bool
+    - proxy_state == 'present'
+
+- name: Remove DNF proxy settings
+  ansible.builtin.blockinfile:
+    path: /etc/dnf/dnf.conf
+    marker: "# {mark} ANSIBLE MANAGED PROXY"
+    state: absent
+  when:
+    - proxy_manage_dnf | bool
+    - proxy_state == 'absent'
 
 - name: Configure systemd proxy drop-in files
   ansible.builtin.template:
@@ -40,10 +63,29 @@
   loop: "{{ proxy_systemd_services }}"
   register: proxy_systemd_dropins
   notify: Reload systemd
+  when: proxy_state == 'present'
+
+- name: Remove systemd proxy drop-in files
+  ansible.builtin.file:
+    path: "/etc/systemd/system/{{ item }}.service.d/http-proxy.conf"
+    state: absent
+  loop: "{{ proxy_systemd_services }}"
+  register: proxy_systemd_dropins_removed
+  notify: Reload systemd
+  when: proxy_state == 'absent'
+
+- name: Define proxy systemd change flag
+  ansible.builtin.set_fact:
+    proxy_systemd_dropins_changed: >-
+      {{
+        (proxy_systemd_dropins is defined and (proxy_systemd_dropins is changed))
+        or
+        (proxy_systemd_dropins_removed is defined and (proxy_systemd_dropins_removed is changed))
+      }}
 
 - name: Gather service facts
   ansible.builtin.service_facts:
-  when: proxy_systemd_dropins is changed
+  when: proxy_systemd_dropins_changed | bool
 
 - name: Restart managed services when present
   ansible.builtin.service:
@@ -51,5 +93,5 @@
     state: restarted
   loop: "{{ proxy_systemd_services }}"
   when:
-    - proxy_systemd_dropins is changed
+    - proxy_systemd_dropins_changed | bool
     - (item + '.service') in ansible_facts.services

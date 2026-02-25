@@ -52,6 +52,7 @@ ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/hardenin
 ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/storage.yml
 ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/validate.yml
 ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/reinstall_cluster_and_nfs.yml
+ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/manage_proxy.yml
 ```
 
 Проверить параметры control-plane VIP в `inventories/prod/group_vars`:
@@ -279,3 +280,22 @@ ansible-playbook -i inventories/prod/hosts.yml playbooks/reinstall_cluster_and_n
 1. Повторно развернуть кластер через `playbooks/site.yml`.
 2. Проверить, что `StorageClass nfs-sp` пересоздан и PVC создаются заново.
 3. Проверить readiness всех нод и системных подов.
+
+## 15. Оперативное управление proxy-режимом
+Для переключения proxy без полного bootstrap используйте отдельный playbook `playbooks/manage_proxy.yml`.
+
+Включить proxy (применить profile/dnf/systemd proxy конфигурацию):
+```bash
+ansible-playbook -i inventories/prod/hosts.yml playbooks/manage_proxy.yml -e proxy_state=present
+```
+
+Отключить proxy (удалить profile/dnf/systemd proxy конфигурацию):
+```bash
+ansible-playbook -i inventories/prod/hosts.yml playbooks/manage_proxy.yml -e proxy_state=absent
+```
+
+Быстрая проверка после переключения:
+```bash
+ansible -i inventories/prod/hosts.yml all -m shell -a "systemctl show kubelet -p Environment --no-pager"
+ansible -i inventories/prod/hosts.yml all -m shell -a "grep -n 'ANSIBLE MANAGED PROXY' /etc/dnf/dnf.conf || true"
+```

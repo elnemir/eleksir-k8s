@@ -63,6 +63,9 @@
 | T-048 | MetalLB Webhook FailurePolicy Workaround | Добавить временный patch `failurePolicy=Ignore` для webhook MetalLB на время `pool apply` с последующим возвратом в `Fail` | Высокий | Завершена (без стендовой валидации) |
 | T-049 | MetalLB Webhook Delete/Recreate Workaround | Временно удалять `ValidatingWebhookConfiguration` MetalLB на время `pool apply` и восстанавливать после | Высокий | Завершена (без стендовой валидации) |
 | T-050 | MetalLB Webhook Restore Proxy Fix | Добавить proxy environment в шаг восстановления webhook-конфигурации MetalLB | Высокий | Завершена (без стендовой валидации) |
+| T-051 | Control Plane Helm Tooling | Добавить установку `helm` и `helmfile` на control-plane ноды через `kubernetes_core` | Высокий | Завершена (без стендовой валидации) |
+| T-052 | Proxy Mode Management Playbook | Добавить отдельный playbook для включения/отключения proxy-режима и доработать роль `proxy` под `present/absent` | Высокий | Завершена (без стендовой валидации) |
+| T-053 | Runbook Proxy Operations | Добавить в runbook раздел по оперативному переключению proxy-режима через `playbooks/manage_proxy.yml` | Средний | Завершена |
 
 ## Собранные данные (2026-02-19)
 - VMware: `vCenter 7.0.3`, `ESXi 7.0.3`, `clone_from_template`, шаблон `k8s-pcp-template`.
@@ -131,6 +134,10 @@
 - В роли `metallb` добавлен временный workaround `failurePolicy=Ignore` для `ipaddresspool`/`l2advertisement` webhook на время `apply` pool-конфига и автоматический rollback в `failurePolicy=Fail` в `always`.
 - В роли `metallb` добавлен fallback-workaround удаления `ValidatingWebhookConfiguration` перед `pool apply` и восстановления webhook-конфигурации через повторный `apply` базового манифеста.
 - В роли `metallb` шаг восстановления webhook-конфигурации переведен на проксируемое окружение (`proxy_environment`) для устранения `network is unreachable` при загрузке remote manifest URL.
+- В роли `kubernetes_core` добавлена параметризуемая установка `helm` и `helmfile` на control-plane нодах из официальных release-артефактов с учетом архитектуры и proxy-настроек.
+- В роли `proxy` добавлена поддержка `proxy_state=present|absent` для управляемого включения/отключения system/profile/dnf proxy-конфигурации.
+- Добавлен отдельный `playbooks/manage_proxy.yml` для оперативного переключения proxy-режима без полного bootstrap.
+- В `docs/runbook.md` добавлены эксплуатационные команды переключения proxy (`present/absent`) через `playbooks/manage_proxy.yml` и базовые проверки результата.
 
 ## Декомпозиция ближайшего этапа (сбор данных)
 - [x] Утвердить схему IP-адресов и список нод/ролей.
