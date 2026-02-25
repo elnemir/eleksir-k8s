@@ -352,3 +352,11 @@
 - Обновлен `roles/metallb/tasks/main.yml`: после `apply` (в `always`) добавлено восстановление `failurePolicy=Fail`.
 - Обновлен `inventories/prod/group_vars/all.yml`: включен workaround `metallb_webhook_failure_policy_workaround_enabled: true`.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-048`.
+
+## 2026-02-25 (metallb webhook delete/recreate workaround)
+### Изменено
+- Обновлен `roles/metallb/defaults/main.yml`: добавлен переключатель `metallb_webhook_delete_recreate_workaround_enabled` для удаления/восстановления webhook-конфигурации на время `pool apply`.
+- Обновлен `roles/metallb/tasks/main.yml`: перед применением `metallb-config.yaml` добавлено удаление `ValidatingWebhookConfiguration` MetalLB (`--ignore-not-found`).
+- Обновлен `roles/metallb/tasks/main.yml`: в `always` добавлено восстановление webhook-конфигурации через повторный `apply` базового манифеста MetalLB.
+- Обновлен `inventories/prod/group_vars/all.yml`: включен workaround `metallb_webhook_delete_recreate_workaround_enabled: true`, предыдущий workaround `failurePolicy` отключен.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-049`.
