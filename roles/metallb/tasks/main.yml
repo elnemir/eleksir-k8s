@@ -37,6 +37,17 @@
     -n {{ metallb_namespace }} rollout status daemonset/speaker --timeout=300s
   changed_when: false
 
+- name: Wait for MetalLB webhook endpoints to become ready
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ metallb_kubeconfig }}
+    -n {{ metallb_namespace }} get endpoints metallb-webhook-service
+    -o jsonpath='{.subsets[*].addresses[*].ip}'
+  register: metallb_webhook_endpoints
+  changed_when: false
+  until: (metallb_webhook_endpoints.stdout | default('') | trim | length) > 0
+  retries: "{{ metallb_webhook_endpoints_retries | int }}"
+  delay: "{{ metallb_webhook_endpoints_delay | int }}"
+
 - name: Render MetalLB pool configuration
   ansible.builtin.template:
     src: metallb-config.yaml.j2
@@ -44,11 +55,45 @@
     mode: "0644"
 
 - name: Apply MetalLB pool configuration
-  ansible.builtin.command: >-
-    kubectl --kubeconfig={{ metallb_kubeconfig }}
-    apply -f /tmp/metallb-config.yaml
-  register: metallb_pool_apply
-  changed_when: "'created' in metallb_pool_apply.stdout or 'configured' in metallb_pool_apply.stdout"
+  block:
+    - name: Apply MetalLB pool configuration manifest
+      ansible.builtin.command: >-
+        kubectl --kubeconfig={{ metallb_kubeconfig }}
+        apply -f /tmp/metallb-config.yaml
+      register: metallb_pool_apply
+      changed_when: "'created' in metallb_pool_apply.stdout or 'configured' in metallb_pool_apply.stdout"
+      retries: "{{ metallb_pool_apply_retries | int }}"
+      delay: "{{ metallb_pool_apply_delay | int }}"
+      until: metallb_pool_apply.rc == 0
+  rescue:
+    - name: Collect MetalLB pods diagnostics after pool apply failure
+      ansible.builtin.command: >-
+        kubectl --kubeconfig={{ metallb_kubeconfig }}
+        -n {{ metallb_namespace }} get pods -o wide
+      register: metallb_pods_diag
+      changed_when: false
+      failed_when: false
+
+    - name: Collect MetalLB events diagnostics after pool apply failure
+      ansible.builtin.command: >-
+        kubectl --kubeconfig={{ metallb_kubeconfig }}
+        -n {{ metallb_namespace }} get events --sort-by=.lastTimestamp
+      register: metallb_events_diag
+      changed_when: false
+      failed_when: false
+
+    - name: Fail with MetalLB webhook diagnostics
+      ansible.builtin.fail:
+        msg: |
+          MetalLB pool configuration apply failed after retries.
+          apply rc={{ metallb_pool_apply.rc | default('n/a') }}
+          apply stderr={{ metallb_pool_apply.stderr | default('') | trim }}
+          webhook endpoints:
+          {{ metallb_webhook_endpoints.stdout | default('') | trim }}
+          metallb pods:
+          {{ metallb_pods_diag.stdout | default('') | trim }}
+          metallb events:
+          {{ metallb_events_diag.stdout | default('') | trim }}
 
 - name: Apply labels to dedicated MetalLB nodes
   ansible.builtin.command: >-

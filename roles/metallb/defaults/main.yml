@@ -5,3 +5,7 @@ metallb_namespace: metallb-system
 metallb_mode: l2
 metallb_kubeconfig: /etc/kubernetes/admin.conf
 metallb_manifest_url: https://raw.githubusercontent.com/metallb/metallb/v0.14.8/config/manifests/metallb-native.yaml
+metallb_webhook_endpoints_retries: 30
+metallb_webhook_endpoints_delay: 10
+metallb_pool_apply_retries: 6
+metallb_pool_apply_delay: 10

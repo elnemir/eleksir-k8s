@@ -337,3 +337,10 @@
 - Обновлен `roles/networking/tasks/main.yml`: при VXLAN добавлен patch health checks `calico-node` на felix-only (`-felix-live`, `-felix-ready`) для удаления зависимости от BIRD.
 - Обновлен `inventories/prod/group_vars/all.yml`: добавлен `network_calico_cluster_type: "k8s"` для production-контура.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-046`.
+
+## 2026-02-25 (metallb webhook readiness hardening)
+### Изменено
+- Обновлен `roles/metallb/defaults/main.yml`: добавлены параметры ожидания webhook endpoints и retry для применения pool-конфига MetalLB.
+- Обновлен `roles/metallb/tasks/main.yml`: добавлен precheck готовности `endpoints/metallb-webhook-service` перед `apply` CR-манифеста.
+- Обновлен `roles/metallb/tasks/main.yml`: применение `metallb-config.yaml` переведено в `block/rescue` с retry и сбором диагностик (`pods/events`) при ошибке webhook.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-047`.
