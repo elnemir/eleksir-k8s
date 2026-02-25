@@ -9,3 +9,5 @@ metallb_webhook_endpoints_retries: 30
 metallb_webhook_endpoints_delay: 10
 metallb_pool_apply_retries: 6
 metallb_pool_apply_delay: 10
+metallb_webhook_failure_policy_workaround_enabled: false
+metallb_webhook_configuration_name: metallb-webhook-configuration

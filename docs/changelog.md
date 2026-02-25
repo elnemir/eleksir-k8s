@@ -344,3 +344,11 @@
 - Обновлен `roles/metallb/tasks/main.yml`: добавлен precheck готовности `endpoints/metallb-webhook-service` перед `apply` CR-манифеста.
 - Обновлен `roles/metallb/tasks/main.yml`: применение `metallb-config.yaml` переведено в `block/rescue` с retry и сбором диагностик (`pods/events`) при ошибке webhook.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-047`.
+
+## 2026-02-25 (metallb webhook temporary failurePolicy workaround)
+### Изменено
+- Обновлен `roles/metallb/defaults/main.yml`: добавлены параметры временного workaround для `ValidatingWebhookConfiguration` (`metallb_webhook_failure_policy_workaround_enabled`, `metallb_webhook_configuration_name`).
+- Обновлен `roles/metallb/tasks/main.yml`: перед `apply` pool-конфига добавлен временный patch `failurePolicy=Ignore` для `ipaddresspool`/`l2advertisement` webhooks.
+- Обновлен `roles/metallb/tasks/main.yml`: после `apply` (в `always`) добавлено восстановление `failurePolicy=Fail`.
+- Обновлен `inventories/prod/group_vars/all.yml`: включен workaround `metallb_webhook_failure_policy_workaround_enabled: true`.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-048`.

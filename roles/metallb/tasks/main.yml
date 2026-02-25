@@ -56,6 +56,15 @@
 
 - name: Apply MetalLB pool configuration
   block:
+    - name: Temporarily set MetalLB validation webhooks failurePolicy to Ignore
+      ansible.builtin.command: >-
+        kubectl --kubeconfig={{ metallb_kubeconfig }}
+        patch validatingwebhookconfiguration {{ metallb_webhook_configuration_name }}
+        --type merge
+        -p '{"webhooks":[{"name":"ipaddresspoolvalidationwebhook.metallb.io","failurePolicy":"Ignore"},{"name":"l2advertisementvalidationwebhook.metallb.io","failurePolicy":"Ignore"}]}'
+      changed_when: true
+      when: metallb_webhook_failure_policy_workaround_enabled | bool
+
     - name: Apply MetalLB pool configuration manifest
       ansible.builtin.command: >-
         kubectl --kubeconfig={{ metallb_kubeconfig }}
@@ -94,6 +103,15 @@
           {{ metallb_pods_diag.stdout | default('') | trim }}
           metallb events:
           {{ metallb_events_diag.stdout | default('') | trim }}
+  always:
+    - name: Restore MetalLB validation webhooks failurePolicy to Fail
+      ansible.builtin.command: >-
+        kubectl --kubeconfig={{ metallb_kubeconfig }}
+        patch validatingwebhookconfiguration {{ metallb_webhook_configuration_name }}
+        --type merge
+        -p '{"webhooks":[{"name":"ipaddresspoolvalidationwebhook.metallb.io","failurePolicy":"Fail"},{"name":"l2advertisementvalidationwebhook.metallb.io","failurePolicy":"Fail"}]}'
+      changed_when: true
+      when: metallb_webhook_failure_policy_workaround_enabled | bool
 
 - name: Apply labels to dedicated MetalLB nodes
   ansible.builtin.command: >-

@@ -60,6 +60,7 @@
 | T-045 | Calico VXLAN Migration | Переключить Calico с BGP на VXLAN в Ansible-автоматизации для устранения зависимости от BGP peering | Критический | Завершена (без стендовой валидации) |
 | T-046 | Calico VXLAN Full Migration | Убрать зависимость `calico-node` от BIRD в VXLAN-режиме (`CLUSTER_TYPE`, probes) | Критический | Завершена (без стендовой валидации) |
 | T-047 | MetalLB Webhook Readiness Hardening | Добавить precheck webhook endpoints и retry/rescue-диагностику для `metallb` pool apply | Высокий | Завершена (без стендовой валидации) |
+| T-048 | MetalLB Webhook FailurePolicy Workaround | Добавить временный patch `failurePolicy=Ignore` для webhook MetalLB на время `pool apply` с последующим возвратом в `Fail` | Высокий | Завершена (без стендовой валидации) |
 
 ## Собранные данные (2026-02-19)
 - VMware: `vCenter 7.0.3`, `ESXi 7.0.3`, `clone_from_template`, шаблон `k8s-pcp-template`.
@@ -125,6 +126,7 @@
 - В `inventories/prod/group_vars/all.yml` включен VXLAN-режим Calico и отключен IPIP для текущего production-контура.
 - В роли `networking` добавлен patch `CLUSTER_TYPE=k8s` и felix-only health checks для `calico-node` в VXLAN-режиме, чтобы исключить ожидание BIRD и CrashLoop/Unhealthy по `bird.*`.
 - В роли `metallb` добавлены precheck готовности `metallb-webhook-service` endpoints, retry при `kubectl apply -f /tmp/metallb-config.yaml` и rescue-диагностика (`metallb-system` pods/events) для сбоев webhook.
+- В роли `metallb` добавлен временный workaround `failurePolicy=Ignore` для `ipaddresspool`/`l2advertisement` webhook на время `apply` pool-конфига и автоматический rollback в `failurePolicy=Fail` в `always`.
 
 ## Декомпозиция ближайшего этапа (сбор данных)
 - [x] Утвердить схему IP-адресов и список нод/ролей.
