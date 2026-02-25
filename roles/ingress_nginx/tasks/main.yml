@@ -18,7 +18,81 @@
   ansible.builtin.command: command -v helm
   register: ingress_nginx_helm_binary
   changed_when: false
-  failed_when: ingress_nginx_helm_binary.rc != 0
+  failed_when: false
+
+- name: Resolve architecture for ingress-nginx helm bootstrap
+  ansible.builtin.set_fact:
+    ingress_nginx_helm_arch: "{{ ingress_nginx_helm_arch_map.get(ansible_architecture, 'amd64') }}"
+  when: (ingress_nginx_helm_binary.rc | default(1)) != 0
+
+- name: Ensure temporary directory for ingress-nginx helm bootstrap exists
+  ansible.builtin.file:
+    path: "{{ ingress_nginx_helm_tmp_dir }}"
+    state: directory
+    mode: "0755"
+  when: (ingress_nginx_helm_binary.rc | default(1)) != 0
+
+- name: Check helm archive presence before bootstrap download
+  ansible.builtin.stat:
+    path: "{{ ingress_nginx_helm_tmp_dir }}/helm-{{ ingress_nginx_helm_version }}-linux-{{ ingress_nginx_helm_arch }}.tar.gz"
+  register: ingress_nginx_helm_archive_stat_before
+  when: (ingress_nginx_helm_binary.rc | default(1)) != 0
+
+- name: Download helm archive for ingress-nginx bootstrap
+  ansible.builtin.get_url:
+    url: "https://get.helm.sh/helm-{{ ingress_nginx_helm_version }}-linux-{{ ingress_nginx_helm_arch }}.tar.gz"
+    dest: "{{ ingress_nginx_helm_tmp_dir }}/helm-{{ ingress_nginx_helm_version }}-linux-{{ ingress_nginx_helm_arch }}.tar.gz"
+    mode: "0644"
+    force: false
+  register: ingress_nginx_helm_archive_download
+  retries: "{{ ingress_nginx_helm_download_retries | int }}"
+  delay: "{{ ingress_nginx_helm_download_delay | int }}"
+  until: ingress_nginx_helm_archive_download is succeeded
+  environment: "{{ proxy_environment | default({}) }}"
+  when:
+    - (ingress_nginx_helm_binary.rc | default(1)) != 0
+    - not (
+        (ingress_nginx_helm_archive_stat_before.stat.exists | default(false))
+        and ((ingress_nginx_helm_archive_stat_before.stat.size | default(0) | int) >= (ingress_nginx_helm_archive_min_size_bytes | int))
+      )
+
+- name: Validate helm archive availability after bootstrap download
+  ansible.builtin.stat:
+    path: "{{ ingress_nginx_helm_tmp_dir }}/helm-{{ ingress_nginx_helm_version }}-linux-{{ ingress_nginx_helm_arch }}.tar.gz"
+  register: ingress_nginx_helm_archive_stat_after
+  when: (ingress_nginx_helm_binary.rc | default(1)) != 0
+
+- name: Ensure helm archive is valid for ingress-nginx bootstrap
+  ansible.builtin.assert:
+    that:
+      - ingress_nginx_helm_archive_stat_after.stat.exists | default(false)
+      - (ingress_nginx_helm_archive_stat_after.stat.size | default(0) | int) >= (ingress_nginx_helm_archive_min_size_bytes | int)
+    fail_msg: >-
+      Helm archive is missing or too small for ingress bootstrap:
+      {{ ingress_nginx_helm_tmp_dir }}/helm-{{ ingress_nginx_helm_version }}-linux-{{ ingress_nginx_helm_arch }}.tar.gz
+      size={{ ingress_nginx_helm_archive_stat_after.stat.size | default(0) }} bytes.
+  when: (ingress_nginx_helm_binary.rc | default(1)) != 0
+
+- name: Extract helm archive for ingress-nginx bootstrap
+  ansible.builtin.unarchive:
+    src: "{{ ingress_nginx_helm_tmp_dir }}/helm-{{ ingress_nginx_helm_version }}-linux-{{ ingress_nginx_helm_arch }}.tar.gz"
+    dest: "{{ ingress_nginx_helm_tmp_dir }}"
+    remote_src: true
+  when: (ingress_nginx_helm_binary.rc | default(1)) != 0
+
+- name: Install helm binary for ingress-nginx bootstrap
+  ansible.builtin.copy:
+    src: "{{ ingress_nginx_helm_tmp_dir }}/linux-{{ ingress_nginx_helm_arch }}/helm"
+    dest: /usr/local/bin/helm
+    remote_src: true
+    mode: "0755"
+  when: (ingress_nginx_helm_binary.rc | default(1)) != 0
+
+- name: Re-check helm binary availability
+  ansible.builtin.command: command -v helm
+  register: ingress_nginx_helm_binary_after_bootstrap
+  changed_when: false
+  failed_when: ingress_nginx_helm_binary_after_bootstrap.rc != 0
 
 - name: Ensure ingress-nginx helm repository is configured
   ansible.builtin.command: >-

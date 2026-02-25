@@ -433,3 +433,9 @@
 - Обновлен `roles/kubernetes_core/defaults/main.yml`: добавлены параметры retry/delay и минимального размера архива для загрузки CLI tooling (`helm`/`helmfile`).
 - Обновлен `roles/kubernetes_core/tasks/main.yml`: загрузка архивов `helm`/`helmfile` переведена на устойчивую схему (проверка существующего файла, `force: false`, retry, post-check размера архива).
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-061`.
+
+## 2026-02-25 (ingress role self-managed helm bootstrap)
+### Изменено
+- Обновлен `roles/ingress_nginx/defaults/main.yml`: добавлены параметры автоустановки `helm` (версия, архитектура, retry/delay, минимальный размер архива, временный каталог).
+- Обновлен `roles/ingress_nginx/tasks/main.yml`: роль больше не падает при отсутствии `helm`; добавлена автоматическая установка `helm` (download/extract/install) перед `helm repo/upgrade`.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-062`.
