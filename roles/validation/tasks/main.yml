@@ -151,7 +151,7 @@
       ansible.builtin.service:
         name: keepalived
         state: stopped
-      delegate_to: "{{ validation_failover_source_host }}"
+      delegate_to: "{{ validation_failover_source_host | default(inventory_hostname) }}"
       when: validation_failover_source_host | length > 0
 
     - name: Wait for VIP migration
@@ -204,7 +204,7 @@
       ansible.builtin.service:
         name: keepalived
         state: started
-      delegate_to: "{{ validation_failover_source_host }}"
+      delegate_to: "{{ validation_failover_source_host | default(inventory_hostname) }}"
       when: validation_failover_source_host | default('') | length > 0
   when: validation_enable_control_plane_vip_failover_test | bool
 

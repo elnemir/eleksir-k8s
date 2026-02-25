@@ -389,3 +389,8 @@
 - Обновлен `roles/validation/tasks/main.yml`: добавлена безопасная предвычисляемая инициализация `validation_failover_source_host` перед failover-блоком.
 - Обновлен `roles/validation/tasks/main.yml`: шаги остановки/запуска `keepalived` на source-host защищены условием наличия `validation_failover_source_host`.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-054`.
+
+## 2026-02-25 (validation delegate_to fallback guard)
+### Изменено
+- Обновлен `roles/validation/tasks/main.yml`: для failover-операций `keepalived` применен безопасный fallback в `delegate_to` через `validation_failover_source_host | default(inventory_hostname)` для исключения ошибок шаблонизации при undefined-переменной.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-055`.
