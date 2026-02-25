@@ -112,6 +112,7 @@
       changed_when: >-
         'created' in (metallb_webhook_restore.stdout | default(''))
         or 'configured' in (metallb_webhook_restore.stdout | default(''))
+      environment: "{{ proxy_environment | default({}) }}"
       when: metallb_webhook_delete_recreate_workaround_enabled | bool
 
 - name: Apply labels to dedicated MetalLB nodes

@@ -360,3 +360,8 @@
 - Обновлен `roles/metallb/tasks/main.yml`: в `always` добавлено восстановление webhook-конфигурации через повторный `apply` базового манифеста MetalLB.
 - Обновлен `inventories/prod/group_vars/all.yml`: включен workaround `metallb_webhook_delete_recreate_workaround_enabled: true`, предыдущий workaround `failurePolicy` отключен.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-049`.
+
+## 2026-02-25 (metallb webhook restore proxy environment fix)
+### Изменено
+- Обновлен `roles/metallb/tasks/main.yml`: в шаг восстановления webhook-конфигурации добавлен `environment: "{{ proxy_environment | default({}) }}"` для корректного доступа к `metallb_manifest_url` в проксируемом контуре.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-050`.

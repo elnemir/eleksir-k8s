@@ -62,6 +62,7 @@
 | T-047 | MetalLB Webhook Readiness Hardening | Добавить precheck webhook endpoints и retry/rescue-диагностику для `metallb` pool apply | Высокий | Завершена (без стендовой валидации) |
 | T-048 | MetalLB Webhook FailurePolicy Workaround | Добавить временный patch `failurePolicy=Ignore` для webhook MetalLB на время `pool apply` с последующим возвратом в `Fail` | Высокий | Завершена (без стендовой валидации) |
 | T-049 | MetalLB Webhook Delete/Recreate Workaround | Временно удалять `ValidatingWebhookConfiguration` MetalLB на время `pool apply` и восстанавливать после | Высокий | Завершена (без стендовой валидации) |
+| T-050 | MetalLB Webhook Restore Proxy Fix | Добавить proxy environment в шаг восстановления webhook-конфигурации MetalLB | Высокий | Завершена (без стендовой валидации) |
 
 ## Собранные данные (2026-02-19)
 - VMware: `vCenter 7.0.3`, `ESXi 7.0.3`, `clone_from_template`, шаблон `k8s-pcp-template`.
@@ -129,6 +130,7 @@
 - В роли `metallb` добавлены precheck готовности `metallb-webhook-service` endpoints, retry при `kubectl apply -f /tmp/metallb-config.yaml` и rescue-диагностика (`metallb-system` pods/events) для сбоев webhook.
 - В роли `metallb` добавлен временный workaround `failurePolicy=Ignore` для `ipaddresspool`/`l2advertisement` webhook на время `apply` pool-конфига и автоматический rollback в `failurePolicy=Fail` в `always`.
 - В роли `metallb` добавлен fallback-workaround удаления `ValidatingWebhookConfiguration` перед `pool apply` и восстановления webhook-конфигурации через повторный `apply` базового манифеста.
+- В роли `metallb` шаг восстановления webhook-конфигурации переведен на проксируемое окружение (`proxy_environment`) для устранения `network is unreachable` при загрузке remote manifest URL.
 
 ## Декомпозиция ближайшего этапа (сбор данных)
 - [x] Утвердить схему IP-адресов и список нод/ролей.
