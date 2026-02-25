@@ -51,6 +51,58 @@
     mode: "0644"
   notify: Apply sysctl settings
 
+- name: Disable zram0 swap on RedOS 8
+  block:
+    - name: Stop and mask zram systemd units
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+        masked: true
+      loop:
+        - zramswap.service
+        - systemd-zram-setup@zram0.service
+      failed_when: false
+
+    - name: Ensure zram-generator override directory exists
+      ansible.builtin.file:
+        path: /etc/systemd/zram-generator.conf.d
+        state: directory
+        mode: "0755"
+
+    - name: Configure zram-generator override to disable zram0
+      ansible.builtin.copy:
+        dest: /etc/systemd/zram-generator.conf.d/99-ansible-disable-zram0.conf
+        mode: "0644"
+        content: |
+          [zram0]
+          zram-size = 0
+
+    - name: Reload systemd after zram0 override
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+    - name: Disable zram0 swap immediately
+      ansible.builtin.command: swapoff /dev/zram0
+      register: base_os_zram_swapoff
+      changed_when: base_os_zram_swapoff.rc == 0
+      failed_when: false
+
+    - name: Check active swap devices after zram0 disable
+      ansible.builtin.command: swapon --show --noheadings --raw
+      register: base_os_active_swaps
+      changed_when: false
+
+    - name: Ensure zram0 is not active in swap list
+      ansible.builtin.assert:
+        that:
+          - (base_os_active_swaps.stdout | default('')) is not search('/dev/zram0')
+        fail_msg: "zram0 is still active as swap device after disable sequence"
+  when:
+    - base_os_disable_swap | bool
+    - base_os_disable_zram0 | bool
+    - (redos_release | string) is search('^8(\\.|$)')
+
 - name: Disable swap immediately
   ansible.builtin.command: swapoff -a
   when:

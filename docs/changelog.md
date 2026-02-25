@@ -445,3 +445,9 @@
 - Обновлен `roles/ingress_nginx/defaults/main.yml`: добавлен параметр `ingress_nginx_helm_binary_path` (`/usr/local/bin/helm`).
 - Обновлен `roles/ingress_nginx/tasks/main.yml`: проверка наличия `helm` переведена на `stat`/абсолютный путь вместо `command -v`, команды `helm` вызываются через абсолютный путь с явным `PATH`.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-063`.
+
+## 2026-02-25 (base_os zram0 disable for RedOS 8)
+### Изменено
+- Обновлен `roles/base_os/defaults/main.yml`: добавлен переключатель `base_os_disable_zram0` для управляемого отключения `zram0`.
+- Обновлен `roles/base_os/tasks/main.yml`: добавлено устойчивое отключение `zram0` на RedOS 8 (mask zram units, zram-generator override, `swapoff /dev/zram0`, проверка отсутствия zram в `swapon`).
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-064`.

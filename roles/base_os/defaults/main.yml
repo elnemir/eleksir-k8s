@@ -16,6 +16,7 @@ base_os_packages:
   - policycoreutils-python-utils
 
 base_os_disable_swap: true
+base_os_disable_zram0: true
 base_os_manage_time: true
 base_os_manage_hostname: true
 base_os_manage_hosts_file: true
