@@ -160,6 +160,7 @@ curl -Ik https://10.255.106.21
 - Опциональный failover-test VIP (по умолчанию выключен): `-e validation_enable_control_plane_vip_failover_test=true`.
 - Для отключения API/VIP проверок: `-e validation_enable_api_vip_check=false -e validation_enable_control_plane_vip_state_check=false`.
 - Для отключения проверки: `-e validation_enable_ingress_vip_check=false`.
+- Текущий troubleshooting-контур: ingress VIP check временно отключен в `inventories/prod/group_vars/all.yml` (`validation_enable_ingress_vip_check: false`) до развертывания namespace `ingress-nginx`.
 
 Пример запуска:
 ```bash

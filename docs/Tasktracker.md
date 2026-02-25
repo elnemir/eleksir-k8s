@@ -70,6 +70,7 @@
 | T-055 | Validation Delegate Fallback Guard | Исключить падение шаблонизации `delegate_to` в failover-блоке через безопасный fallback `default(inventory_hostname)` | Высокий | Завершена |
 | T-056 | Documentation Full Sync | Полностью синхронизировать `Project.md`, `runbook.md`, `qa.md`, `Diary.md` с актуальным состоянием ролей и эксплуатационных сценариев | Высокий | Завершена |
 | T-057 | Validation Ingress Diagnostics Hardening | Добавить явный диагностический вывод `kubectl get svc` (rc/stdout/stderr) перед ingress assert и расширить fail message | Высокий | Завершена |
+| T-058 | Temporary Ingress Validation Disable | Временно отключить ingress VIP-проверку в `group_vars` до развёртывания ingress namespace/service | Средний | Завершена |
 
 ## Собранные данные (2026-02-19)
 - VMware: `vCenter 7.0.3`, `ESXi 7.0.3`, `clone_from_template`, шаблон `k8s-pcp-template`.
@@ -146,6 +147,7 @@
 - В роли `validation` для failover-операций `keepalived` добавлен fallback в `delegate_to` через `validation_failover_source_host | default(inventory_hostname)`, чтобы исключить падение до вычисления `when`.
 - Выполнена полная синхронизация эксплуатационной и архитектурной документации (`Project.md`, `runbook.md`, `qa.md`, `Diary.md`) с текущим фактическим состоянием кластера и последних фиксов validation failover.
 - В роли `validation` добавлена расширенная диагностика ingress-проверки: при `rc != 0` выводятся `rc/stdout/stderr`, а итоговый assert содержит `stderr` для упрощения устранения причин (`NotFound`/namespace/service mismatch/доступ).
+- В `inventories/prod/group_vars/all.yml` временно отключена ingress VIP-проверка (`validation_enable_ingress_vip_check: false`) до появления `ingress-nginx/ingress-nginx-controller` в кластере.
 
 ## Декомпозиция ближайшего этапа (сбор данных)
 - [x] Утвердить схему IP-адресов и список нод/ролей.

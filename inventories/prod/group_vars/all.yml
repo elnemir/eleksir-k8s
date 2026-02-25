@@ -68,6 +68,7 @@ network_calico_ipv4pool_vxlan: Always
 network_calico_cluster_type: "k8s"
 metallb_webhook_failure_policy_workaround_enabled: false
 metallb_webhook_delete_recreate_workaround_enabled: true
+validation_enable_ingress_vip_check: false
 validation_ingress_namespace: ingress-nginx
 validation_ingress_service_name: ingress-nginx-controller
 validation_ingress_expected_vip: "10.255.106.21"

@@ -408,3 +408,9 @@
 - Обновлен `roles/validation/tasks/main.yml`: перед assert ingress-проверки добавлен диагностический вывод при `kubectl get svc` с `rc != 0` (rc/stdout/stderr).
 - Обновлен `roles/validation/tasks/main.yml`: расширено fail-сообщение ingress assert с добавлением `stderr` для ускорения root-cause анализа.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-057`.
+
+## 2026-02-25 (temporary ingress validation disable)
+### Изменено
+- Обновлен `inventories/prod/group_vars/all.yml`: временно отключена ingress VIP-проверка (`validation_enable_ingress_vip_check: false`) из-за отсутствия namespace `ingress-nginx` в текущем контуре.
+- Обновлен `docs/runbook.md`: добавлена явная заметка о временно отключенной ingress-проверке и условии ее обратного включения.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-058`.
