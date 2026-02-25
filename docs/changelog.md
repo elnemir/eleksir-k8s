@@ -321,3 +321,11 @@
 - Обновлен `roles/networking/tasks/main.yml`: ожидание `calico-node` rollout переведено на retry (`until`) с параметризуемым timeout.
 - Обновлен `roles/networking/tasks/main.yml`: добавлен `block/rescue` со сбором диагностик (`get pods`, `describe ds calico-node`, `get events`) и агрегированным fail-сообщением при таймауте rollout.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-044`.
+
+## 2026-02-25 (calico backend switch to VXLAN)
+### Изменено
+- Обновлен `roles/networking/defaults/main.yml`: добавлены параметры backend-режима Calico (`network_calico_backend`, `network_calico_ipv4pool_ipip`, `network_calico_ipv4pool_vxlan`).
+- Обновлен `roles/networking/tasks/main.yml`: после применения манифеста добавлена настройка `calico-config` и `calico-node` под VXLAN через `kubectl patch`.
+- Обновлен `roles/networking/tasks/main.yml`: добавлен условный `rollout restart` для `daemonset/calico-node` и `deployment/calico-kube-controllers` при изменении сетевых параметров Calico.
+- Обновлен `inventories/prod/group_vars/all.yml`: включен режим Calico VXLAN (`network_calico_backend: vxlan`, `network_calico_ipv4pool_ipip: Never`, `network_calico_ipv4pool_vxlan: Always`).
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-045`.

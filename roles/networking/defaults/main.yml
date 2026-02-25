@@ -6,6 +6,9 @@ network_kubeconfig: /etc/kubernetes/admin.conf
 network_cni_rollout_timeout: "300s"
 network_cni_rollout_retries: 2
 network_cni_rollout_delay: 30
+network_calico_backend: bird
+network_calico_ipv4pool_ipip: Always
+network_calico_ipv4pool_vxlan: Never
 
 network_manifest_urls:
   calico: https://raw.githubusercontent.com/projectcalico/calico/v3.28.2/manifests/calico.yaml

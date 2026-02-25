@@ -24,6 +24,34 @@
   changed_when: "'created' in networking_apply.stdout or 'configured' in networking_apply.stdout"
   environment: "{{ proxy_environment }}"
 
+- name: Configure Calico backend mode via ConfigMap
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ network_kubeconfig }}
+    -n kube-system patch configmap calico-config --type merge
+    -p '{"data":{"calico_backend":"{{ network_calico_backend }}"}}'
+  register: networking_calico_config_patch
+  changed_when: "'(no change)' not in (networking_calico_config_patch.stdout | default(''))"
+  when: network_cni == 'calico'
+
+- name: Configure Calico node tunnel env vars
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ network_kubeconfig }}
+    -n kube-system patch daemonset calico-node --type strategic
+    -p '{"spec":{"template":{"spec":{"containers":[{"name":"calico-node","env":[{"name":"CALICO_IPV4POOL_IPIP","value":"{{ network_calico_ipv4pool_ipip }}"},{"name":"CALICO_IPV4POOL_VXLAN","value":"{{ network_calico_ipv4pool_vxlan }}"}]}]}}}}'
+  register: networking_calico_ds_patch
+  changed_when: "'(no change)' not in (networking_calico_ds_patch.stdout | default(''))"
+  when: network_cni == 'calico'
+
+- name: Restart Calico components when backend settings changed
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ network_kubeconfig }}
+    -n kube-system rollout restart daemonset/calico-node deployment/calico-kube-controllers
+  changed_when: true
+  when:
+    - network_cni == 'calico'
+    - ("(no change)" not in (networking_calico_config_patch.stdout | default('')))
+      or ("(no change)" not in (networking_calico_ds_patch.stdout | default('')))
+
 - name: Wait for CNI DaemonSet rollout (calico)
   block:
     - name: Wait for calico-node DaemonSet rollout

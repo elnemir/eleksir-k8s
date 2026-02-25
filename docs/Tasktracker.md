@@ -57,6 +57,7 @@
 | T-042 | Join Endpoint Diagnostics | Добавить auto-диагностику сети при падении `wait_for` выбранного `kubeadm join` endpoint | Высокий | Завершена (без стендовой валидации) |
 | T-043 | Bootstrap Security Sequencing | Добавить запуск `security_hardening` в `bootstrap.yml` перед `kubernetes_core` для гарантии портов/API reachability | Критический | Завершена (без стендовой валидации) |
 | T-044 | Calico Rollout Diagnostics Hardening | Добавить retry/timeout и auto-диагностику в `networking` при таймауте rollout `calico-node` | Высокий | Завершена (без стендовой валидации) |
+| T-045 | Calico VXLAN Migration | Переключить Calico с BGP на VXLAN в Ansible-автоматизации для устранения зависимости от BGP peering | Критический | Завершена (без стендовой валидации) |
 
 ## Собранные данные (2026-02-19)
 - VMware: `vCenter 7.0.3`, `ESXi 7.0.3`, `clone_from_template`, шаблон `k8s-pcp-template`.
@@ -118,6 +119,8 @@
 - В `roles/kubernetes_core/tasks/main.yml` добавлен `block/rescue` и авто-диагностика сети на joining-ноде при недоступности выбранного endpoint (`ip route get`, TCP probe, `curl /readyz`) с агрегированным fail-сообщением.
 - В `playbooks/bootstrap.yml` добавлен запуск роли `security_hardening` на `k8s_cluster` до роли `kubernetes_core`, чтобы исключить повторный bootstrap без примененных firewall-правил.
 - В роли `networking` ожидание `calico-node` rollout сделано параметризуемым и переведено в `block/rescue` с автосбором диагностик (`pods`, `describe ds`, `events`) при таймауте.
+- В роли `networking` добавлена параметризация backend-режима Calico и применение VXLAN-параметров (`calico_backend=vxlan`, `IPIP=Never`, `VXLAN=Always`) после `kubectl apply`.
+- В `inventories/prod/group_vars/all.yml` включен VXLAN-режим Calico и отключен IPIP для текущего production-контура.
 
 ## Декомпозиция ближайшего этапа (сбор данных)
 - [x] Утвердить схему IP-адресов и список нод/ролей.
