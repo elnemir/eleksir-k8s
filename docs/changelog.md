@@ -383,3 +383,9 @@
 ### Изменено
 - Обновлен `docs/runbook.md`: добавлен раздел оперативного переключения proxy-режима через `playbooks/manage_proxy.yml` с командами включения/отключения.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-053`.
+
+## 2026-02-25 (validation failover source host guard)
+### Изменено
+- Обновлен `roles/validation/tasks/main.yml`: добавлена безопасная предвычисляемая инициализация `validation_failover_source_host` перед failover-блоком.
+- Обновлен `roles/validation/tasks/main.yml`: шаги остановки/запуска `keepalived` на source-host защищены условием наличия `validation_failover_source_host`.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-054`.

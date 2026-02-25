@@ -66,6 +66,7 @@
 | T-051 | Control Plane Helm Tooling | Добавить установку `helm` и `helmfile` на control-plane ноды через `kubernetes_core` | Высокий | Завершена (без стендовой валидации) |
 | T-052 | Proxy Mode Management Playbook | Добавить отдельный playbook для включения/отключения proxy-режима и доработать роль `proxy` под `present/absent` | Высокий | Завершена (без стендовой валидации) |
 | T-053 | Runbook Proxy Operations | Добавить в runbook раздел по оперативному переключению proxy-режима через `playbooks/manage_proxy.yml` | Средний | Завершена |
+| T-054 | Validation Failover Source Guard | Устранить падение failover-проверки при undefined `validation_failover_source_host` через безопасную инициализацию и guards | Высокий | Завершена |
 
 ## Собранные данные (2026-02-19)
 - VMware: `vCenter 7.0.3`, `ESXi 7.0.3`, `clone_from_template`, шаблон `k8s-pcp-template`.
@@ -138,6 +139,7 @@
 - В роли `proxy` добавлена поддержка `proxy_state=present|absent` для управляемого включения/отключения system/profile/dnf proxy-конфигурации.
 - Добавлен отдельный `playbooks/manage_proxy.yml` для оперативного переключения proxy-режима без полного bootstrap.
 - В `docs/runbook.md` добавлены эксплуатационные команды переключения proxy (`present/absent`) через `playbooks/manage_proxy.yml` и базовые проверки результата.
+- В роли `validation` добавлена безопасная прединициализация `validation_failover_source_host` и защитные `when`-условия для failover-операций `keepalived`, чтобы исключить `undefined` в `delegate_to`.
 
 ## Декомпозиция ближайшего этапа (сбор данных)
 - [x] Утвердить схему IP-адресов и список нод/ролей.
