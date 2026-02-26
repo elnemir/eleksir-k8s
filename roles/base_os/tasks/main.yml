@@ -108,6 +108,32 @@
   when:
     - base_os_nm_dns_config is changed
 
+- name: Check resolved resolv.conf target availability
+  ansible.builtin.stat:
+    path: "{{ base_os_resolv_conf_target }}"
+  register: base_os_resolv_conf_target_stat
+  when:
+    - base_os_manage_resolv_conf_symlink | bool
+
+- name: Ensure resolved resolv.conf target exists
+  ansible.builtin.assert:
+    that:
+      - base_os_resolv_conf_target_stat.stat.exists | default(false)
+    fail_msg: >-
+      Resolv.conf target {{ base_os_resolv_conf_target }} is missing.
+      Ensure systemd-resolved is configured before forcing /etc/resolv.conf symlink.
+  when:
+    - base_os_manage_resolv_conf_symlink | bool
+
+- name: Force /etc/resolv.conf to non-stub resolved file
+  ansible.builtin.file:
+    path: /etc/resolv.conf
+    state: link
+    src: "{{ base_os_resolv_conf_target }}"
+    force: true
+  when:
+    - base_os_manage_resolv_conf_symlink | bool
+
 - name: Configure kernel modules for Kubernetes
   ansible.builtin.copy:
     dest: /etc/modules-load.d/k8s.conf

@@ -79,6 +79,7 @@
 | T-064 | Base OS ZRAM Disable | Добавить устойчивое отключение `zram0` на RedOS 8 (runtime + persist) в роли `base_os` | Высокий | Завершена |
 | T-065 | NM DNS and Kubelet ResolvConf | Настроить DNS через `NetworkManager` и зафиксировать `kubelet resolvConf` на `/run/systemd/resolve/resolv.conf` с валидацией на всех k8s-нодах | Критический | Завершена |
 | T-066 | Ingress Admission Webhooks Temporary Disable | Временно отключить admission webhooks ingress-nginx для обхода таймаутов Helm pre/post-upgrade hooks в проблемном контуре | Высокий | Завершена |
+| T-067 | ResolvConf Stub Drift Guard | Исключить возврат `/etc/resolv.conf` к stub и принудительно выравнивать `kubelet resolvConf` после повторного bootstrap | Критический | Завершена |
 
 ## Собранные данные (2026-02-19)
 - VMware: `vCenter 7.0.3`, `ESXi 7.0.3`, `clone_from_template`, шаблон `k8s-pcp-template`.
@@ -164,6 +165,8 @@
 - В роли `base_os` добавлено управляемое отключение `zram0` на RedOS 8: mask системных zram-юнитов, override для `zram-generator`, `swapoff /dev/zram0` и проверка, что активный swap не содержит `zram`.
 - Добавлена интеграция с `NetworkManager` для DNS (`nmcli`) и выравнивание `kubelet resolvConf` на `/run/systemd/resolve/resolv.conf` с автоматической проверкой на всех узлах `k8s_cluster` в роли `validation`.
 - В роли `ingress_nginx` временно отключены admission webhooks (`controller.admissionWebhooks.enabled=false`, `controller.admissionWebhooks.patch.enabled=false`) для обхода таймаутов pre/post-upgrade hooks Helm в текущем troubleshooting-контуре.
+- В роли `base_os` добавлена принудительная фиксация `/etc/resolv.conf` на non-stub target (`/run/systemd/resolve/resolv.conf`) с проверкой существования целевого файла, чтобы исключить drift после перераскатки.
+- В роли `kubernetes_core` добавлено пост-выравнивание `resolvConf` в `/var/lib/kubelet/config.yaml` и restart `kubelet` при изменении для стабильного DNS-поведения на повторных прогонах.
 
 ## Декомпозиция ближайшего этапа (сбор данных)
 - [x] Утвердить схему IP-адресов и список нод/ролей.

@@ -466,3 +466,11 @@
 - Обновлен `roles/ingress_nginx/defaults/main.yml`: добавлены параметры временного отключения admission webhooks (`ingress_nginx_controller_admission_webhooks_enabled`, `ingress_nginx_controller_admission_webhooks_patch_enabled`).
 - Обновлен `roles/ingress_nginx/templates/values.yaml.j2`: для ingress chart добавлена конфигурация `controller.admissionWebhooks.enabled/patch.enabled`.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-066`.
+
+## 2026-02-25 (resolv.conf stub drift guard on rebootstrap)
+### Изменено
+- Обновлен `roles/base_os/defaults/main.yml`: добавлены параметры `base_os_manage_resolv_conf_symlink` и `base_os_resolv_conf_target` для явного управления `/etc/resolv.conf`.
+- Обновлен `roles/base_os/tasks/main.yml`: добавлена проверка существования target-файла и принудительная фиксация `/etc/resolv.conf` как symlink на non-stub resolved-файл.
+- Обновлен `roles/kubernetes_core/defaults/main.yml`: добавлен переключатель `kubelet_enforce_resolv_conf_post_join`.
+- Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлено пост-выравнивание `resolvConf` в `/var/lib/kubelet/config.yaml` и restart `kubelet` при изменении.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-067`.
