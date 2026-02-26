@@ -317,3 +317,52 @@ ansible-playbook -i inventories/prod/hosts.yml playbooks/manage_proxy.yml -e pro
 ansible -i inventories/prod/hosts.yml all -m shell -a "systemctl show kubelet -p Environment --no-pager"
 ansible -i inventories/prod/hosts.yml all -m shell -a "grep -n 'ANSIBLE MANAGED PROXY' /etc/dnf/dnf.conf || true"
 ```
+
+## 16. Автодеплой приложений: Prometheus, GitLab Runner, k8tz
+Автодеплой выполняется из `playbooks/bootstrap.yml` на `control_plane[0]` и управляется переменными в `inventories/prod/group_vars/all.yml`:
+- `deploy_prometheus_stack: true|false`
+- `deploy_gitlab_runner: true|false`
+- `deploy_k8tz: true|false`
+
+### 16.1 Настройка параметров деплоя
+Ключевые переменные:
+- `prometheus_stack_*`: repo/chart/version, namespace/release, ingress hosts.
+- `gitlab_runner_*`: `gitlab_runner_gitlab_url`, `gitlab_runner_registration_token`, теги, parallelism.
+- `k8tz_*`: repo/chart/version, namespace/release, `k8tz_timezone`.
+
+Секреты (GitLab runner token) храните в vault-файле.
+
+Создать vault-файл из примера:
+```bash
+cp inventories/prod/group_vars/vault.yml.example inventories/prod/group_vars/vault.yml
+ansible-vault encrypt inventories/prod/group_vars/vault.yml
+ansible-vault edit inventories/prod/group_vars/vault.yml
+```
+
+### 16.2 Запуск только новых приложений по тегам
+Только Prometheus:
+```bash
+ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml --tags prometheus
+```
+
+Только GitLab Runner:
+```bash
+ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml --tags gitlab-runner
+```
+
+Только k8tz:
+```bash
+ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml --tags k8tz
+```
+
+Все три приложения:
+```bash
+ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml --tags observability,gitlab-runner,k8tz
+```
+
+Пример запуска с vault:
+```bash
+ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml \
+  --tags gitlab-runner \
+  --ask-vault-pass
+```

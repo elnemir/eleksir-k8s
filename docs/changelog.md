@@ -487,3 +487,10 @@
 - Добавлены роли `roles/prometheus_stack`, `roles/gitlab_runner`, `roles/k8tz` (defaults/tasks/templates) для Helm-деплоя приложений с параметризацией URL/токенов/адресов через inventory variables.
 - Обновлен `inventories/prod/group_vars/all.yml`: добавлены переменные управления деплоем и параметрами приложений (`repo/chart/version`, `gitlab_url`, `registration_token`, `timezone`, ingress hosts).
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-069`.
+
+## 2026-02-25 (apps deploy runbook and vault example)
+### Изменено
+- Добавлен `inventories/prod/group_vars/vault.yml.example` с примером секретной переменной `vault_gitlab_runner_registration_token`.
+- Обновлен `docs/runbook.md`: добавлен раздел по настройке и запуску автодеплоя `prometheus`, `gitlab-runner`, `k8tz`, включая команды запуска по тегам.
+- Обновлен `docs/runbook.md`: добавлены инструкции по созданию и использованию `ansible-vault` файла для хранения токена GitLab Runner.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-070`.
