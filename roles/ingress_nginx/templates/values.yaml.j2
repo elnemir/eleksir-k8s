@@ -9,5 +9,9 @@ controller:
     ports:
       http: {{ ingress_nginx_controller_hostport_http | int }}
       https: {{ ingress_nginx_controller_hostport_https | int }}
+  admissionWebhooks:
+    enabled: {{ ingress_nginx_controller_admission_webhooks_enabled | bool | lower }}
+    patch:
+      enabled: {{ ingress_nginx_controller_admission_webhooks_patch_enabled | bool | lower }}
   service:
     enabled: {{ ingress_nginx_controller_service_enabled | bool | lower }}

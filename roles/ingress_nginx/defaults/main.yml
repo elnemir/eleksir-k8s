@@ -19,6 +19,8 @@ ingress_nginx_controller_hostport_enabled: true
 ingress_nginx_controller_hostport_http: 80
 ingress_nginx_controller_hostport_https: 443
 ingress_nginx_controller_service_enabled: false
+ingress_nginx_controller_admission_webhooks_enabled: false
+ingress_nginx_controller_admission_webhooks_patch_enabled: false
 ingress_nginx_helm_version: v3.16.4
 ingress_nginx_helm_tmp_dir: /tmp/ingress-nginx-tools
 ingress_nginx_helm_download_retries: 4

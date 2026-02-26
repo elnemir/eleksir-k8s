@@ -460,3 +460,9 @@
 - Обновлен `roles/kubernetes_core/templates/kubeadm-config.yaml.j2`: в `KubeletConfiguration` добавлен `resolvConf`.
 - Обновлен `roles/validation/defaults/main.yml` и `roles/validation/tasks/main.yml`: добавлена проверка `resolvConf` в `/var/lib/kubelet/config.yaml` на всех узлах `k8s_cluster`.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-065`.
+
+## 2026-02-25 (ingress webhook hooks temporary disable workaround)
+### Изменено
+- Обновлен `roles/ingress_nginx/defaults/main.yml`: добавлены параметры временного отключения admission webhooks (`ingress_nginx_controller_admission_webhooks_enabled`, `ingress_nginx_controller_admission_webhooks_patch_enabled`).
+- Обновлен `roles/ingress_nginx/templates/values.yaml.j2`: для ingress chart добавлена конфигурация `controller.admissionWebhooks.enabled/patch.enabled`.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-066`.
