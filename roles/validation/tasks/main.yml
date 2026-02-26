@@ -43,7 +43,7 @@
 
 - name: Read kubelet resolvConf from all k8s nodes
   ansible.builtin.command: >-
-    awk '/^resolvConf:/{print $2}' /var/lib/kubelet/config.yaml
+    awk '/^resolvConf:/{gsub(/^"|"$/, "", $2); print $2}' /var/lib/kubelet/config.yaml
   delegate_to: "{{ item }}"
   loop: "{{ groups['k8s_cluster'] }}"
   register: validation_kubelet_resolv_conf_values
@@ -58,7 +58,10 @@
       - >-
         (
           validation_kubelet_resolv_conf_values.results
-          | rejectattr('stdout', 'equalto', validation_kubelet_resolv_conf_expected)
+          | map(attribute='stdout')
+          | map('trim')
+          | map('regex_replace', '^"|"$', '')
+          | reject('equalto', validation_kubelet_resolv_conf_expected)
           | list
           | length
         ) == 0
@@ -67,7 +70,12 @@
       Actual: {{
         validation_kubelet_resolv_conf_values.results
         | map(attribute='item')
-        | zip(validation_kubelet_resolv_conf_values.results | map(attribute='stdout'))
+        | zip(
+            validation_kubelet_resolv_conf_values.results
+            | map(attribute='stdout')
+            | map('trim')
+            | map('regex_replace', '^"|"$', '')
+          )
         | map('join', '=')
         | join(', ')
       }}.

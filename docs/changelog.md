@@ -474,3 +474,9 @@
 - Обновлен `roles/kubernetes_core/defaults/main.yml`: добавлен переключатель `kubelet_enforce_resolv_conf_post_join`.
 - Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлено пост-выравнивание `resolvConf` в `/var/lib/kubelet/config.yaml` и restart `kubelet` при изменении.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-067`.
+
+## 2026-02-25 (validation resolvconf quote-normalization fix)
+### Изменено
+- Обновлен `roles/validation/tasks/main.yml`: чтение `resolvConf` переведено на нормализацию значения без кавычек.
+- Обновлен `roles/validation/tasks/main.yml`: сравнение ожидаемого `resolvConf` выполняется по нормализованным значениям (`trim` + удаление кавычек), чтобы исключить ложные срабатывания.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-068`.
