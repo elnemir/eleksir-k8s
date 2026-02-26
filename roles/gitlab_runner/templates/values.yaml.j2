@@ -1,0 +1,13 @@
+gitlabUrl: {{ gitlab_runner_gitlab_url | quote }}
+runnerRegistrationToken: {{ gitlab_runner_registration_token | quote }}
+concurrent: {{ gitlab_runner_concurrent | int }}
+
+rbac:
+  create: true
+
+runners:
+  tags: {{ gitlab_runner_runner_tags | quote }}
+  locked: false
+  runUntagged: true
+
+{{ gitlab_runner_extra_values | default({}) | to_nice_yaml(indent=2) }}

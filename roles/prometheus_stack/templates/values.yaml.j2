@@ -1,0 +1,19 @@
+grafana:
+  ingress:
+    enabled: {{ (prometheus_stack_grafana_host | default('') | length > 0) | bool | lower }}
+    hosts:
+      - {{ prometheus_stack_grafana_host | quote }}
+
+prometheus:
+  ingress:
+    enabled: {{ (prometheus_stack_prometheus_host | default('') | length > 0) | bool | lower }}
+    hosts:
+      - {{ prometheus_stack_prometheus_host | quote }}
+
+alertmanager:
+  ingress:
+    enabled: {{ (prometheus_stack_alertmanager_host | default('') | length > 0) | bool | lower }}
+    hosts:
+      - {{ prometheus_stack_alertmanager_host | quote }}
+
+{{ prometheus_stack_extra_values | default({}) | to_nice_yaml(indent=2) }}

@@ -1,0 +1,15 @@
+# ## Задача: Роль k8tz
+# - **Статус**: В процессе
+# - **Описание**: Автоматическое развертывание k8tz через Helm.
+k8tz_kubeconfig: /etc/kubernetes/admin.conf
+k8tz_helm_binary_path: /usr/local/bin/helm
+k8tz_release_name: k8tz
+k8tz_namespace: k8tz
+k8tz_chart_repo_name: k8tz
+k8tz_chart_repo_url: https://k8tz.github.io/k8tz/
+k8tz_chart_ref: k8tz/k8tz
+k8tz_chart_version: ""
+k8tz_values_path: /tmp/k8tz-values.yaml
+k8tz_wait_timeout: 600s
+k8tz_timezone: Europe/Moscow
+k8tz_extra_values: {}

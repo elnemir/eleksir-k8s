@@ -480,3 +480,10 @@
 - Обновлен `roles/validation/tasks/main.yml`: чтение `resolvConf` переведено на нормализацию значения без кавычек.
 - Обновлен `roles/validation/tasks/main.yml`: сравнение ожидаемого `resolvConf` выполняется по нормализованным значениям (`trim` + удаление кавычек), чтобы исключить ложные срабатывания.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-068`.
+
+## 2026-02-25 (apps auto-deploy with inventory-driven settings)
+### Изменено
+- Обновлен `playbooks/bootstrap.yml`: добавлены этапы автоматизированного деплоя `kube-prometheus-stack`, `gitlab-runner`, `k8tz` после ingress с отдельными тегами и `when`-переключателями.
+- Добавлены роли `roles/prometheus_stack`, `roles/gitlab_runner`, `roles/k8tz` (defaults/tasks/templates) для Helm-деплоя приложений с параметризацией URL/токенов/адресов через inventory variables.
+- Обновлен `inventories/prod/group_vars/all.yml`: добавлены переменные управления деплоем и параметрами приложений (`repo/chart/version`, `gitlab_url`, `registration_token`, `timezone`, ingress hosts).
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-069`.

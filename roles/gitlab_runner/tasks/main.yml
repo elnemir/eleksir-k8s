@@ -1,0 +1,71 @@
+# ## Задача: Роль gitlab_runner
+# - **Статус**: В процессе
+# - **Описание**: Деплой GitLab Runner с параметризацией URL и registration token.
+- name: Validate GitLab Runner settings
+  ansible.builtin.assert:
+    that:
+      - gitlab_runner_release_name | length > 0
+      - gitlab_runner_namespace | length > 0
+      - gitlab_runner_chart_repo_name | length > 0
+      - gitlab_runner_chart_repo_url | length > 0
+      - gitlab_runner_chart_ref | length > 0
+      - gitlab_runner_gitlab_url | length > 0
+      - gitlab_runner_registration_token | length > 0
+    fail_msg: >-
+      GitLab Runner settings are incomplete.
+      Set gitlab_runner_gitlab_url and gitlab_runner_registration_token (recommended via vault).
+
+- name: Ensure helm binary exists for GitLab Runner
+  ansible.builtin.stat:
+    path: "{{ gitlab_runner_helm_binary_path }}"
+  register: gitlab_runner_helm_stat
+
+- name: Fail when helm binary is missing for GitLab Runner
+  ansible.builtin.assert:
+    that:
+      - gitlab_runner_helm_stat.stat.exists | default(false)
+    fail_msg: "Helm binary is missing at {{ gitlab_runner_helm_binary_path }}"
+
+- name: Ensure GitLab chart repository is configured
+  ansible.builtin.command: >-
+    {{ gitlab_runner_helm_binary_path }} repo add {{ gitlab_runner_chart_repo_name }} {{ gitlab_runner_chart_repo_url }}
+  register: gitlab_runner_repo_add
+  changed_when: "'has been added' in (gitlab_runner_repo_add.stdout | default(''))"
+  failed_when: >-
+    gitlab_runner_repo_add.rc != 0
+    and 'already exists' not in (gitlab_runner_repo_add.stderr | default(''))
+  environment: "{{ (proxy_environment | default({})) | combine({'PATH': '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'}) }}"
+
+- name: Refresh helm repositories before GitLab Runner deploy
+  ansible.builtin.command: "{{ gitlab_runner_helm_binary_path }} repo update"
+  changed_when: false
+  environment: "{{ (proxy_environment | default({})) | combine({'PATH': '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'}) }}"
+
+- name: Render GitLab Runner values
+  ansible.builtin.template:
+    src: values.yaml.j2
+    dest: "{{ gitlab_runner_values_path }}"
+    mode: "0644"
+
+- name: Deploy GitLab Runner
+  ansible.builtin.command: >-
+    {{ gitlab_runner_helm_binary_path }} upgrade --install {{ gitlab_runner_release_name }} {{ gitlab_runner_chart_ref }}
+    --kubeconfig {{ gitlab_runner_kubeconfig }}
+    --namespace {{ gitlab_runner_namespace }}
+    --create-namespace
+    -f {{ gitlab_runner_values_path }}
+    {{ ('--version ' ~ gitlab_runner_chart_version) if (gitlab_runner_chart_version | length > 0) else '' }}
+    --wait --timeout {{ gitlab_runner_wait_timeout }}
+  register: gitlab_runner_release
+  changed_when: >-
+    'Installing it now' in (gitlab_runner_release.stdout | default(''))
+    or 'has been upgraded' in (gitlab_runner_release.stdout | default(''))
+  environment: "{{ (proxy_environment | default({})) | combine({'PATH': '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'}) }}"
+
+- name: Wait for GitLab Runner deployment rollout
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ gitlab_runner_kubeconfig }}
+    -n {{ gitlab_runner_namespace }}
+    rollout status deployment/{{ gitlab_runner_release_name }}-gitlab-runner
+    --timeout={{ gitlab_runner_wait_timeout }}
+  changed_when: false

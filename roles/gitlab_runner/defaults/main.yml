@@ -1,0 +1,18 @@
+# ## Задача: Роль gitlab_runner
+# - **Статус**: В процессе
+# - **Описание**: Автоматическое развертывание GitLab Runner через Helm.
+gitlab_runner_kubeconfig: /etc/kubernetes/admin.conf
+gitlab_runner_helm_binary_path: /usr/local/bin/helm
+gitlab_runner_release_name: gitlab-runner
+gitlab_runner_namespace: gitlab-runner
+gitlab_runner_chart_repo_name: gitlab
+gitlab_runner_chart_repo_url: https://charts.gitlab.io
+gitlab_runner_chart_ref: gitlab/gitlab-runner
+gitlab_runner_chart_version: ""
+gitlab_runner_values_path: /tmp/gitlab-runner-values.yaml
+gitlab_runner_wait_timeout: 600s
+gitlab_runner_gitlab_url: ""
+gitlab_runner_registration_token: ""
+gitlab_runner_runner_tags: "kubernetes"
+gitlab_runner_concurrent: 10
+gitlab_runner_extra_values: {}
