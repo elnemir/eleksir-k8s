@@ -195,19 +195,21 @@ roles/
 - Labels на MetalLB-нодах: `node-role.kubernetes.io/metallb=true`
 - Taints на MetalLB-нодах: отсутствуют
 - Ограничение прав: нет доступа к изменению сетевых настроек в `vCenter`.
-- Публикация ресурсов выполняется через `Service type=LoadBalancer` с выдачей `VIP` из пула MetalLB.
+- Текущий ingress-режим: `DaemonSet + hostNetwork` на нодах `k8s-mlb-01..03` (`node_ip` публикация на портах `80/443`).
+- Публикация сервисов через `Service type=LoadBalancer` с выдачей `VIP` из пула MetalLB доступна как отдельный/дополнительный сценарий.
 - В режиме `l2` VIP не назначается как обычный адрес интерфейса; трафик доставляется через ARP/NDP анонс от `metallb-speaker`.
-- Рекомендация для ingress: закрепить статический VIP (`10.255.106.21`) за сервисом ingress.
+- Для ingress в `node_ip` режиме выделенный VIP не требуется.
 - Обязательные внешние условия без vCenter-изменений:
-  - VIP-диапазон должен быть зарезервирован в IPAM/DHCP и не использоваться другими хостами.
-  - Должна быть сетевая достижимость клиентов до VIP (L2/L3 маршрут).
-  - На периметре должен быть разрешен доступ к VIP на `80/443`.
-  - DNS-записи внешних сервисов должны указывать на VIP ingress.
+  - Для режима `node_ip`: клиенты должны иметь маршрутизацию и доступ к ingress-нодам (`k8s-mlb-*`) на `80/443`.
+  - Для режима `LoadBalancer`: VIP-диапазон должен быть зарезервирован в IPAM/DHCP и не использоваться другими хостами.
+  - Для режима `LoadBalancer`: должна быть сетевая достижимость клиентов до VIP (L2/L3 маршрут), доступ на `80/443` и DNS-записи на VIP ingress.
 - В `validation` включен автоматический post-check ingress:
   - `validation_enable_ingress_vip_check: true`
+  - `validation_ingress_validation_mode: node_ip`
   - `validation_ingress_namespace: ingress-nginx`
-  - `validation_ingress_service_name: ingress-nginx-controller`
-  - `validation_ingress_expected_vip: 10.255.106.21`
+  - `validation_ingress_controller_daemonset_name: ingress-nginx-controller`
+  - `validation_ingress_require_controller_on_all_metallb_nodes: true`
+  - `validation_ingress_expected_vip` применяется только при `validation_ingress_validation_mode=loadbalancer`
 - В `validation` включен автоматический post-check control-plane API VIP:
   - `validation_enable_api_vip_check: true`
   - `validation_control_plane_endpoint_host: 10.255.106.20`
@@ -265,8 +267,8 @@ roles/
   - Повторный запуск плейбука не приводит к незапланированным изменениям (идемпотентность).
   - Все ноды кластера в состоянии `Ready`, системные поды в `Running`.
   - Kubernetes API доступен через `control_plane_endpoint` (`10.255.106.20:8443`).
-  - Сервис типа `LoadBalancer` получает IP из пула MetalLB и доступен по `80/443`.
-  - Публикация ingress через VIP работает без изменений сети в `vCenter` (при выполненных внешних сетевых предпосылках).
+  - Ingress в режиме `node_ip` публикуется через выделенные ingress-ноды (`k8s-mlb-*`) и доступен по `80/443`.
+  - Сценарий `LoadBalancer` через MetalLB остается доступным как опциональный режим публикации сервисов.
   - PVC через NFS StorageClass `nfs-sp` успешно создается и проходит RW-проверку.
   - Проверка failover: кластер сохраняет работоспособность при недоступности одной control-plane ноды.
 
@@ -309,7 +311,7 @@ roles/
   - `metallb`: установка и конфигурация IP pool
   - `storage_nfs`: NFS export + Kubernetes StorageClass через provisioner
   - `security_hardening`: SELinux/firewalld
-  - `validation`: проверки критериев приемки, включая автоматические проверки ingress VIP, API VIP и состояния HA-сервисов
+  - `validation`: проверки критериев приемки, включая ingress в `node_ip` режиме (и `LoadBalancer` в режиме совместимости), API VIP и состояние HA-сервисов
 - Дополнительные требования, принятые после первичной реализации:
   - системные hostname должны синхронизироваться с именами узлов из inventory;
   - необходимость настройки proxy должна управляться параметром (`proxy_enabled`).

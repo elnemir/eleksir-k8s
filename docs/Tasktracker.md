@@ -78,6 +78,8 @@
 | T-063 | Ingress Helm Path Hardening | Перевести проверку/вызов `helm` в `ingress_nginx` на абсолютный путь и убрать зависимость от shell PATH | Высокий | Завершена |
 | T-064 | Base OS ZRAM Disable | Добавить устойчивое отключение `zram0` на RedOS 8 (runtime + persist) в роли `base_os` | Высокий | Завершена |
 | T-065 | NM DNS and Kubelet ResolvConf | Настроить DNS через `NetworkManager` и зафиксировать `kubelet resolvConf` на `/run/systemd/resolve/resolv.conf` с валидацией на всех k8s-нодах | Критический | Завершена |
+| T-066 | Documentation Ingress Node-IP Sync | Синхронизировать `Project.md`/`runbook.md`/`qa.md` с фактическим ingress-режимом `node_ip` и включенной проверкой `validation_enable_ingress_vip_check=true` | Высокий | Завершена |
+| T-067 | Hosts Mapping Runbook | Явно зафиксировать в runbook проверку управления `/etc/hosts` из inventory и критерии корректности | Средний | Завершена |
 
 ## Собранные данные (2026-02-19)
 - VMware: `vCenter 7.0.3`, `ESXi 7.0.3`, `clone_from_template`, шаблон `k8s-pcp-template`.
@@ -113,7 +115,7 @@
 - В `storage_nfs` добавлена опция выделенного data-диска: разметка, форматирование и монтирование в `nfs_export_path`.
 - Добавлен guardrail в `storage_nfs`: блокировка системного диска по умолчанию с явным override-флагом.
 - В документации зафиксирован операционный сценарий MetalLB L2 без прав на сетевые изменения в `vCenter`.
-- В роль `validation` добавлена автоматическая проверка ingress `LoadBalancer` и ожидаемого VIP.
+- В роль `validation` добавлена автоматическая ingress-проверка с основным режимом `node_ip` (DaemonSet readiness/placement) и обратной совместимостью режима `LoadBalancer`.
 - Добавлена роль `control_plane_vip`: реализация API endpoint VIP через `keepalived + haproxy` на control-plane нодах.
 - Роль `validation` дополнена проверками API VIP (`/readyz`), состояния `keepalived/haproxy` и опциональным failover-test для control-plane VIP.
 - В `playbooks/validate.yml` добавлен отдельный on-demand путь запуска failover-проверки по тегу `failover`.

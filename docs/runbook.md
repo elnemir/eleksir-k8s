@@ -103,6 +103,18 @@ ansible -i inventories/prod/hosts.yml all -m command -a hostname
 - `k8s-mlb-01`, `k8s-mlb-02`, `k8s-mlb-03`
 - `k8s-nfs-01`
 
+## 7.1 Проверка `/etc/hosts` на узлах
+Роль `base_os` управляет `/etc/hosts` блоком `ANSIBLE MANAGED INVENTORY HOSTS`.
+
+Проверка:
+```bash
+ansible -i inventories/prod/hosts.yml all -m shell -a "sed -n '/ANSIBLE MANAGED INVENTORY HOSTS/,+15p' /etc/hosts"
+```
+
+Ожидается:
+- в управляемом блоке присутствуют соответствия `IP -> inventory hostname` для всех узлов кластера;
+- обновление выполняется из inventory (при изменении IP/hostname в `inventories/prod/hosts.yml` блок перегенерируется при следующем запуске `bootstrap`).
+
 ## 8. Проверка идемпотентности
 После успешного деплоя выполнить повторный запуск:
 ```bash
@@ -126,41 +138,42 @@ ansible-playbook -i inventories/prod/hosts.yml playbooks/site.yml
 Ограничение: сетевые изменения в `vCenter` недоступны.
 
 Что обязательно проверить до публикации:
-1. VIP-пул `10.255.106.21-10.255.106.30` зарезервирован и не выдается DHCP.
-2. Клиенты имеют маршрут/доступ в сеть `10.255.106.0/26`.
-3. На межсетевых экранах разрешен доступ к VIP на `80/443`.
-4. DNS указывает на VIP ingress.
+1. Для `node_ip` режима: клиенты имеют маршрут/доступ к ingress-нодам `k8s-mlb-*` в сети `10.255.106.0/26`.
+2. Для `node_ip` режима: на межсетевых экранах разрешен доступ на IP ingress-нод по `80/443`.
+3. Для `LoadBalancer` режима: VIP-пул `10.255.106.21-10.255.106.30` зарезервирован и не выдается DHCP.
+4. Для `LoadBalancer` режима: DNS указывает на ingress VIP.
 
-Рекомендованная фиксация VIP ingress:
+Текущий ingress-режим проекта: `DaemonSet + hostNetwork` (`node_ip`), без обязательного `LoadBalancer`-VIP.
+
+Проверка публикации в текущем режиме:
 ```bash
-# Проверить, что ingress service имеет тип LoadBalancer
-kubectl --kubeconfig /etc/kubernetes/admin.conf -n ingress-nginx get svc ingress-nginx-controller -o wide
+# DaemonSet ingress контроллера должен быть готов
+kubectl --kubeconfig /etc/kubernetes/admin.conf -n ingress-nginx get ds ingress-nginx-controller -o wide
 
-# Зафиксировать VIP (пример: 10.255.106.21)
-kubectl --kubeconfig /etc/kubernetes/admin.conf -n ingress-nginx patch svc ingress-nginx-controller \
-  --type merge \
-  -p '{"metadata":{"annotations":{"metallb.io/loadBalancerIPs":"10.255.106.21"}}}'
+# Поды ingress должны быть размещены на выделенных ingress-нодах
+kubectl --kubeconfig /etc/kubernetes/admin.conf -n ingress-nginx get pods -o wide -l app.kubernetes.io/component=controller
+
+# Проверка доступности через node IP ingress-нод (пример)
+curl -I http://10.255.106.16
+curl -I http://10.255.106.17
+curl -I http://10.255.106.18
 ```
 
-Проверка публикации:
+Опциональный режим `LoadBalancer` (режим совместимости):
 ```bash
-# Проверить EXTERNAL-IP у ingress-сервиса
+# Используется только при явном переключении validation_ingress_validation_mode=loadbalancer
 kubectl --kubeconfig /etc/kubernetes/admin.conf -n ingress-nginx get svc ingress-nginx-controller -o wide
-
-# Проверить с клиентской сети (где должен быть доступ)
-curl -I http://10.255.106.21
-curl -Ik https://10.255.106.21
 ```
 
 Автоматизация в `playbooks/validate.yml`:
 - Роль `validation` проверяет доступность API через control-plane VIP (`/readyz` через `kubectl --server=https://10.255.106.20:8443`).
 - Роль `validation` проверяет `keepalived/haproxy` на всех control-plane нодах и наличие ровно одного владельца VIP.
-- Роль `validation` проверяет, что ingress-service имеет `type=LoadBalancer` и ненулевой external address.
-- При заданном `validation_ingress_expected_vip` дополнительно валидируется точное совпадение VIP.
+- Роль `validation` в текущем режиме `node_ip` проверяет готовность ingress `DaemonSet` и размещение controller-подов на ingress-нодах.
+- В режиме совместимости `loadbalancer` проверяются `type=LoadBalancer`, external address и (опционально) `validation_ingress_expected_vip`.
 - Опциональный failover-test VIP (по умолчанию выключен): `-e validation_enable_control_plane_vip_failover_test=true`.
 - Для отключения API/VIP проверок: `-e validation_enable_api_vip_check=false -e validation_enable_control_plane_vip_state_check=false`.
 - Для отключения проверки: `-e validation_enable_ingress_vip_check=false`.
-- Текущий troubleshooting-контур: ingress VIP check временно отключен в `inventories/prod/group_vars/all.yml` (`validation_enable_ingress_vip_check: false`) до развертывания namespace `ingress-nginx`.
+- Текущее значение в inventory: `validation_enable_ingress_vip_check=true`, `validation_ingress_validation_mode=node_ip`.
 
 Пример запуска:
 ```bash

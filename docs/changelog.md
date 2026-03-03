@@ -460,3 +460,15 @@
 - Обновлен `roles/kubernetes_core/templates/kubeadm-config.yaml.j2`: в `KubeletConfiguration` добавлен `resolvConf`.
 - Обновлен `roles/validation/defaults/main.yml` и `roles/validation/tasks/main.yml`: добавлена проверка `resolvConf` в `/var/lib/kubelet/config.yaml` на всех узлах `k8s_cluster`.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-065`.
+
+## 2026-03-02 (documentation sync for ingress node-ip mode)
+### Изменено
+- Обновлен `docs/Project.md`: синхронизирована модель ingress-публикации с фактической реализацией (`DaemonSet + hostNetwork`, `node_ip`), сценарий `LoadBalancer` оставлен как дополнительный.
+- Обновлен `docs/runbook.md`: раздел эксплуатации MetalLB/ingress приведен к текущему режиму `node_ip`, обновлены проверки и диагностика, удалена устаревшая заметка о временном отключении ingress validation.
+- Обновлен `docs/qa.md`: acceptance criteria обновлены под ingress `node_ip` (с сохранением `LoadBalancer` как дополнительного сценария).
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-066`.
+
+## 2026-03-03 (hosts mapping runbook sync)
+### Изменено
+- Обновлен `docs/runbook.md`: добавлен отдельный раздел проверки `/etc/hosts` (`ANSIBLE MANAGED INVENTORY HOSTS`) и ожидаемого соответствия `IP -> inventory hostname`.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-067`.
