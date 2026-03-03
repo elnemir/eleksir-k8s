@@ -49,6 +49,7 @@ flowchart LR
 
 ## 5. Целевые компоненты и зоны ответственности
 - `base_os`: базовая подготовка RedOS (time sync, packages, kernel params).
+  - перед установкой кластера выполняется полное обновление установленных пакетов (`dnf update`), параметризуемое через `base_os_update_all_packages`.
 - `proxy`: настройка системного и пакетного прокси (`dnf`, `container runtime`, systemd env).
 - `container_runtime`: установка и настройка containerd/CRI-O (уточняется).
 - `control_plane_vip`: настройка HA endpoint Kubernetes API через `keepalived + haproxy`.

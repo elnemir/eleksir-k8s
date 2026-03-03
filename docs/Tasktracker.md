@@ -88,6 +88,7 @@
 | T-073 | K8s Package Nobest Fallback | Добавить fallback установки Kubernetes-пакетов через `dnf nobest`, чтобы не блокироваться на недоступном patch-релизе в канале `v1.30` | Критический | Завершена (без стендовой валидации) |
 | T-074 | Docs Steps Dedup Cleanup | Проверить и убрать повторяющиеся шаги в документации после merge-конфликта (`Tasktracker/changelog`) | Высокий | Завершена |
 | T-075 | Firewall Disable and Steps Cleanup | Отключить firewalld в текущем контуре и исключить лишние firewall-шаги из выполнения ролей | Критический | Завершена (без стендовой валидации) |
+| T-076 | Base OS Full Update Pre-Step | Добавить обязательный шаг обновления всех пакетов на хостах перед установкой кластера (с параметром управления) | Критический | Завершена (без стендовой валидации) |
 
 ## Собранные данные (2026-02-19)
 - VMware: `vCenter 7.0.3`, `ESXi 7.0.3`, `clone_from_template`, шаблон `k8s-pcp-template`.
@@ -174,6 +175,7 @@
 - Добавлена интеграция с `NetworkManager` для DNS (`nmcli`) и выравнивание `kubelet resolvConf` на `/run/systemd/resolve/resolv.conf` с автоматической проверкой на всех узлах `k8s_cluster` в роли `validation`.
 - В роли `kubernetes_core` включен управляемый fallback установки пакетов через `dnf nobest` (`kubernetes_package_install_nobest: true`), чтобы обходить недоступные patch-артефакты при живом minor-канале репозитория.
 - В текущем контуре отключен firewalld (`firewalld_enabled: false`), добавлено явное отключение сервиса в `security_hardening` и исключена установка `firewalld` из `base_os` пакетов при выключенном firewall.
+- В `base_os` добавлен pre-step полного обновления установленных пакетов (`dnf update_only`) перед установкой baseline-компонентов; шаг управляется параметром `base_os_update_all_packages`.
 - В роли `ingress_nginx` временно отключены admission webhooks (`controller.admissionWebhooks.enabled=false`, `controller.admissionWebhooks.patch.enabled=false`) для обхода таймаутов pre/post-upgrade hooks Helm в текущем troubleshooting-контуре.
 - В роли `base_os` добавлена принудительная фиксация `/etc/resolv.conf` на non-stub target (`/run/systemd/resolve/resolv.conf`) с проверкой существования целевого файла, чтобы исключить drift после перераскатки.
 - В роли `kubernetes_core` добавлено пост-выравнивание `resolvConf` в `/var/lib/kubelet/config.yaml` и restart `kubelet` при изменении для стабильного DNS-поведения на повторных прогонах.

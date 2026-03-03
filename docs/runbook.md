@@ -38,6 +38,10 @@ ansible-lint --version
 yamllint --version
 ```
 
+Важно:
+- в роли `base_os` перед кластерной установкой выполняется обновление всех установленных пакетов (`base_os_update_all_packages: true` по умолчанию).
+- при необходимости этот шаг можно отключить только осознанно: `-e base_os_update_all_packages=false`.
+
 ## 4. Предпроверки перед деплоем
 ```bash
 cd /Users/eln/Documents/k8s-redos

@@ -24,6 +24,14 @@
       {% endfor %}
   when: base_os_manage_hosts_file | bool
 
+- name: Update all installed packages before cluster installation
+  ansible.builtin.dnf:
+    name: "*"
+    state: latest
+    update_only: true
+  when: base_os_update_all_packages | bool
+  environment: "{{ proxy_environment | default({}) }}"
+
 - name: Install baseline packages
   ansible.builtin.package:
     name: >-

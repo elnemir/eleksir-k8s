@@ -4,6 +4,7 @@
 cluster_name: redos-k8s
 redos_release: "8.0.2"
 management_cidr: "10.255.106.0/26"
+base_os_update_all_packages: true
 
 kubernetes_version: "1.30.14"
 kubeadm_config_api_version: "kubeadm.k8s.io/v1beta3"

@@ -523,6 +523,14 @@
 - Обновлены `docs/Project.md`, `docs/runbook.md`, `docs/qa.md`: синхронизирован текущий режим безопасности (firewalld отключен).
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-075`.
 
+## 2026-03-03 (base_os full package update pre-step)
+### Изменено
+- Обновлен `roles/base_os/defaults/main.yml`: добавлен параметр `base_os_update_all_packages` (по умолчанию `true`).
+- Обновлен `roles/base_os/tasks/main.yml`: добавлен шаг полного обновления установленных пакетов (`dnf`, `name='*'`, `state=latest`, `update_only=true`) перед установкой baseline-пакетов.
+- Обновлен `inventories/prod/group_vars/all.yml`: зафиксирован `base_os_update_all_packages: true`.
+- Обновлены `docs/Project.md` и `docs/runbook.md`: отражен обязательный pre-step обновления пакетов перед установкой кластера.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-076`.
+
 ## 2026-03-03 (docs repeated steps cleanup)
 ### Изменено
 - Обновлен `docs/Tasktracker.md`: убраны повторяющиеся конфликтные шаги, сохранены уникальные задачи без дублирования.
