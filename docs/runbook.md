@@ -132,7 +132,7 @@ ansible-playbook -i inventories/prod/hosts.yml playbooks/site.yml
 4. Kubernetes API доступен через `10.255.106.20:8443`.
 5. MetalLB controller/speaker в `Running`, IP-пул применен.
 6. `StorageClass nfs-sp` создан, PVC успешно bind.
-7. SELinux/firewalld применены по ролям.
+7. SELinux/firewalld соответствуют текущему контуру (в диагностическом режиме `firewalld` отключен).
 8. Повторный прогон плейбука не создает нежелательных изменений.
 
 ## 10. MetalLB L2 без доступа к vCenter
@@ -205,6 +205,10 @@ kubectl --kubeconfig /etc/kubernetes/admin.conf get nodes -o wide
 kubectl --kubeconfig /etc/kubernetes/admin.conf get pods -A
 kubectl --kubeconfig /etc/kubernetes/admin.conf get svc -A
 kubectl --kubeconfig /etc/kubernetes/admin.conf get storageclass
+
+# Проверка режима firewall
+ansible -i inventories/prod/hosts.yml all -m command -a "systemctl is-enabled firewalld || true"
+ansible -i inventories/prod/hosts.yml all -m command -a "systemctl is-active firewalld || true"
 
 # Control-plane VIP
 ansible -i inventories/prod/hosts.yml control_plane -m command -a "systemctl is-active haproxy"

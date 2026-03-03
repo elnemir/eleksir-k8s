@@ -5,10 +5,23 @@
   ansible.builtin.assert:
     that:
       - (selinux_target_mode | lower) in ['enforcing', 'permissive', 'disabled']
-      - firewall_allowed_tcp is defined
-      - firewall_allowed_udp is defined
-      - firewall_allowed_protocols is defined
+      - (not (firewalld_enabled | bool)) or (firewall_allowed_tcp is defined)
+      - (not (firewalld_enabled | bool)) or (firewall_allowed_udp is defined)
+      - (not (firewalld_enabled | bool)) or (firewall_allowed_protocols is defined)
     fail_msg: "Security variables are incomplete"
+
+- name: Gather service facts when firewalld is disabled
+  ansible.builtin.service_facts:
+  when: not (firewalld_enabled | bool)
+
+- name: Ensure firewalld service is stopped and disabled when firewalld is disabled
+  ansible.builtin.service:
+    name: firewalld
+    enabled: false
+    state: stopped
+  when:
+    - not (firewalld_enabled | bool)
+    - "'firewalld.service' in ansible_facts.services"
 
 - name: Ensure firewalld package is installed
   ansible.builtin.package:

@@ -26,7 +26,12 @@
 
 - name: Install baseline packages
   ansible.builtin.package:
-    name: "{{ base_os_packages }}"
+    name: >-
+      {{
+        (base_os_packages | reject('equalto', 'firewalld') | list)
+        if (not (firewalld_enabled | default(true) | bool))
+        else base_os_packages
+      }}
     state: present
 
 - name: Get active NetworkManager connection for primary interface

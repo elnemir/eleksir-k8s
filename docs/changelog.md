@@ -514,3 +514,18 @@
 - Обновлен `inventories/prod/group_vars/all.yml`: зафиксирован `kubernetes_package_install_nobest: true`.
 - Обновлены `docs/Project.md` и `docs/runbook.md`: добавлены эксплуатационные пояснения по fallback-режиму установки пакетов в условиях нестабильных зеркал.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-073`.
+
+## 2026-03-03 (firewalld disable and firewall steps cleanup)
+### Изменено
+- Обновлен `inventories/prod/group_vars/all.yml`: установлен `firewalld_enabled: false` для текущего диагностического контура.
+- Обновлен `roles/security_hardening/tasks/main.yml`: добавлено явное отключение сервиса `firewalld` (`stopped/disabled`) при `firewalld_enabled=false`; валидация firewall-переменных сделана условной.
+- Обновлен `roles/base_os/tasks/main.yml`: исключена установка пакета `firewalld` из baseline-пакетов при `firewalld_enabled=false`.
+- Обновлены `docs/Project.md`, `docs/runbook.md`, `docs/qa.md`: синхронизирован текущий режим безопасности (firewalld отключен).
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-075`.
+
+## 2026-03-03 (docs repeated steps cleanup)
+### Изменено
+- Обновлен `docs/Tasktracker.md`: убраны повторяющиеся конфликтные шаги, сохранены уникальные задачи без дублирования.
+- Обновлен `docs/changelog.md`: очищены повторяющиеся конфликтные блоки, история изменений приведена к линейному виду.
+- Выполнена контрольная проверка отсутствия conflict-маркеров (`<<<<<<<`, `=======`, `>>>>>>>`) в `docs/`.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-074`.

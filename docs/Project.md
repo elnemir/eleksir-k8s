@@ -258,6 +258,7 @@ roles/
 - SSH auth: `password`
 - Bastion: `no`
 - SELinux: `Disabled` (временный диагностический режим для текущего контура; целевой baseline остается `Enforcing` после завершения сетевой диагностики)
+- firewalld: `Disabled` (временный диагностический режим текущего контура; сервис принудительно останавливается/отключается при `firewalld_enabled=false`)
 - Secrets store: `ansible-vault`
 - Ansible control node: `Debian 13`
 - ansible-core: `2.19.4`
