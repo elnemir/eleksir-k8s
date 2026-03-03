@@ -1,0 +1,67 @@
+# ## Задача: Роль prometheus_stack
+# - **Статус**: В процессе
+# - **Описание**: Деплой kube-prometheus-stack с параметризацией URL/адресов.
+- name: Validate prometheus stack settings
+  ansible.builtin.assert:
+    that:
+      - prometheus_stack_release_name | length > 0
+      - prometheus_stack_namespace | length > 0
+      - prometheus_stack_chart_repo_name | length > 0
+      - prometheus_stack_chart_repo_url | length > 0
+      - prometheus_stack_chart_ref | length > 0
+    fail_msg: "Prometheus stack settings are incomplete"
+
+- name: Ensure helm binary exists for prometheus stack
+  ansible.builtin.stat:
+    path: "{{ prometheus_stack_helm_binary_path }}"
+  register: prometheus_stack_helm_stat
+
+- name: Fail when helm binary is missing for prometheus stack
+  ansible.builtin.assert:
+    that:
+      - prometheus_stack_helm_stat.stat.exists | default(false)
+    fail_msg: "Helm binary is missing at {{ prometheus_stack_helm_binary_path }}"
+
+- name: Ensure prometheus chart repository is configured
+  ansible.builtin.command: >-
+    {{ prometheus_stack_helm_binary_path }} repo add {{ prometheus_stack_chart_repo_name }} {{ prometheus_stack_chart_repo_url }}
+  register: prometheus_stack_repo_add
+  changed_when: "'has been added' in (prometheus_stack_repo_add.stdout | default(''))"
+  failed_when: >-
+    prometheus_stack_repo_add.rc != 0
+    and 'already exists' not in (prometheus_stack_repo_add.stderr | default(''))
+  environment: "{{ (proxy_environment | default({})) | combine({'PATH': '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'}) }}"
+
+- name: Refresh helm repositories before prometheus stack deploy
+  ansible.builtin.command: "{{ prometheus_stack_helm_binary_path }} repo update"
+  changed_when: false
+  environment: "{{ (proxy_environment | default({})) | combine({'PATH': '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'}) }}"
+
+- name: Render prometheus stack values
+  ansible.builtin.template:
+    src: values.yaml.j2
+    dest: "{{ prometheus_stack_values_path }}"
+    mode: "0644"
+
+- name: Deploy prometheus stack
+  ansible.builtin.command: >-
+    {{ prometheus_stack_helm_binary_path }} upgrade --install {{ prometheus_stack_release_name }} {{ prometheus_stack_chart_ref }}
+    --kubeconfig {{ prometheus_stack_kubeconfig }}
+    --namespace {{ prometheus_stack_namespace }}
+    --create-namespace
+    -f {{ prometheus_stack_values_path }}
+    {{ ('--version ' ~ prometheus_stack_chart_version) if (prometheus_stack_chart_version | length > 0) else '' }}
+    --wait --timeout {{ prometheus_stack_wait_timeout }}
+  register: prometheus_stack_release
+  changed_when: >-
+    'Installing it now' in (prometheus_stack_release.stdout | default(''))
+    or 'has been upgraded' in (prometheus_stack_release.stdout | default(''))
+  environment: "{{ (proxy_environment | default({})) | combine({'PATH': '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'}) }}"
+
+- name: Wait for prometheus operator rollout
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ prometheus_stack_kubeconfig }}
+    -n {{ prometheus_stack_namespace }}
+    rollout status deployment/{{ prometheus_stack_release_name }}-kube-prometheus-stack-operator
+    --timeout={{ prometheus_stack_wait_timeout }}
+  changed_when: false

@@ -22,6 +22,8 @@ base_os_manage_hostname: true
 base_os_manage_hosts_file: true
 base_os_manage_networkmanager_dns: true
 base_os_networkmanager_ignore_auto_dns: true
+base_os_manage_resolv_conf_symlink: true
+base_os_resolv_conf_target: /run/systemd/resolve/resolv.conf
 
 base_os_kernel_modules:
   - overlay

@@ -1,0 +1,17 @@
+# ## Задача: Роль prometheus_stack
+# - **Статус**: В процессе
+# - **Описание**: Автоматическое развертывание kube-prometheus-stack через Helm.
+prometheus_stack_kubeconfig: /etc/kubernetes/admin.conf
+prometheus_stack_helm_binary_path: /usr/local/bin/helm
+prometheus_stack_release_name: kube-prometheus-stack
+prometheus_stack_namespace: monitoring
+prometheus_stack_chart_repo_name: prometheus-community
+prometheus_stack_chart_repo_url: https://prometheus-community.github.io/helm-charts
+prometheus_stack_chart_ref: prometheus-community/kube-prometheus-stack
+prometheus_stack_chart_version: ""
+prometheus_stack_values_path: /tmp/prometheus-stack-values.yaml
+prometheus_stack_wait_timeout: 900s
+prometheus_stack_grafana_host: ""
+prometheus_stack_prometheus_host: ""
+prometheus_stack_alertmanager_host: ""
+prometheus_stack_extra_values: {}

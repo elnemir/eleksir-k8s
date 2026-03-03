@@ -1,0 +1,3 @@
+timezone: {{ k8tz_timezone | quote }}
+
+{{ k8tz_extra_values | default({}) | to_nice_yaml(indent=2) }}

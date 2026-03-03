@@ -67,3 +67,30 @@
   roles:
     - role: ingress_nginx
       tags: [ingress, k8s]
+
+- name: Deploy kube-prometheus-stack
+  hosts: control_plane[0]
+  become: true
+  gather_facts: true
+  roles:
+    - role: prometheus_stack
+      tags: [observability, prometheus, k8s]
+      when: deploy_prometheus_stack | default(false) | bool
+
+- name: Deploy GitLab Runner
+  hosts: control_plane[0]
+  become: true
+  gather_facts: true
+  roles:
+    - role: gitlab_runner
+      tags: [ci, gitlab-runner, k8s]
+      when: deploy_gitlab_runner | default(false) | bool
+
+- name: Deploy k8tz
+  hosts: control_plane[0]
+  become: true
+  gather_facts: true
+  roles:
+    - role: k8tz
+      tags: [k8tz, addons, k8s]
+      when: deploy_k8tz | default(false) | bool

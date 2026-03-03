@@ -73,3 +73,38 @@ validation_ingress_validation_mode: node_ip
 validation_ingress_namespace: ingress-nginx
 validation_ingress_service_name: ingress-nginx-controller
 validation_ingress_expected_vip: "10.255.106.21"
+
+deploy_prometheus_stack: true
+prometheus_stack_release_name: kube-prometheus-stack
+prometheus_stack_namespace: monitoring
+prometheus_stack_chart_repo_name: prometheus-community
+prometheus_stack_chart_repo_url: https://prometheus-community.github.io/helm-charts
+prometheus_stack_chart_ref: prometheus-community/kube-prometheus-stack
+prometheus_stack_chart_version: ""
+prometheus_stack_wait_timeout: 900s
+prometheus_stack_grafana_host: ""
+prometheus_stack_prometheus_host: ""
+prometheus_stack_alertmanager_host: ""
+
+deploy_gitlab_runner: false
+gitlab_runner_release_name: gitlab-runner
+gitlab_runner_namespace: gitlab-runner
+gitlab_runner_chart_repo_name: gitlab
+gitlab_runner_chart_repo_url: https://charts.gitlab.io
+gitlab_runner_chart_ref: gitlab/gitlab-runner
+gitlab_runner_chart_version: ""
+gitlab_runner_wait_timeout: 600s
+gitlab_runner_gitlab_url: ""
+gitlab_runner_registration_token: "{{ vault_gitlab_runner_registration_token | default('') }}"
+gitlab_runner_runner_tags: "kubernetes,redos"
+gitlab_runner_concurrent: 10
+
+deploy_k8tz: true
+k8tz_release_name: k8tz
+k8tz_namespace: k8tz
+k8tz_chart_repo_name: k8tz
+k8tz_chart_repo_url: https://k8tz.github.io/k8tz/
+k8tz_chart_ref: k8tz/k8tz
+k8tz_chart_version: ""
+k8tz_wait_timeout: 600s
+k8tz_timezone: Europe/Moscow

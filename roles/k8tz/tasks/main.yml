@@ -1,0 +1,74 @@
+# ## Задача: Роль k8tz
+# - **Статус**: В процессе
+# - **Описание**: Деплой k8tz с параметром timezone.
+- name: Validate k8tz settings
+  ansible.builtin.assert:
+    that:
+      - k8tz_release_name | length > 0
+      - k8tz_namespace | length > 0
+      - k8tz_chart_repo_name | length > 0
+      - k8tz_chart_repo_url | length > 0
+      - k8tz_chart_ref | length > 0
+      - k8tz_timezone | length > 0
+    fail_msg: "k8tz settings are incomplete"
+
+- name: Ensure helm binary exists for k8tz
+  ansible.builtin.stat:
+    path: "{{ k8tz_helm_binary_path }}"
+  register: k8tz_helm_stat
+
+- name: Fail when helm binary is missing for k8tz
+  ansible.builtin.assert:
+    that:
+      - k8tz_helm_stat.stat.exists | default(false)
+    fail_msg: "Helm binary is missing at {{ k8tz_helm_binary_path }}"
+
+- name: Ensure k8tz chart repository is configured
+  ansible.builtin.command: >-
+    {{ k8tz_helm_binary_path }} repo add {{ k8tz_chart_repo_name }} {{ k8tz_chart_repo_url }}
+  register: k8tz_repo_add
+  changed_when: "'has been added' in (k8tz_repo_add.stdout | default(''))"
+  failed_when: >-
+    k8tz_repo_add.rc != 0
+    and 'already exists' not in (k8tz_repo_add.stderr | default(''))
+  environment: "{{ (proxy_environment | default({})) | combine({'PATH': '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'}) }}"
+
+- name: Refresh helm repositories before k8tz deploy
+  ansible.builtin.command: "{{ k8tz_helm_binary_path }} repo update"
+  changed_when: false
+  environment: "{{ (proxy_environment | default({})) | combine({'PATH': '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'}) }}"
+
+- name: Render k8tz values
+  ansible.builtin.template:
+    src: values.yaml.j2
+    dest: "{{ k8tz_values_path }}"
+    mode: "0644"
+
+- name: Deploy k8tz
+  ansible.builtin.command: >-
+    {{ k8tz_helm_binary_path }} upgrade --install {{ k8tz_release_name }} {{ k8tz_chart_ref }}
+    --kubeconfig {{ k8tz_kubeconfig }}
+    --namespace {{ k8tz_namespace }}
+    --create-namespace
+    -f {{ k8tz_values_path }}
+    {{ ('--version ' ~ k8tz_chart_version) if (k8tz_chart_version | length > 0) else '' }}
+    --wait --timeout {{ k8tz_wait_timeout }}
+  register: k8tz_release
+  changed_when: >-
+    'Installing it now' in (k8tz_release.stdout | default(''))
+    or 'has been upgraded' in (k8tz_release.stdout | default(''))
+  environment: "{{ (proxy_environment | default({})) | combine({'PATH': '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'}) }}"
+
+- name: Ensure k8tz has running pods
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ k8tz_kubeconfig }}
+    -n {{ k8tz_namespace }}
+    get pods -l app.kubernetes.io/instance={{ k8tz_release_name }} --no-headers
+  register: k8tz_pods
+  changed_when: false
+
+- name: Validate k8tz pod readiness output is not empty
+  ansible.builtin.assert:
+    that:
+      - (k8tz_pods.stdout_lines | default([]) | length) > 0
+    fail_msg: "k8tz pods were not found in namespace {{ k8tz_namespace }}"

@@ -1,0 +1,4 @@
+# ## Задача: Пример секретных переменных
+# - **Статус**: Шаблон
+# - **Описание**: Пример структуры для ansible-vault (не использовать в проде как есть).
+vault_gitlab_runner_registration_token: "REPLACE_WITH_REAL_TOKEN"

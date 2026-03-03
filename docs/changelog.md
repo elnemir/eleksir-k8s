@@ -461,6 +461,7 @@
 - Обновлен `roles/validation/defaults/main.yml` и `roles/validation/tasks/main.yml`: добавлена проверка `resolvConf` в `/var/lib/kubelet/config.yaml` на всех узлах `k8s_cluster`.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-065`.
 
+<<<<<<< HEAD
 ## 2026-03-02 (documentation sync for ingress node-ip mode)
 ### Изменено
 - Обновлен `docs/Project.md`: синхронизирована модель ingress-публикации с фактической реализацией (`DaemonSet + hostNetwork`, `node_ip`), сценарий `LoadBalancer` оставлен как дополнительный.
@@ -472,3 +473,38 @@
 ### Изменено
 - Обновлен `docs/runbook.md`: добавлен отдельный раздел проверки `/etc/hosts` (`ANSIBLE MANAGED INVENTORY HOSTS`) и ожидаемого соответствия `IP -> inventory hostname`.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-067`.
+=======
+## 2026-02-25 (ingress webhook hooks temporary disable workaround)
+### Изменено
+- Обновлен `roles/ingress_nginx/defaults/main.yml`: добавлены параметры временного отключения admission webhooks (`ingress_nginx_controller_admission_webhooks_enabled`, `ingress_nginx_controller_admission_webhooks_patch_enabled`).
+- Обновлен `roles/ingress_nginx/templates/values.yaml.j2`: для ingress chart добавлена конфигурация `controller.admissionWebhooks.enabled/patch.enabled`.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-066`.
+
+## 2026-02-25 (resolv.conf stub drift guard on rebootstrap)
+### Изменено
+- Обновлен `roles/base_os/defaults/main.yml`: добавлены параметры `base_os_manage_resolv_conf_symlink` и `base_os_resolv_conf_target` для явного управления `/etc/resolv.conf`.
+- Обновлен `roles/base_os/tasks/main.yml`: добавлена проверка существования target-файла и принудительная фиксация `/etc/resolv.conf` как symlink на non-stub resolved-файл.
+- Обновлен `roles/kubernetes_core/defaults/main.yml`: добавлен переключатель `kubelet_enforce_resolv_conf_post_join`.
+- Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлено пост-выравнивание `resolvConf` в `/var/lib/kubelet/config.yaml` и restart `kubelet` при изменении.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-067`.
+
+## 2026-02-25 (validation resolvconf quote-normalization fix)
+### Изменено
+- Обновлен `roles/validation/tasks/main.yml`: чтение `resolvConf` переведено на нормализацию значения без кавычек.
+- Обновлен `roles/validation/tasks/main.yml`: сравнение ожидаемого `resolvConf` выполняется по нормализованным значениям (`trim` + удаление кавычек), чтобы исключить ложные срабатывания.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-068`.
+
+## 2026-02-25 (apps auto-deploy with inventory-driven settings)
+### Изменено
+- Обновлен `playbooks/bootstrap.yml`: добавлены этапы автоматизированного деплоя `kube-prometheus-stack`, `gitlab-runner`, `k8tz` после ingress с отдельными тегами и `when`-переключателями.
+- Добавлены роли `roles/prometheus_stack`, `roles/gitlab_runner`, `roles/k8tz` (defaults/tasks/templates) для Helm-деплоя приложений с параметризацией URL/токенов/адресов через inventory variables.
+- Обновлен `inventories/prod/group_vars/all.yml`: добавлены переменные управления деплоем и параметрами приложений (`repo/chart/version`, `gitlab_url`, `registration_token`, `timezone`, ingress hosts).
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-069`.
+
+## 2026-02-25 (apps deploy runbook and vault example)
+### Изменено
+- Добавлен `inventories/prod/group_vars/vault.yml.example` с примером секретной переменной `vault_gitlab_runner_registration_token`.
+- Обновлен `docs/runbook.md`: добавлен раздел по настройке и запуску автодеплоя `prometheus`, `gitlab-runner`, `k8tz`, включая команды запуска по тегам.
+- Обновлен `docs/runbook.md`: добавлены инструкции по созданию и использованию `ansible-vault` файла для хранения токена GitLab Runner.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-070`.
+>>>>>>> b2574560bca2252398e3af9b630249753b2cddb9

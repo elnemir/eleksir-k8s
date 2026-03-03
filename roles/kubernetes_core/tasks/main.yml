@@ -513,6 +513,30 @@
   throttle: 1
   when: is_worker_like_node | bool
 
+- name: Check kubelet config file presence
+  ansible.builtin.stat:
+    path: /var/lib/kubelet/config.yaml
+  register: kubernetes_kubelet_config_stat
+  when: kubelet_enforce_resolv_conf_post_join | bool
+
+- name: Ensure kubelet resolvConf is enforced after bootstrap
+  ansible.builtin.lineinfile:
+    path: /var/lib/kubelet/config.yaml
+    regexp: '^resolvConf:'
+    line: 'resolvConf: "{{ kubelet_resolv_conf_path }}"'
+  register: kubernetes_kubelet_resolv_conf_line
+  when:
+    - kubelet_enforce_resolv_conf_post_join | bool
+    - kubernetes_kubelet_config_stat.stat.exists | default(false)
+
+- name: Restart kubelet after resolvConf enforcement
+  ansible.builtin.service:
+    name: kubelet
+    state: restarted
+  when:
+    - kubelet_enforce_resolv_conf_post_join | bool
+    - kubernetes_kubelet_resolv_conf_line is changed
+
 - name: Resolve architecture for control-plane CLI tools
   ansible.builtin.set_fact:
     kubernetes_cli_tools_arch: "{{ kubernetes_cli_tools_arch_map.get(ansible_architecture, 'amd64') }}"
