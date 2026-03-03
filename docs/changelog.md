@@ -461,19 +461,6 @@
 - Обновлен `roles/validation/defaults/main.yml` и `roles/validation/tasks/main.yml`: добавлена проверка `resolvConf` в `/var/lib/kubelet/config.yaml` на всех узлах `k8s_cluster`.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-065`.
 
-<<<<<<< HEAD
-## 2026-03-02 (documentation sync for ingress node-ip mode)
-### Изменено
-- Обновлен `docs/Project.md`: синхронизирована модель ingress-публикации с фактической реализацией (`DaemonSet + hostNetwork`, `node_ip`), сценарий `LoadBalancer` оставлен как дополнительный.
-- Обновлен `docs/runbook.md`: раздел эксплуатации MetalLB/ingress приведен к текущему режиму `node_ip`, обновлены проверки и диагностика, удалена устаревшая заметка о временном отключении ingress validation.
-- Обновлен `docs/qa.md`: acceptance criteria обновлены под ingress `node_ip` (с сохранением `LoadBalancer` как дополнительного сценария).
-- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-066`.
-
-## 2026-03-03 (hosts mapping runbook sync)
-### Изменено
-- Обновлен `docs/runbook.md`: добавлен отдельный раздел проверки `/etc/hosts` (`ANSIBLE MANAGED INVENTORY HOSTS`) и ожидаемого соответствия `IP -> inventory hostname`.
-- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-067`.
-=======
 ## 2026-02-25 (ingress webhook hooks temporary disable workaround)
 ### Изменено
 - Обновлен `roles/ingress_nginx/defaults/main.yml`: добавлены параметры временного отключения admission webhooks (`ingress_nginx_controller_admission_webhooks_enabled`, `ingress_nginx_controller_admission_webhooks_patch_enabled`).
@@ -507,4 +494,23 @@
 - Обновлен `docs/runbook.md`: добавлен раздел по настройке и запуску автодеплоя `prometheus`, `gitlab-runner`, `k8tz`, включая команды запуска по тегам.
 - Обновлен `docs/runbook.md`: добавлены инструкции по созданию и использованию `ansible-vault` файла для хранения токена GitLab Runner.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-070`.
->>>>>>> b2574560bca2252398e3af9b630249753b2cddb9
+
+## 2026-03-02 (documentation sync for ingress node-ip mode)
+### Изменено
+- Обновлен `docs/Project.md`: синхронизирована модель ingress-публикации с фактической реализацией (`DaemonSet + hostNetwork`, `node_ip`), сценарий `LoadBalancer` оставлен как дополнительный.
+- Обновлен `docs/runbook.md`: раздел эксплуатации MetalLB/ingress приведен к текущему режиму `node_ip`, обновлены проверки и диагностика, удалена устаревшая заметка о временном отключении ingress validation.
+- Обновлен `docs/qa.md`: acceptance criteria обновлены под ingress `node_ip` (с сохранением `LoadBalancer` как дополнительного сценария).
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-071`.
+
+## 2026-03-03 (hosts mapping runbook sync)
+### Изменено
+- Обновлен `docs/runbook.md`: добавлен отдельный раздел проверки `/etc/hosts` (`ANSIBLE MANAGED INVENTORY HOSTS`) и ожидаемого соответствия `IP -> inventory hostname`.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-072`.
+
+## 2026-03-03 (kubernetes packages install nobest fallback)
+### Изменено
+- Обновлен `roles/kubernetes_core/defaults/main.yml`: добавлен параметр `kubernetes_package_install_nobest` (по умолчанию `true`).
+- Обновлен `roles/kubernetes_core/tasks/main.yml`: установка Kubernetes-пакетов через `ansible.builtin.dnf` переведена на управляемый режим `nobest`.
+- Обновлен `inventories/prod/group_vars/all.yml`: зафиксирован `kubernetes_package_install_nobest: true`.
+- Обновлены `docs/Project.md` и `docs/runbook.md`: добавлены эксплуатационные пояснения по fallback-режиму установки пакетов в условиях нестабильных зеркал.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-073`.

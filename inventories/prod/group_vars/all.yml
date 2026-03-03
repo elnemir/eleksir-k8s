@@ -14,6 +14,7 @@ kubernetes_repo_validate_retries: 4
 kubernetes_repo_validate_delay: 15
 kubernetes_package_install_retries: 4
 kubernetes_package_install_delay: 20
+kubernetes_package_install_nobest: true
 kubernetes_cni: calico
 control_plane_endpoint: "10.255.106.20"
 control_plane_endpoint_port: 8443

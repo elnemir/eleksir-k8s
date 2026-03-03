@@ -57,6 +57,7 @@
   ansible.builtin.dnf:
     name: "{{ kubernetes_packages_resolved }}"
     state: present
+    nobest: "{{ kubernetes_package_install_nobest | bool }}"
   register: kubernetes_packages_install_result
   retries: "{{ kubernetes_package_install_retries | int }}"
   delay: "{{ kubernetes_package_install_delay | int }}"

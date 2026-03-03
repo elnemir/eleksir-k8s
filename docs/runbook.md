@@ -64,6 +64,7 @@ ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/manage_p
 - `container_runtime_install_cri_tools: false` (рекомендуемо для текущего набора repo на RedOS)
 - `kubernetes_repo_validate_before_install: true`
 - `kubernetes_package_install_retries: 4`
+- `kubernetes_package_install_nobest: true`
 - `kubernetes_packages_version_override: ""` (пусто = использовать текущую версию из repo channel)
 
 ## 5. Режим A: Изолированная сеть (proxy включен)
@@ -237,9 +238,11 @@ ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml
 ```bash
 sudo dnf -q makecache --refresh --disablerepo='*' --enablerepo=kubernetes
 ```
-2. При недоступности нужного patch-релиза временно указать доступную версию:
+2. Проверить, что включен fallback по `nobest`:
+- `kubernetes_package_install_nobest: true`
+3. При недоступности нужного patch-релиза временно указать доступную версию:
 - `kubernetes_packages_version_override: "1.30.1-150500.1.1"` (пример)
-3. Повторить bootstrap:
+4. Повторить bootstrap:
 ```bash
 ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml
 ```

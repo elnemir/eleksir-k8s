@@ -78,16 +78,14 @@
 | T-063 | Ingress Helm Path Hardening | Перевести проверку/вызов `helm` в `ingress_nginx` на абсолютный путь и убрать зависимость от shell PATH | Высокий | Завершена |
 | T-064 | Base OS ZRAM Disable | Добавить устойчивое отключение `zram0` на RedOS 8 (runtime + persist) в роли `base_os` | Высокий | Завершена |
 | T-065 | NM DNS and Kubelet ResolvConf | Настроить DNS через `NetworkManager` и зафиксировать `kubelet resolvConf` на `/run/systemd/resolve/resolv.conf` с валидацией на всех k8s-нодах | Критический | Завершена |
-<<<<<<< HEAD
-| T-066 | Documentation Ingress Node-IP Sync | Синхронизировать `Project.md`/`runbook.md`/`qa.md` с фактическим ingress-режимом `node_ip` и включенной проверкой `validation_enable_ingress_vip_check=true` | Высокий | Завершена |
-| T-067 | Hosts Mapping Runbook | Явно зафиксировать в runbook проверку управления `/etc/hosts` из inventory и критерии корректности | Средний | Завершена |
-=======
 | T-066 | Ingress Admission Webhooks Temporary Disable | Временно отключить admission webhooks ingress-nginx для обхода таймаутов Helm pre/post-upgrade hooks в проблемном контуре | Высокий | Завершена |
 | T-067 | ResolvConf Stub Drift Guard | Исключить возврат `/etc/resolv.conf` к stub и принудительно выравнивать `kubelet resolvConf` после повторного bootstrap | Критический | Завершена |
 | T-068 | Validation ResolvConf Quote Normalization | Устранить ложный fail `validation` при корректном `kubelet resolvConf` из-за кавычек в parsed stdout | Высокий | Завершена |
 | T-069 | Apps Auto-Deploy Parameterization | Добавить автоматизированный деплой `kube-prometheus-stack`, `gitlab-runner`, `k8tz` с параметризацией URL/токенов/адресов через inventory vars | Критический | Завершена |
 | T-070 | Apps Deploy Runbook and Vault Example | Добавить в runbook инструкции по автодеплою приложений и пример vault-файла для секретов | Высокий | Завершена |
->>>>>>> b2574560bca2252398e3af9b630249753b2cddb9
+| T-071 | Documentation Ingress Node-IP Sync | Синхронизировать `Project.md`/`runbook.md`/`qa.md` с фактическим ingress-режимом `node_ip` и включенной проверкой `validation_enable_ingress_vip_check=true` | Высокий | Завершена |
+| T-072 | Hosts Mapping Runbook | Явно зафиксировать в runbook проверку управления `/etc/hosts` из inventory и критерии корректности | Средний | Завершена |
+| T-073 | K8s Package Nobest Fallback | Добавить fallback установки Kubernetes-пакетов через `dnf nobest`, чтобы не блокироваться на недоступном patch-релизе в канале `v1.30` | Критический | Завершена (без стендовой валидации) |
 
 ## Собранные данные (2026-02-19)
 - VMware: `vCenter 7.0.3`, `ESXi 7.0.3`, `clone_from_template`, шаблон `k8s-pcp-template`.
@@ -172,6 +170,7 @@
 - В роли `ingress_nginx` устранена зависимость от `command -v helm`: использованы `stat` и абсолютный путь `/usr/local/bin/helm` для проверки и выполнения команд.
 - В роли `base_os` добавлено управляемое отключение `zram0` на RedOS 8: mask системных zram-юнитов, override для `zram-generator`, `swapoff /dev/zram0` и проверка, что активный swap не содержит `zram`.
 - Добавлена интеграция с `NetworkManager` для DNS (`nmcli`) и выравнивание `kubelet resolvConf` на `/run/systemd/resolve/resolv.conf` с автоматической проверкой на всех узлах `k8s_cluster` в роли `validation`.
+- В роли `kubernetes_core` включен управляемый fallback установки пакетов через `dnf nobest` (`kubernetes_package_install_nobest: true`), чтобы обходить недоступные patch-артефакты при живом minor-канале репозитория.
 - В роли `ingress_nginx` временно отключены admission webhooks (`controller.admissionWebhooks.enabled=false`, `controller.admissionWebhooks.patch.enabled=false`) для обхода таймаутов pre/post-upgrade hooks Helm в текущем troubleshooting-контуре.
 - В роли `base_os` добавлена принудительная фиксация `/etc/resolv.conf` на non-stub target (`/run/systemd/resolve/resolv.conf`) с проверкой существования целевого файла, чтобы исключить drift после перераскатки.
 - В роли `kubernetes_core` добавлено пост-выравнивание `resolvConf` в `/var/lib/kubelet/config.yaml` и restart `kubelet` при изменении для стабильного DNS-поведения на повторных прогонах.

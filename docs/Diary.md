@@ -394,7 +394,7 @@
 
 ### Решения
 - Выполнена синхронизация `docs/Project.md`, `docs/runbook.md`, `docs/qa.md` с текущей ingress-моделью (`DaemonSet + hostNetwork`, проверка через `node_ip`).
-- В `Tasktracker.md` добавлена и закрыта задача `T-066` на документационный sync.
+- В `Tasktracker.md` добавлена и закрыта задача `T-071` на документационный sync.
 - В `changelog.md` зафиксированы изменения с датой `2026-03-02`.
 
 ### Проблемы
@@ -407,7 +407,21 @@
 
 ### Решения
 - В `runbook` добавлен отдельный раздел проверки `/etc/hosts` (блок `ANSIBLE MANAGED INVENTORY HOSTS`) и ожидаемого соответствия `IP -> inventory hostname`.
-- Изменение зафиксировано в трекере задач как `T-067`.
+- Изменение зафиксировано в трекере задач как `T-072`.
 
 ### Проблемы
 - Для полного подтверждения остается выполнить стендовую проверку команды из runbook на control host.
+
+## Дата: 2026-03-03 (сессия 30)
+### Наблюдения
+- На части узлов установка Kubernetes-пакетов падала с `Cannot download, all mirrors were already tried without success` для `kubelet/kubeadm/kubectl` версии `1.30.14-150500.1.1`.
+- Симптом соответствует недоступности конкретного patch-релиза при доступном minor-канале репозитория `v1.30`.
+
+### Решения
+- Стартована и закрыта задача `T-073`: добавлен управляемый fallback установки пакетов через `dnf nobest`.
+- В `kubernetes_core` добавлен параметр `kubernetes_package_install_nobest` (default `true`) и включен в задаче `Install Kubernetes packages`.
+- В inventory (`group_vars/all.yml`) зафиксировано значение `kubernetes_package_install_nobest: true`.
+- В `runbook` добавлена проверка/рекомендация по `nobest` в troubleshooting-блоке установки Kubernetes-пакетов.
+
+### Проблемы
+- Требуется повторный запуск `playbooks/bootstrap.yml --tags k8s` на control host для подтверждения, что ноды берут доступный patch-пакет из канала и проходят установку.

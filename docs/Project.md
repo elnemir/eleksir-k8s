@@ -161,6 +161,7 @@ roles/
 - Kubernetes package install resilience:
   - precheck репозитория через `dnf makecache` c retry;
   - установка пакетов с retry;
+  - fallback через `dnf nobest` (`kubernetes_package_install_nobest: true`) для обхода недоступного конкретного patch-релиза;
   - поддержка override версии пакетов через `kubernetes_packages_version_override`.
 - Runtime: `containerd`
 - Runtime packaging policy:
