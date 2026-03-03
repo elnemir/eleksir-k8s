@@ -478,3 +478,31 @@
 
 ### Проблемы
 - Для подтверждения поведения требуется прогон `site/bootstrap/hardening` на control host с обоими значениями `security_hardening_enabled`.
+
+## Дата: 2026-03-03 (сессия 35)
+### Наблюдения
+- На этапе `networking` зафиксирован таймаут `kubectl rollout status daemonset/calico-node` (`1 of 7 updated pods are available`).
+- Текущего timeout/retry было недостаточно для проблемного контура, и после таймаута роль завершалась без попытки controlled recovery.
+
+### Решения
+- Добавлена и закрыта задача `T-078`.
+- В `networking` увеличены timeout/retries ожидания rollout Calico.
+- В `rescue` добавлен controlled self-heal: `rollout restart daemonset/calico-node` и повторный `rollout status` с отдельным timeout.
+- Fail по роли теперь происходит только если повторная проверка после controlled restart также неуспешна; иначе роль восстанавливается и продолжает выполнение.
+
+### Проблемы
+- Нужен повторный запуск `bootstrap --tags network` на control host для подтверждения устойчивости в текущем стенде.
+
+## Дата: 2026-03-03 (сессия 36)
+### Наблюдения
+- В диагностике `networking` зафиксировано, что `calico-node`/`kube-proxy` не стартуют на части нод из-за `FailedCreatePodSandBox`: `registry.k8s.io/pause:3.9 ... Forbidden`.
+- Текущее состояние указывало на два риска одновременно: не гарантированное применение proxy drop-in к systemd сервисам и отсутствие явного mirror-маршрута `registry.k8s.io` в `containerd`.
+
+### Решения
+- В роли `proxy` изменен порядок применения: после изменения drop-in выполняется `daemon-reload`, затем рестарт управляемых сервисов (`containerd`, `kubelet`, `crio`).
+- В роли `container_runtime` добавлен управляемый mirror `registry.k8s.io` через `certs.d/hosts.toml` с параметрами `containerd_registry_k8s_io_*` и fallback на upstream.
+- В `containerd` конфиг включен `registry.config_path=/etc/containerd/certs.d`.
+- В `inventories/prod/group_vars/all.yml` для текущего контура включен mirror endpoint `https://cr.yandex/mirror/k8s.gcr.io`.
+
+### Проблемы
+- Стендовая проверка не выполнена в этой сессии: отсутствует `ansible-playbook` в текущем окружении разработки, поэтому подтверждение возможно только запуском на control host.

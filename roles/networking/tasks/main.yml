@@ -110,16 +110,53 @@
       changed_when: false
       failed_when: false
 
+    - name: Attempt controlled calico-node rollout restart after timeout
+      ansible.builtin.command: >-
+        kubectl --kubeconfig={{ network_kubeconfig }}
+        -n kube-system rollout restart daemonset/calico-node
+      register: networking_calico_rollout_restart
+      changed_when: true
+      failed_when: false
+      when: network_cni_rollout_retry_after_restart | bool
+
+    - name: Wait for calico-node DaemonSet rollout after controlled restart
+      ansible.builtin.command: >-
+        kubectl --kubeconfig={{ network_kubeconfig }}
+        -n kube-system rollout status daemonset/calico-node --timeout={{ network_cni_rollout_timeout_retry }}
+      register: networking_calico_rollout_retry
+      changed_when: false
+      failed_when: false
+      when:
+        - network_cni_rollout_retry_after_restart | bool
+        - (networking_calico_rollout_restart.rc | default(1)) == 0
+
+    - name: Confirm calico-node rollout recovered after controlled restart
+      ansible.builtin.debug:
+        msg: "Calico rollout recovered after controlled restart."
+      changed_when: false
+      when:
+        - network_cni_rollout_retry_after_restart | bool
+        - (networking_calico_rollout_retry.rc | default(1)) == 0
+
     - name: Fail with calico rollout diagnostics
       ansible.builtin.fail:
         msg: |
           Calico DaemonSet rollout timed out.
           rollout rc={{ networking_calico_rollout.rc | default('n/a') }}
           rollout stderr={{ networking_calico_rollout.stderr | default('') | trim }}
+          retry-after-restart enabled={{ network_cni_rollout_retry_after_restart | bool }}
+          restart rc={{ networking_calico_rollout_restart.rc | default('n/a') }}
+          retry rollout rc={{ networking_calico_rollout_retry.rc | default('n/a') }}
+          retry rollout stderr={{ networking_calico_rollout_retry.stderr | default('') | trim }}
           kube-system pods:
           {{ networking_calico_pods_diag.stdout | default('') | trim }}
           calico-node describe:
           {{ networking_calico_ds_diag.stdout | default('') | trim }}
           kube-system events:
           {{ networking_calico_events_diag.stdout | default('') | trim }}
+      when: >-
+        not (
+          (network_cni_rollout_retry_after_restart | bool)
+          and ((networking_calico_rollout_retry.rc | default(1)) == 0)
+        )
   when: network_cni == 'calico'

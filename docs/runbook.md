@@ -277,6 +277,40 @@ ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml
 ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml --tags k8s
 ```
 
+Если в `kube-system events` есть `FailedCreatePodSandBox` с `pause:3.9` и `registry.k8s.io ... Forbidden`:
+1. Проверить применение proxy-env к systemd-сервисам:
+```bash
+ansible -i inventories/prod/hosts.yml all -m shell -a "systemctl show containerd -p Environment --no-pager"
+ansible -i inventories/prod/hosts.yml all -m shell -a "systemctl show kubelet -p Environment --no-pager"
+```
+2. Проверить, что включен mirror `registry.k8s.io` для `containerd`:
+```bash
+ansible -i inventories/prod/hosts.yml all -m shell -a "cat /etc/containerd/certs.d/registry.k8s.io/hosts.toml || true"
+ansible -i inventories/prod/hosts.yml all -m shell -a "grep -n 'config_path' /etc/containerd/config.toml"
+```
+3. Убедиться в inventory:
+- `containerd_registry_k8s_io_mirror_enabled: true`
+- `containerd_registry_k8s_io_mirror_endpoint: https://cr.yandex/mirror/k8s.gcr.io`
+4. Перезапустить runtime и сетевой этап:
+```bash
+ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml --tags proxy,runtime,network
+```
+
+Если на этапе `networking` возникает таймаут `calico-node rollout`:
+1. В текущей версии роли включен controlled self-heal:
+   - первичный `rollout status`;
+   - при таймауте: сбор диагностик (`get pods`, `describe ds`, `get events`);
+   - автоматический `rollout restart daemonset/calico-node` и повторный `rollout status`.
+2. Проверить параметры ожидания:
+- `network_cni_rollout_timeout: "600s"`
+- `network_cni_rollout_retries: 3`
+- `network_cni_rollout_retry_after_restart: true`
+- `network_cni_rollout_timeout_retry: "600s"`
+3. Повторить bootstrap:
+```bash
+ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml --tags network
+```
+
 Если failover-валидация падала с `validation_failover_source_host is undefined`:
 1. Убедиться, что используется актуальная версия роли `validation` с guard/fallback для `delegate_to`.
 2. Запускать failover по команде с явным флагом:

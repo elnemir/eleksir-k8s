@@ -540,9 +540,28 @@
 - Обновлены `docs/Project.md`, `docs/runbook.md`, `docs/qa.md`: добавлено описание переключателя hardening/SELinux шагов.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-077`.
 
+## 2026-03-03 (calico rollout self-heal hardening)
+### Изменено
+- Обновлен `roles/networking/defaults/main.yml`: увеличены параметры ожидания rollout (`network_cni_rollout_timeout: 600s`, `network_cni_rollout_retries: 3`) и добавлены параметры controlled retry (`network_cni_rollout_retry_after_restart`, `network_cni_rollout_timeout_retry`).
+- Обновлен `roles/networking/tasks/main.yml`: в `rescue` при таймауте `calico-node` добавлены controlled `rollout restart` и повторный `rollout status`, с условным `fail` только при неуспешном повторе.
+- Обновлен `inventories/prod/group_vars/all.yml`: зафиксированы параметры Calico rollout resilience для текущего контура.
+- Обновлены `docs/Project.md` и `docs/runbook.md`: добавлено описание CNI rollout resilience и troubleshooting для таймаута `calico-node`.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-078`.
+
 ## 2026-03-03 (docs repeated steps cleanup)
 ### Изменено
 - Обновлен `docs/Tasktracker.md`: убраны повторяющиеся конфликтные шаги, сохранены уникальные задачи без дублирования.
 - Обновлен `docs/changelog.md`: очищены повторяющиеся конфликтные блоки, история изменений приведена к линейному виду.
 - Выполнена контрольная проверка отсутствия conflict-маркеров (`<<<<<<<`, `=======`, `>>>>>>>`) в `docs/`.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-074`.
+
+## 2026-03-03 (containerd registry/proxy hardening for pause image pull)
+### Изменено
+- Обновлен `roles/proxy/tasks/main.yml`: добавлен явный `systemd daemon-reload` до рестарта сервисов после изменения proxy drop-in, чтобы `HTTP(S)_PROXY/NO_PROXY` гарантированно применялись к `containerd`/`kubelet`.
+- Обновлен `roles/container_runtime/defaults/main.yml`: добавлены параметры mirror для `registry.k8s.io` (`containerd_registry_k8s_io_*`) и `containerd_registry_config_path`.
+- Обновлен `roles/container_runtime/templates/containerd-config.toml.j2`: включен `registry.config_path` (`/etc/containerd/certs.d`).
+- Добавлен `roles/container_runtime/templates/registry-k8s-io-hosts.toml.j2`: шаблон `hosts.toml` для маршрутизации pulls `registry.k8s.io` через mirror с fallback на upstream.
+- Обновлен `roles/container_runtime/tasks/main.yml`: добавлены валидация mirror endpoint, управление `hosts.toml` и restart `containerd` при изменениях.
+- Обновлен `inventories/prod/group_vars/all.yml`: для текущего контура включен mirror `containerd_registry_k8s_io_mirror_enabled=true`, endpoint `https://cr.yandex/mirror/k8s.gcr.io`.
+- Обновлены `docs/Project.md` и `docs/runbook.md`: добавлены архитектурные и эксплуатационные инструкции по проверке proxy/mirror для `containerd`.
+- Обновлен `docs/Tasktracker.md`: задача `T-079` переведена в завершенный статус.

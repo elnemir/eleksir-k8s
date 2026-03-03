@@ -1,0 +1,9 @@
+server = "{{ containerd_registry_k8s_io_server }}"
+
+[host."{{ containerd_registry_k8s_io_mirror_endpoint }}"]
+  capabilities = ["pull", "resolve"]
+
+{% if containerd_registry_k8s_io_fallback_to_upstream | bool %}
+[host."{{ containerd_registry_k8s_io_server }}"]
+  capabilities = ["pull", "resolve"]
+{% endif %}

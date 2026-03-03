@@ -9,6 +9,15 @@
       - container_runtime_cri_tools_package is string
     fail_msg: "Supported runtimes: containerd, crio"
 
+- name: Validate containerd registry mirror settings
+  ansible.builtin.assert:
+    that:
+      - containerd_registry_k8s_io_mirror_endpoint is match('^https?://')
+    fail_msg: "containerd_registry_k8s_io_mirror_endpoint must be a valid http(s) URL when mirror is enabled"
+  when:
+    - container_runtime_name == 'containerd'
+    - containerd_registry_k8s_io_mirror_enabled | bool
+
 - name: Install container runtime packages
   ansible.builtin.package:
     name: "{{ container_runtime_packages_map[container_runtime_name] }}"
@@ -36,6 +45,15 @@
     mode: "0755"
   when: container_runtime_name == 'containerd'
 
+- name: Ensure containerd registry config directory exists
+  ansible.builtin.file:
+    path: "{{ containerd_registry_config_path }}/registry.k8s.io"
+    state: directory
+    mode: "0755"
+  when:
+    - container_runtime_name == 'containerd'
+    - containerd_registry_k8s_io_mirror_enabled | bool
+
 - name: Configure containerd
   ansible.builtin.template:
     src: containerd-config.toml.j2
@@ -44,6 +62,25 @@
   when:
     - container_runtime_name == 'containerd'
     - container_runtime_manage_config | bool
+  notify: Restart containerd
+
+- name: Configure registry.k8s.io mirror for containerd
+  ansible.builtin.template:
+    src: registry-k8s-io-hosts.toml.j2
+    dest: "{{ containerd_registry_config_path }}/registry.k8s.io/hosts.toml"
+    mode: "0644"
+  when:
+    - container_runtime_name == 'containerd'
+    - containerd_registry_k8s_io_mirror_enabled | bool
+  notify: Restart containerd
+
+- name: Remove registry.k8s.io mirror override when disabled
+  ansible.builtin.file:
+    path: "{{ containerd_registry_config_path }}/registry.k8s.io/hosts.toml"
+    state: absent
+  when:
+    - container_runtime_name == 'containerd'
+    - not (containerd_registry_k8s_io_mirror_enabled | bool)
   notify: Restart containerd
 
 - name: Configure crictl endpoint

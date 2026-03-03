@@ -62,7 +62,6 @@
     mode: "0644"
   loop: "{{ proxy_systemd_services }}"
   register: proxy_systemd_dropins
-  notify: Reload systemd
   when: proxy_state == 'present'
 
 - name: Remove systemd proxy drop-in files
@@ -71,7 +70,6 @@
     state: absent
   loop: "{{ proxy_systemd_services }}"
   register: proxy_systemd_dropins_removed
-  notify: Reload systemd
   when: proxy_state == 'absent'
 
 - name: Define proxy systemd change flag
@@ -82,6 +80,11 @@
         or
         (proxy_systemd_dropins_removed is defined and (proxy_systemd_dropins_removed is changed))
       }}
+
+- name: Reload systemd units before restarting managed services
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: proxy_systemd_dropins_changed | bool
 
 - name: Gather service facts
   ansible.builtin.service_facts:

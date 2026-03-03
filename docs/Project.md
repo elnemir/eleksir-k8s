@@ -165,6 +165,9 @@ roles/
   - установка пакетов с retry;
   - fallback через `dnf nobest` (`kubernetes_package_install_nobest: true`) для обхода недоступного конкретного patch-релиза;
   - поддержка override версии пакетов через `kubernetes_packages_version_override`.
+- CNI rollout resilience (Calico):
+  - увеличенные timeout/retries ожидания `daemonset/calico-node`;
+  - controlled self-heal при первичном таймауте (`rollout restart` + повторный `rollout status`).
 - Runtime: `containerd`
 - Runtime packaging policy:
   - установка базового runtime выполняется без жесткой зависимости на пакет `cri-tools`;
@@ -228,6 +231,13 @@ roles/
 - `no_proxy`: `localhost,127.0.0.1,10.0.0.0/8,.eleksir.net,.eleksir.finance,.cr.yandex`
 - Пакеты RedOS: `external_via_proxy`
 - Registry/образы: `external_via_proxy`
+- Для runtime добавлен управляемый mirror `registry.k8s.io` в `containerd`:
+  - `containerd_registry_k8s_io_mirror_enabled`
+  - `containerd_registry_k8s_io_mirror_endpoint`
+  - `containerd_registry_k8s_io_fallback_to_upstream`
+  - текущий endpoint: `https://cr.yandex/mirror/k8s.gcr.io`
+- `containerd` использует `certs.d` (`/etc/containerd/certs.d`) и `hosts.toml` для маршрутизации pulls `registry.k8s.io` через mirror/fallback.
+- В роли `proxy` применен порядок `daemon-reload -> restart services`, чтобы proxy drop-in гарантированно применялся к `containerd`/`kubelet`.
 - Для неизолированной сети допускается установка `proxy_enabled=false`.
 - Для оперативного переключения proxy-режима без полного bootstrap используется отдельный playbook `playbooks/manage_proxy.yml` с `proxy_state=present|absent`.
 

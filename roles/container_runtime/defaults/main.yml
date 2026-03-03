@@ -14,3 +14,8 @@ container_runtime_packages_map:
 
 containerd_config_path: /etc/containerd/config.toml
 containerd_sandbox_image: registry.k8s.io/pause:3.9
+containerd_registry_config_path: /etc/containerd/certs.d
+containerd_registry_k8s_io_mirror_enabled: false
+containerd_registry_k8s_io_server: https://registry.k8s.io
+containerd_registry_k8s_io_mirror_endpoint: ""
+containerd_registry_k8s_io_fallback_to_upstream: true

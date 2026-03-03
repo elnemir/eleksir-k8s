@@ -3,9 +3,11 @@
 # - **Описание**: Дефолтные параметры CNI и сетевой конфигурации.
 network_cni: "{{ kubernetes_cni }}"
 network_kubeconfig: /etc/kubernetes/admin.conf
-network_cni_rollout_timeout: "300s"
-network_cni_rollout_retries: 2
+network_cni_rollout_timeout: "600s"
+network_cni_rollout_retries: 3
 network_cni_rollout_delay: 30
+network_cni_rollout_retry_after_restart: true
+network_cni_rollout_timeout_retry: "600s"
 network_calico_backend: bird
 network_calico_ipv4pool_ipip: Always
 network_calico_ipv4pool_vxlan: Never
