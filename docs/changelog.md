@@ -565,3 +565,11 @@
 - Обновлен `inventories/prod/group_vars/all.yml`: для текущего контура включен mirror `containerd_registry_k8s_io_mirror_enabled=true`, endpoint `https://cr.yandex/mirror/k8s.gcr.io`.
 - Обновлены `docs/Project.md` и `docs/runbook.md`: добавлены архитектурные и эксплуатационные инструкции по проверке proxy/mirror для `containerd`.
 - Обновлен `docs/Tasktracker.md`: задача `T-079` переведена в завершенный статус.
+
+## 2026-03-03 (metallb moved to dedicated playbook)
+### Изменено
+- Добавлен `playbooks/metallb.yml`: отдельный этап конфигурации MetalLB на `control_plane[0]`.
+- Обновлен `playbooks/bootstrap.yml`: этап `Configure MetalLB` удален из базового bootstrap-сценария.
+- Обновлен `playbooks/site.yml`: подключен отдельный `import_playbook: metallb.yml` в общей orchestration-цепочке.
+- Обновлены `docs/Project.md` и `docs/runbook.md`: синхронизирована структура playbooks и порядок запуска с выделенным MetalLB-этапом.
+- Обновлен `docs/Tasktracker.md`: задача `T-080` переведена в завершенный статус.

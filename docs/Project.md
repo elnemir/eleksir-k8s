@@ -78,6 +78,7 @@ inventories/
 playbooks/
   site.yml
   bootstrap.yml
+  metallb.yml
   hardening.yml
   storage.yml
   validate.yml
@@ -297,6 +298,7 @@ roles/
 - Реализован каркас оркестрации:
   - `playbooks/site.yml`
   - `playbooks/bootstrap.yml`
+  - `playbooks/metallb.yml`
   - `playbooks/hardening.yml`
   - `playbooks/storage.yml`
   - `playbooks/validate.yml`
@@ -334,4 +336,5 @@ roles/
   - для NFS должна поддерживаться опциональная подготовка выделенного data-диска.
   - control-plane endpoint должен быть реализован как HA VIP через `keepalived + haproxy`.
   - должен быть отдельный operational playbook для переключения proxy-режима (`manage_proxy.yml`).
+  - конфигурация MetalLB должна запускаться отдельным этапом через `playbooks/metallb.yml` (вне `bootstrap.yml`).
   - failover-сценарий validation должен быть устойчив к отсутствию `validation_failover_source_host` (safe init + `delegate_to` fallback).

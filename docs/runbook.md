@@ -52,6 +52,7 @@ ansible -i inventories/prod/hosts.yml all -m ping
 
 ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/site.yml
 ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/bootstrap.yml
+ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/metallb.yml
 ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/hardening.yml
 ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/storage.yml
 ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/validate.yml
@@ -338,9 +339,15 @@ ansible-playbook -i inventories/prod/hosts.yml playbooks/validate.yml \
 
 ## 13. Рекомендованный порядок запуска
 1. `playbooks/bootstrap.yml`
-2. `playbooks/hardening.yml`
-3. `playbooks/storage.yml`
-4. `playbooks/validate.yml`
+2. `playbooks/metallb.yml`
+3. `playbooks/hardening.yml`
+4. `playbooks/storage.yml`
+5. `playbooks/validate.yml`
+
+Отдельный запуск только этапа MetalLB:
+```bash
+ansible-playbook -i inventories/prod/hosts.yml playbooks/metallb.yml
+```
 
 Либо единым запуском:
 ```bash

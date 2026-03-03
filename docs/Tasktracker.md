@@ -92,6 +92,7 @@
 | T-077 | SELinux/Hardening Toggle | Добавить возможность отключать SELinux и связанные шаги hardening через единый параметр запуска | Критический | Завершена (без стендовой валидации) |
 | T-078 | Calico Rollout Self-Heal | Усилить роль `networking` при таймауте `calico-node` rollout: авто-диагностика + controlled restart + повторная проверка | Критический | Завершена (без стендовой валидации) |
 | T-079 | Containerd Registry/Proxy Hardening | Устранить `FailedCreatePodSandbox` (`pause:3.9` Forbidden): обеспечить применение proxy в systemd и добавить mirror/fallback для `registry.k8s.io` в `containerd` | Критический | Завершена (без стендовой валидации) |
+| T-080 | Separate MetalLB Playbook | Вынести конфигурацию MetalLB из `bootstrap.yml` в отдельный playbook `playbooks/metallb.yml` и подключить его в `site.yml` | Высокий | Завершена (без стендовой валидации) |
 
 ## Собранные данные (2026-02-19)
 - VMware: `vCenter 7.0.3`, `ESXi 7.0.3`, `clone_from_template`, шаблон `k8s-pcp-template`.
@@ -106,7 +107,7 @@
 ## Реализованный каркас (2026-02-19)
 - Создан `inventories/prod/hosts.yml` с группами `control_plane`, `workers`, `metallb`, `nfs`, `k8s_cluster`.
 - Созданы `group_vars` для `all`, `control_plane`, `workers`, `metallb`, `nfs`.
-- Создан набор playbook-файлов: `site.yml`, `bootstrap.yml`, `hardening.yml`, `storage.yml`, `validate.yml`.
+- Создан набор playbook-файлов: `site.yml`, `bootstrap.yml`, `metallb.yml`, `hardening.yml`, `storage.yml`, `validate.yml`.
 - Созданы роли-каркасы: `base_os`, `proxy`, `container_runtime`, `kubernetes_core`, `networking`, `metallb`, `security_hardening`, `storage_nfs`, `validation`.
 - Добавлены `ansible.cfg` и `requirements.yml`.
 
@@ -181,6 +182,7 @@
 - В `base_os` добавлен pre-step полного обновления установленных пакетов (`dnf update_only`) перед установкой baseline-компонентов; шаг управляется параметром `base_os_update_all_packages`.
 - Добавлен единый переключатель `security_hardening_enabled`: при `false` роль `security_hardening` пропускается в `bootstrap` и `hardening` playbooks (для контуров с отключенным SELinux/hardening).
 - В `networking` усилено ожидание Calico: увеличены timeout/retries и добавлен controlled self-heal (`rollout restart daemonset/calico-node` + повторная проверка) при первичном таймауте rollout.
+- Конфигурация MetalLB вынесена из `playbooks/bootstrap.yml` в отдельный playbook `playbooks/metallb.yml`; orchestration `playbooks/site.yml` обновлен с отдельным этапом MetalLB.
 - В роли `ingress_nginx` временно отключены admission webhooks (`controller.admissionWebhooks.enabled=false`, `controller.admissionWebhooks.patch.enabled=false`) для обхода таймаутов pre/post-upgrade hooks Helm в текущем troubleshooting-контуре.
 - В роли `base_os` добавлена принудительная фиксация `/etc/resolv.conf` на non-stub target (`/run/systemd/resolve/resolv.conf`) с проверкой существования целевого файла, чтобы исключить drift после перераскатки.
 - В роли `kubernetes_core` добавлено пост-выравнивание `resolvConf` в `/var/lib/kubelet/config.yaml` и restart `kubelet` при изменении для стабильного DNS-поведения на повторных прогонах.

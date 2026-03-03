@@ -1,0 +1,10 @@
+# ## Задача: Отдельный этап настройки MetalLB
+# - **Статус**: В процессе
+# - **Описание**: Выделить конфигурацию MetalLB в отдельный playbook.
+- name: Configure MetalLB
+  hosts: control_plane[0]
+  become: true
+  gather_facts: true
+  roles:
+    - role: metallb
+      tags: [metallb, ingress]

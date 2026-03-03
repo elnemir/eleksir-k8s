@@ -53,14 +53,6 @@
     - role: networking
       tags: [network, k8s]
 
-- name: Configure MetalLB
-  hosts: control_plane[0]
-  become: true
-  gather_facts: true
-  roles:
-    - role: metallb
-      tags: [metallb, ingress]
-
 - name: Deploy ingress-nginx in node-IP mode
   hosts: control_plane[0]
   become: true
