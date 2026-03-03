@@ -63,6 +63,7 @@ ntp_servers:
 ansible_require_check_diff_support: true
 ingress_controller: nginx
 selinux_target_mode: Disabled
+security_hardening_enabled: false
 firewalld_enabled: false
 kubeadm_join_force_primary_endpoint: true
 network_calico_backend: vxlan

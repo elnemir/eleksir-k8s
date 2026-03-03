@@ -78,6 +78,7 @@
   - bastion: `no`
 - selinux: `Disabled` (временный диагностический режим в текущем контуре; целевое состояние после стабилизации — `Enforcing`)
   - firewalld: `Disabled` (временный диагностический режим текущего контура)
+  - security_hardening_enabled: `false` (в текущем контуре роль hardening отключена)
   - secrets store: `ansible-vault`
 - Operations:
   - ansible control node: `Debian 13`

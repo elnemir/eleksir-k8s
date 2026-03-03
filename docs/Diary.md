@@ -464,3 +464,17 @@
 
 ### Проблемы
 - Требуется стендовый прогон на control host для оценки длительности полного package update на каждом узле.
+
+## Дата: 2026-03-03 (сессия 34)
+### Наблюдения
+- Получено требование иметь явную возможность отключать SELinux и связанные шаги hardening в runtime-контурах.
+- Текущий контур уже использует `selinux_target_mode: Disabled`, но роль `security_hardening` запускалась в playbooks без отдельного верхнеуровневого toggle.
+
+### Решения
+- Добавлена и закрыта задача `T-077`.
+- Введен переключатель `security_hardening_enabled` (default `true`), примененный в `bootstrap.yml` и `hardening.yml` для условного запуска роли.
+- В текущем inventory зафиксировано `security_hardening_enabled: false`, что исключает шаги hardening (включая SELinux/firewalld из роли).
+- Документация (`Project/runbook/qa`) синхронизирована с новым механизмом управления.
+
+### Проблемы
+- Для подтверждения поведения требуется прогон `site/bootstrap/hardening` на control host с обоими значениями `security_hardening_enabled`.

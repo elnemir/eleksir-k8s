@@ -35,6 +35,7 @@
   roles:
     - role: security_hardening
       tags: [security, k8s]
+      when: security_hardening_enabled | default(true) | bool
 
 - name: Bootstrap and join Kubernetes nodes
   hosts: k8s_cluster

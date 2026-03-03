@@ -70,6 +70,7 @@ ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/manage_p
 - `kubernetes_package_install_retries: 4`
 - `kubernetes_package_install_nobest: true`
 - `kubernetes_packages_version_override: ""` (пусто = использовать текущую версию из repo channel)
+- `security_hardening_enabled: false|true` (управление запуском роли hardening)
 
 ## 5. Режим A: Изолированная сеть (proxy включен)
 Убедитесь, что в `inventories/prod/group_vars/all.yml`:
@@ -92,6 +93,16 @@ ansible-playbook -i inventories/prod/hosts.yml playbooks/site.yml -e proxy_enabl
 - затем запускать обычной командой:
 ```bash
 ansible-playbook -i inventories/prod/hosts.yml playbooks/site.yml
+```
+
+Управление hardening/SELinux шагами:
+- для отключения hardening-этапа (включая SELinux/firewalld шаги роли `security_hardening`) используйте:
+```bash
+ansible-playbook -i inventories/prod/hosts.yml playbooks/site.yml -e security_hardening_enabled=false
+```
+- для обратного включения:
+```bash
+ansible-playbook -i inventories/prod/hosts.yml playbooks/site.yml -e security_hardening_enabled=true
 ```
 
 ## 7. Проверка hostname по inventory

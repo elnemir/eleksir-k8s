@@ -531,6 +531,15 @@
 - Обновлены `docs/Project.md` и `docs/runbook.md`: отражен обязательный pre-step обновления пакетов перед установкой кластера.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-076`.
 
+## 2026-03-03 (selinux/hardening toggle)
+### Изменено
+- Обновлен `roles/security_hardening/defaults/main.yml`: добавлен параметр `security_hardening_enabled` (по умолчанию `true`).
+- Обновлен `playbooks/bootstrap.yml`: роль `security_hardening` выполняется условно по флагу `security_hardening_enabled`.
+- Обновлен `playbooks/hardening.yml`: роль `security_hardening` выполняется условно по флагу `security_hardening_enabled`.
+- Обновлен `inventories/prod/group_vars/all.yml`: в текущем контуре установлен `security_hardening_enabled: false`.
+- Обновлены `docs/Project.md`, `docs/runbook.md`, `docs/qa.md`: добавлено описание переключателя hardening/SELinux шагов.
+- Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-077`.
+
 ## 2026-03-03 (docs repeated steps cleanup)
 ### Изменено
 - Обновлен `docs/Tasktracker.md`: убраны повторяющиеся конфликтные шаги, сохранены уникальные задачи без дублирования.

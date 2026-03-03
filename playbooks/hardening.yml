@@ -8,3 +8,4 @@
   roles:
     - role: security_hardening
       tags: [security]
+      when: security_hardening_enabled | default(true) | bool
