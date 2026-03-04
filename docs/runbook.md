@@ -53,6 +53,7 @@ ansible -i inventories/prod/hosts.yml all -m ping
 ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/site.yml
 ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/bootstrap.yml
 ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/metallb.yml
+ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/scale_out.yml
 ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/hardening.yml
 ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/storage.yml
 ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/validate.yml
@@ -353,6 +354,28 @@ ansible-playbook -i inventories/prod/hosts.yml playbooks/metallb.yml
 ```bash
 ansible-playbook -i inventories/prod/hosts.yml playbooks/site.yml
 ```
+
+## 13.1 Масштабирование существующего кластера (добавление нод)
+Используйте отдельный playbook `playbooks/scale_out.yml`.
+
+Шаги:
+1. Добавьте новые хосты в inventory в их целевые роли (`control_plane` или `workers` или `metallb`).
+2. Добавьте эти же хосты в группу `scale_out_nodes`.
+3. Запустите:
+```bash
+ansible-playbook -i inventories/prod/hosts.yml playbooks/scale_out.yml
+```
+
+Ключевые особенности:
+- playbook валидирует, что `scale_out_nodes` не пуст и что все хосты в нем входят в одну из групп `control_plane/workers/metallb`;
+- выполняет подготовку ОС/runtime только для `scale_out_nodes`;
+- выполняет join через `control_plane[0]` + целевые новые ноды;
+- автоматически пересобирает `control_plane_vip`, если добавляются control-plane ноды;
+- автоматически пересобирает `metallb`, если добавляются metallb-ноды.
+
+Защитный механизм:
+- если на целевой ноде уже существует `/etc/kubernetes/kubelet.conf`, playbook завершится с ошибкой;
+- принудительный режим допускается только с `-e scale_out_allow_reprepare_existing_nodes=true`.
 
 ## 14. Деструктивный сценарий: полная переустановка (cluster_and_nfs)
 Внимание: сценарий удаляет:

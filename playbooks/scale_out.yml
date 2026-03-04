@@ -1,0 +1,92 @@
+# ## Задача: Масштабирование существующего кластера
+# - **Статус**: В процессе
+# - **Описание**: Подготовка и добавление новых узлов в существующий Kubernetes-кластер.
+- name: Validate scale-out target group and role membership
+  hosts: localhost
+  gather_facts: false
+  vars:
+    scale_out_target_group_name: "{{ scale_out_target_group | default('scale_out_nodes') }}"
+  tasks:
+    - name: Resolve scale-out host list from inventory
+      ansible.builtin.set_fact:
+        scale_out_group_hosts: "{{ groups.get(scale_out_target_group_name, []) }}"
+        scale_out_allowed_hosts: "{{ (groups.get('control_plane', []) + groups.get('workers', []) + groups.get('metallb', [])) | unique }}"
+
+    - name: Ensure scale-out group is not empty
+      ansible.builtin.assert:
+        that:
+          - scale_out_group_hosts | length > 0
+        fail_msg: >-
+          Scale-out target group '{{ scale_out_target_group_name }}' is empty or undefined.
+          Add new nodes to inventory and include them in this group.
+
+    - name: Detect scale-out hosts with invalid role membership
+      ansible.builtin.set_fact:
+        scale_out_invalid_hosts: "{{ scale_out_group_hosts | difference(scale_out_allowed_hosts) }}"
+        scale_out_contains_control_plane_hosts: "{{ (scale_out_group_hosts | intersect(groups.get('control_plane', [])) | length) > 0 }}"
+        scale_out_contains_metallb_hosts: "{{ (scale_out_group_hosts | intersect(groups.get('metallb', [])) | length) > 0 }}"
+
+    - name: Ensure all scale-out hosts are in control_plane/workers/metallb groups
+      ansible.builtin.assert:
+        that:
+          - scale_out_invalid_hosts | length == 0
+        fail_msg: >-
+          Scale-out hosts must be members of control_plane/workers/metallb groups.
+          Invalid hosts: {{ scale_out_invalid_hosts | join(', ') }}.
+
+- name: Prepare scale-out nodes
+  hosts: "{{ scale_out_target_group | default('scale_out_nodes') }}"
+  become: true
+  gather_facts: true
+  pre_tasks:
+    - name: Check whether node is already part of cluster
+      ansible.builtin.stat:
+        path: /etc/kubernetes/kubelet.conf
+      register: scale_out_kubelet_conf_stat
+
+    - name: Fail when target node is already joined and reprepare is not allowed
+      ansible.builtin.fail:
+        msg: >-
+          Host {{ inventory_hostname }} already has /etc/kubernetes/kubelet.conf.
+          Remove it from scale-out target group or set
+          scale_out_allow_reprepare_existing_nodes=true explicitly.
+      when:
+        - scale_out_kubelet_conf_stat.stat.exists | default(false)
+        - not (scale_out_allow_reprepare_existing_nodes | default(false) | bool)
+  roles:
+    - role: base_os
+      tags: [scale, base]
+    - role: proxy
+      tags: [scale, proxy]
+      when: proxy_enabled | bool
+    - role: container_runtime
+      tags: [scale, runtime, k8s]
+    - role: security_hardening
+      tags: [scale, security, k8s]
+      when: security_hardening_enabled | default(true) | bool
+
+- name: Join scale-out nodes to existing cluster
+  hosts: "control_plane[0]:{{ scale_out_target_group | default('scale_out_nodes') }}"
+  become: true
+  gather_facts: true
+  roles:
+    - role: kubernetes_core
+      tags: [scale, k8s, join]
+
+- name: Reconcile control-plane VIP after control-plane scale-out
+  hosts: control_plane
+  become: true
+  gather_facts: true
+  roles:
+    - role: control_plane_vip
+      tags: [scale, vip, control-plane]
+  when: hostvars['localhost'].scale_out_contains_control_plane_hosts | default(false) | bool
+
+- name: Reconcile MetalLB after metallb-node scale-out
+  hosts: control_plane[0]
+  become: true
+  gather_facts: true
+  roles:
+    - role: metallb
+      tags: [scale, metallb, ingress]
+  when: hostvars['localhost'].scale_out_contains_metallb_hosts | default(false) | bool

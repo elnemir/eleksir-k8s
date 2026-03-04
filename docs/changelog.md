@@ -573,3 +573,13 @@
 - Обновлен `playbooks/site.yml`: подключен отдельный `import_playbook: metallb.yml` в общей orchestration-цепочке.
 - Обновлены `docs/Project.md` и `docs/runbook.md`: синхронизирована структура playbooks и порядок запуска с выделенным MetalLB-этапом.
 - Обновлен `docs/Tasktracker.md`: задача `T-080` переведена в завершенный статус.
+
+## 2026-03-04 (cluster scale-out playbook)
+### Изменено
+- Добавлен `playbooks/scale_out.yml`: отдельный сценарий подготовки и присоединения новых нод к существующему кластеру.
+- Обновлен `inventories/prod/hosts.yml`: добавлена служебная группа `scale_out_nodes` для целевых нод масштабирования.
+- В `scale_out.yml` добавлены precheck группы и membership (`control_plane/workers/metallb`) и guard против повторной подготовки уже присоединенных нод (`/etc/kubernetes/kubelet.conf`).
+- В `scale_out.yml` добавлен автоматический post-reconcile `control_plane_vip` при добавлении control-plane нод.
+- В `scale_out.yml` добавлен автоматический post-reconcile `metallb` при добавлении metallb-нод.
+- Обновлены `docs/Project.md` и `docs/runbook.md`: добавлен новый playbook и инструкции по масштабированию.
+- Обновлен `docs/Tasktracker.md`: задача `T-081` переведена в завершенный статус.

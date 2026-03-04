@@ -79,6 +79,7 @@ playbooks/
   site.yml
   bootstrap.yml
   metallb.yml
+  scale_out.yml
   hardening.yml
   storage.yml
   validate.yml
@@ -299,6 +300,7 @@ roles/
   - `playbooks/site.yml`
   - `playbooks/bootstrap.yml`
   - `playbooks/metallb.yml`
+  - `playbooks/scale_out.yml`
   - `playbooks/hardening.yml`
   - `playbooks/storage.yml`
   - `playbooks/validate.yml`
@@ -333,6 +335,7 @@ roles/
   - системные hostname должны синхронизироваться с именами узлов из inventory;
   - необходимость настройки proxy должна управляться параметром (`proxy_enabled`).
   - должен существовать отдельный деструктивный сценарий полной переустановки (`cluster_and_nfs`).
+  - должен существовать отдельный сценарий масштабирования (`playbooks/scale_out.yml`) для подготовки и присоединения новых нод к уже работающему кластеру.
   - для NFS должна поддерживаться опциональная подготовка выделенного data-диска.
   - control-plane endpoint должен быть реализован как HA VIP через `keepalived + haproxy`.
   - должен быть отдельный operational playbook для переключения proxy-режима (`manage_proxy.yml`).

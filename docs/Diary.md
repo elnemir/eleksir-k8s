@@ -520,3 +520,20 @@
 
 ### Проблемы
 - Функциональная стендовая валидация нового порядка (`bootstrap -> metallb`) в этой сессии не выполнялась.
+
+## Дата: 2026-03-04 (сессия 38)
+### Наблюдения
+- Получен запрос добавить сценарий масштабирования существующего кластера для подготовки и присоединения новых нод без полного повторного bootstrap.
+- Базовая логика join уже реализована в `kubernetes_core`, но отсутствовал отдельный orchestration playbook для целевых новых нод.
+
+### Решения
+- Добавлен `playbooks/scale_out.yml` с явным precheck целевой группы масштабирования (`scale_out_nodes`) и валидацией принадлежности нод к `control_plane/workers/metallb`.
+- В сценарий добавлен guard против повторной подготовки уже присоединенных нод по факту наличия `/etc/kubernetes/kubelet.conf`.
+- Добавлены шаги подготовки только для новых нод (`base_os`, `proxy`, `container_runtime`, `security_hardening`) и join через `control_plane[0]` + `kubernetes_core`.
+- Добавлен post-reconcile:
+  - `control_plane_vip` при добавлении control-plane нод;
+  - `metallb` при добавлении metallb-нод.
+- В inventory добавлена служебная группа `scale_out_nodes`.
+
+### Проблемы
+- Стендовый запуск `playbooks/scale_out.yml` в этой сессии не выполнялся (в текущей среде отсутствует `ansible-playbook`).
