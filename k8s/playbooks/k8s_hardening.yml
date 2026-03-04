@@ -6,6 +6,6 @@
   become: true
   gather_facts: true
   roles:
-    - role: security_hardening
+    - role: k8s_security_hardening
       tags: [security]
       when: security_hardening_enabled | default(true) | bool

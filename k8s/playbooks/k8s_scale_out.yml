@@ -93,14 +93,14 @@
         - scale_out_kubelet_conf_stat.stat.exists | default(false)
         - scale_out_allow_reprepare_existing_nodes | default(false) | bool
   roles:
-    - role: base_os
+    - role: k8s_base_os
       tags: [scale, base]
-    - role: proxy
+    - role: k8s_proxy
       tags: [scale, proxy]
       when: proxy_enabled | bool
-    - role: container_runtime
+    - role: k8s_container_runtime
       tags: [scale, runtime, k8s]
-    - role: security_hardening
+    - role: k8s_security_hardening
       tags: [scale, security, k8s]
       when: security_hardening_enabled | default(true) | bool
 
@@ -109,7 +109,7 @@
   become: true
   gather_facts: true
   roles:
-    - role: kubernetes_core
+    - role: k8s_kubernetes_core
       tags: [scale, k8s, join]
 
 - name: Reconcile control-plane VIP after control-plane scale-out
@@ -117,7 +117,7 @@
   become: true
   gather_facts: true
   roles:
-    - role: control_plane_vip
+    - role: k8s_control_plane_vip
       tags: [scale, vip, control-plane]
       when: hostvars['localhost'].scale_out_contains_control_plane_hosts | default(false) | bool
 
@@ -126,6 +126,6 @@
   become: true
   gather_facts: true
   roles:
-    - role: metallb
+    - role: k8s_metallb
       tags: [scale, metallb, ingress]
       when: hostvars['localhost'].scale_out_contains_metallb_hosts | default(false) | bool

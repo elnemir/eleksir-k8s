@@ -242,7 +242,7 @@
 
 ### Решения
 - Стартована задача `T-023` на добавление post-check для `Service type=LoadBalancer` и выделенного VIP ingress.
-- В `roles/validation/tasks/main.yml` добавлен блок проверок ingress-сервиса:
+- В `roles/k8s_validation/tasks/main.yml` добавлен блок проверок ingress-сервиса:
   - тип сервиса `LoadBalancer`,
   - наличие внешнего адреса (`ip` или `hostname`),
   - опциональная сверка с `validation_ingress_expected_vip`.

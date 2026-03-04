@@ -100,6 +100,7 @@
 | T-085 | Scale-Out Replacement Node Rejoin | Добавить в `k8s/playbooks/k8s_scale_out.yml` режим безопасной repare/rejoin для replacement-ноды (тот же hostname/IP) через cleanup stale kubeadm/kubelet state | Критический | Завершена (без стендовой валидации) |
 | T-086 | Repo Namespace Refactor | Перевести inventory в INI, перенести inventory/group_vars и playbooks в `k8s/` с переименованием playbooks (`k8s_*`) | Критический | Завершена (без стендовой валидации) |
 | T-087 | Cross-OS Bootstrap Adaptation | Адаптировать роли bootstrap для мульти-ОС (RedHat/Debian): package manager, repo, proxy, NFS service/package maps, SELinux guard | Критический | Завершена (без стендовой валидации) |
+| T-088 | Roles Prefix Refactor | Переименовать роли с префиксом `k8s_` и обновить все `role:`/`roles/...` ссылки в playbooks и документации | Высокий | Завершена (без стендовой валидации) |
 
 ## Собранные данные (2026-02-19)
 - VMware: `vCenter 7.0.3`, `ESXi 7.0.3`, `clone_from_template`, шаблон `k8s-pcp-template`.
@@ -158,7 +159,7 @@
 - В `k8s/inventories/prod/group_vars/all.yml` добавлен `selinux_target_mode: Disabled` как временный диагностический режим для всех узлов (требуется reboot для полного применения).
 - В роли `kubernetes_core` добавлен режим `kubeadm_join_force_primary_endpoint`, отключающий VIP probe и принудительно выбирающий endpoint `primary_control_plane:6443` для join.
 - В `k8s/inventories/prod/group_vars/all.yml` включен `kubeadm_join_force_primary_endpoint: true` для текущего troubleshooting-контура.
-- В `roles/kubernetes_core/tasks/main.yml` добавлен `block/rescue` и авто-диагностика сети на joining-ноде при недоступности выбранного endpoint (`ip route get`, TCP probe, `curl /readyz`) с агрегированным fail-сообщением.
+- В `roles/k8s_kubernetes_core/tasks/main.yml` добавлен `block/rescue` и авто-диагностика сети на joining-ноде при недоступности выбранного endpoint (`ip route get`, TCP probe, `curl /readyz`) с агрегированным fail-сообщением.
 - В `k8s/playbooks/k8s_bootstrap.yml` добавлен запуск роли `security_hardening` на `k8s_cluster` до роли `kubernetes_core`, чтобы исключить повторный bootstrap без примененных firewall-правил.
 - В роли `networking` ожидание `calico-node` rollout сделано параметризуемым и переведено в `block/rescue` с автосбором диагностик (`pods`, `describe ds`, `events`) при таймауте.
 - В роли `networking` добавлена параметризация backend-режима Calico и применение VXLAN-параметров (`calico_backend=vxlan`, `IPIP=Never`, `VXLAN=Always`) после `kubectl apply`.

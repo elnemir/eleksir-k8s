@@ -8,5 +8,5 @@
   vars:
     proxy_state: "{{ proxy_state | default('present') }}"
   roles:
-    - role: proxy
+    - role: k8s_proxy
       tags: [proxy, proxy-manage]

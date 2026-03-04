@@ -1,7 +1,7 @@
 # ## Задача: Переменные MetalLB-нод
 # - **Статус**: В процессе
 # - **Описание**: Настройки выделенных ingress-нод и MetalLB-пула.
-node_role: metallb
+node_role: k8s_metallb
 
 metallb_mode: l2
 metallb_node_labels:

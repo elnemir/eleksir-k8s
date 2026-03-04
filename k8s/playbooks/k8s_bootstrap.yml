@@ -6,9 +6,9 @@
   become: true
   gather_facts: true
   roles:
-    - role: base_os
+    - role: k8s_base_os
       tags: [base]
-    - role: proxy
+    - role: k8s_proxy
       tags: [base, proxy]
       when: proxy_enabled | bool
 
@@ -17,7 +17,7 @@
   become: true
   gather_facts: true
   roles:
-    - role: container_runtime
+    - role: k8s_container_runtime
       tags: [runtime, k8s]
 
 - name: Configure control-plane VIP endpoint
@@ -25,7 +25,7 @@
   become: true
   gather_facts: true
   roles:
-    - role: control_plane_vip
+    - role: k8s_control_plane_vip
       tags: [vip, k8s, control-plane]
 
 - name: Apply security hardening on Kubernetes nodes
@@ -33,7 +33,7 @@
   become: true
   gather_facts: true
   roles:
-    - role: security_hardening
+    - role: k8s_security_hardening
       tags: [security, k8s]
       when: security_hardening_enabled | default(true) | bool
 
@@ -42,7 +42,7 @@
   become: true
   gather_facts: true
   roles:
-    - role: kubernetes_core
+    - role: k8s_kubernetes_core
       tags: [k8s]
 
 - name: Configure CNI
@@ -50,7 +50,7 @@
   become: true
   gather_facts: true
   roles:
-    - role: networking
+    - role: k8s_networking
       tags: [network, k8s]
 
 - name: Deploy ingress-nginx in node-IP mode
@@ -58,7 +58,7 @@
   become: true
   gather_facts: true
   roles:
-    - role: ingress_nginx
+    - role: k8s_ingress_nginx
       tags: [ingress, k8s]
 
 - name: Deploy kube-prometheus-stack
@@ -66,7 +66,7 @@
   become: true
   gather_facts: true
   roles:
-    - role: prometheus_stack
+    - role: k8s_prometheus_stack
       tags: [observability, prometheus, k8s]
       when: deploy_prometheus_stack | default(false) | bool
 
@@ -75,7 +75,7 @@
   become: true
   gather_facts: true
   roles:
-    - role: gitlab_runner
+    - role: k8s_gitlab_runner
       tags: [ci, gitlab-runner, k8s]
       when: deploy_gitlab_runner | default(false) | bool
 
@@ -84,6 +84,6 @@
   become: true
   gather_facts: true
   roles:
-    - role: k8tz
+    - role: k8s_k8tz
       tags: [k8tz, addons, k8s]
       when: deploy_k8tz | default(false) | bool

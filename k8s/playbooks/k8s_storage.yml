@@ -6,7 +6,7 @@
   become: true
   gather_facts: true
   roles:
-    - role: storage_nfs
+    - role: k8s_storage_nfs
       tags: [storage, nfs]
 
 - name: Configure Kubernetes storage integration
@@ -14,5 +14,5 @@
   become: true
   gather_facts: true
   roles:
-    - role: storage_nfs
+    - role: k8s_storage_nfs
       tags: [storage, k8s]

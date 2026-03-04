@@ -6,7 +6,7 @@
   become: true
   gather_facts: true
   roles:
-    - role: validation
+    - role: k8s_validation
       tags: [validate]
 
 - name: Validate control-plane VIP failover on demand
@@ -14,7 +14,7 @@
   become: true
   gather_facts: true
   roles:
-    - role: validation
+    - role: k8s_validation
       tags: [never, failover]
       vars:
         validation_enable_storage_check: false

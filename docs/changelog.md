@@ -19,6 +19,26 @@
   - `roles/security_hardening`: SELinux-настройки выполняются только при поддержке SELinux на хосте.
 - Обновлена эксплуатационная документация (`docs/runbook.md`, `docs/Project.md`, `docs/qa.md`, `docs/Tasktracker.md`) на новые пути `k8s/...`.
 
+## 2026-03-04 (roles prefix refactor: `k8s_`)
+### Изменено
+- Все каталоги ролей переименованы с префиксом `k8s_`:
+  - `roles/base_os` -> `roles/k8s_base_os`
+  - `roles/container_runtime` -> `roles/k8s_container_runtime`
+  - `roles/control_plane_vip` -> `roles/k8s_control_plane_vip`
+  - `roles/gitlab_runner` -> `roles/k8s_gitlab_runner`
+  - `roles/ingress_nginx` -> `roles/k8s_ingress_nginx`
+  - `roles/k8tz` -> `roles/k8s_k8tz`
+  - `roles/kubernetes_core` -> `roles/k8s_kubernetes_core`
+  - `roles/metallb` -> `roles/k8s_metallb`
+  - `roles/networking` -> `roles/k8s_networking`
+  - `roles/prometheus_stack` -> `roles/k8s_prometheus_stack`
+  - `roles/proxy` -> `roles/k8s_proxy`
+  - `roles/security_hardening` -> `roles/k8s_security_hardening`
+  - `roles/storage_nfs` -> `roles/k8s_storage_nfs`
+  - `roles/validation` -> `roles/k8s_validation`
+- Обновлены все вызовы `role:` в playbooks на новые имена ролей с префиксом `k8s_`.
+- Обновлены документированные пути `roles/...` в `docs/` на новую структуру именования.
+
 ## 2026-02-19
 ### Добавлено
 - Создан каталог документации `docs/`.
@@ -128,9 +148,9 @@
 
 ## 2026-02-19 (NFS data disk option)
 ### Изменено
-- Обновлен `roles/storage_nfs/defaults/main.yml`: добавлены параметры управления выделенным data-диском.
+- Обновлен `roles/k8s_storage_nfs/defaults/main.yml`: добавлены параметры управления выделенным data-диском.
 - Обновлен `inventories/prod/group_vars/nfs.yml`: добавлены переменные конфигурации data-диска для NFS.
-- Обновлен `roles/storage_nfs/tasks/main.yml`: реализованы шаги разметки диска, создания ФС и монтирования в `nfs_export_path` (опционально).
+- Обновлен `roles/k8s_storage_nfs/tasks/main.yml`: реализованы шаги разметки диска, создания ФС и монтирования в `nfs_export_path` (опционально).
 - Обновлен `docs/runbook.md`: добавлен раздел по использованию опции data-диска.
 - Обновлен `docs/Tasktracker.md`: задача `T-020` переведена в `Завершена (без стендовой валидации)`.
 
@@ -141,8 +161,8 @@
 
 ## 2026-02-19 (NFS system-disk guardrail)
 ### Изменено
-- Обновлен `roles/storage_nfs/tasks/main.yml`: добавлен guardrail, блокирующий выбор системного диска для data-диска NFS по умолчанию.
-- Обновлен `roles/storage_nfs/defaults/main.yml`: добавлены параметры `storage_nfs_data_disk_allow_system_disk` и `storage_nfs_data_disk_guard_mounts`.
+- Обновлен `roles/k8s_storage_nfs/tasks/main.yml`: добавлен guardrail, блокирующий выбор системного диска для data-диска NFS по умолчанию.
+- Обновлен `roles/k8s_storage_nfs/defaults/main.yml`: добавлены параметры `storage_nfs_data_disk_allow_system_disk` и `storage_nfs_data_disk_guard_mounts`.
 - Обновлен `inventories/prod/group_vars/nfs.yml`: добавлен параметр `storage_nfs_data_disk_allow_system_disk`.
 - Обновлен `docs/runbook.md`: добавлены инструкции по guardrail и override-поведению.
 - Обновлен `docs/Tasktracker.md`: задача `T-021` переведена в `Завершена (без стендовой валидации)`.
@@ -160,8 +180,8 @@
 
 ## 2026-02-19 (ingress VIP post-check)
 ### Изменено
-- Обновлен `roles/validation/tasks/main.yml`: добавлены проверки ingress service (`type=LoadBalancer`, external address, optional expected VIP).
-- Обновлен `roles/validation/defaults/main.yml`: добавлены параметры `validation_enable_ingress_vip_check`, `validation_ingress_namespace`, `validation_ingress_service_name`, `validation_ingress_expected_vip`.
+- Обновлен `roles/k8s_validation/tasks/main.yml`: добавлены проверки ingress service (`type=LoadBalancer`, external address, optional expected VIP).
+- Обновлен `roles/k8s_validation/defaults/main.yml`: добавлены параметры `validation_enable_ingress_vip_check`, `validation_ingress_namespace`, `validation_ingress_service_name`, `validation_ingress_expected_vip`.
 - Обновлен `inventories/prod/group_vars/all.yml`: зафиксированы параметры проверки ingress VIP и ожидаемый VIP `10.255.106.21`.
 - Обновлен `docs/Project.md`: добавлено описание автоматического ingress VIP post-check в архитектурной части.
 - Обновлен `docs/runbook.md`: добавлено описание автоматизации проверки в `playbooks/validate.yml`.
@@ -175,9 +195,9 @@
 ### Изменено
 - Добавлена роль `roles/control_plane_vip` (установка `keepalived/haproxy`, настройка VRRP unicast, VIP listener для Kubernetes API).
 - Обновлен `playbooks/bootstrap.yml`: добавлен запуск роли `control_plane_vip` до `kubernetes_core`.
-- Обновлен `roles/kubernetes_core/templates/kubeadm-config.yaml.j2`: `controlPlaneEndpoint` параметризован через `control_plane_endpoint_port`.
+- Обновлен `roles/k8s_kubernetes_core/templates/kubeadm-config.yaml.j2`: `controlPlaneEndpoint` параметризован через `control_plane_endpoint_port`.
 - Обновлены `inventories/prod/group_vars/all.yml` и `inventories/prod/group_vars/control_plane.yml`: включен control-plane VIP, задан endpoint port `8443`, добавлены VRRP/firewall параметры.
-- Обновлены `roles/security_hardening/defaults/main.yml` и `roles/security_hardening/tasks/main.yml`: добавлена поддержка `firewall_allowed_protocols` (для `vrrp`).
+- Обновлены `roles/k8s_security_hardening/defaults/main.yml` и `roles/k8s_security_hardening/tasks/main.yml`: добавлена поддержка `firewall_allowed_protocols` (для `vrrp`).
 - Обновлены `docs/Project.md`, `docs/runbook.md`, `docs/qa.md`: зафиксирована архитектура и эксплуатация control-plane VIP.
 - Обновлен `docs/Tasktracker.md`: задача `T-024` переведена в `Завершена (без стендовой валидации)`.
 
@@ -187,8 +207,8 @@
 
 ## 2026-02-19 (validation API VIP + failover-check)
 ### Изменено
-- Обновлен `roles/validation/defaults/main.yml`: добавлены параметры API VIP-проверки и опционального failover-test.
-- Обновлен `roles/validation/tasks/main.yml`: добавлены проверки API `readyz` через `control_plane_endpoint`, проверки `keepalived/haproxy` на всех control-plane узлах, проверка единственного владельца VIP и опциональный failover-test.
+- Обновлен `roles/k8s_validation/defaults/main.yml`: добавлены параметры API VIP-проверки и опционального failover-test.
+- Обновлен `roles/k8s_validation/tasks/main.yml`: добавлены проверки API `readyz` через `control_plane_endpoint`, проверки `keepalived/haproxy` на всех control-plane узлах, проверка единственного владельца VIP и опциональный failover-test.
 - Обновлен `docs/runbook.md`: добавлены флаги запуска валидации для API VIP и failover-test.
 - Обновлен `docs/Project.md`: отражены новые проверки в архитектурном описании и статусе реализации.
 - Обновлен `docs/Tasktracker.md`: задача `T-025` переведена в `Завершена (без стендовой валидации)`.
@@ -210,9 +230,9 @@
 
 ## 2026-02-19 (kubeadm config API compatibility fix)
 ### Изменено
-- Обновлен `roles/kubernetes_core/defaults/main.yml`: добавлены параметры `kubeadm_config_api_version` и `kubeadm_init_allow_experimental_api`.
-- Обновлен `roles/kubernetes_core/templates/kubeadm-config.yaml.j2`: `apiVersion` переведен на параметр `kubeadm_config_api_version`.
-- Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлена проверка переменной API-версии и опциональный флаг `--allow-experimental-api`.
+- Обновлен `roles/k8s_kubernetes_core/defaults/main.yml`: добавлены параметры `kubeadm_config_api_version` и `kubeadm_init_allow_experimental_api`.
+- Обновлен `roles/k8s_kubernetes_core/templates/kubeadm-config.yaml.j2`: `apiVersion` переведен на параметр `kubeadm_config_api_version`.
+- Обновлен `roles/k8s_kubernetes_core/tasks/main.yml`: добавлена проверка переменной API-версии и опциональный флаг `--allow-experimental-api`.
 - Обновлен `inventories/prod/group_vars/all.yml`: зафиксированы безопасные значения `kubeadm_config_api_version: kubeadm.k8s.io/v1beta3` и `kubeadm_init_allow_experimental_api: false`.
 - Обновлены `docs/Project.md` и `docs/runbook.md`: добавлены эксплуатационные инструкции по совместимости kubeadm API.
 - Обновлен `docs/Tasktracker.md`: задача `T-027` переведена в `Завершена`.
@@ -223,8 +243,8 @@
 
 ## 2026-02-19 (container runtime depsolve fix)
 ### Изменено
-- Обновлен `roles/container_runtime/defaults/main.yml`: установка `cri-tools` вынесена в опциональные параметры (`container_runtime_install_cri_tools`, `container_runtime_cri_tools_package`), из дефолтного списка runtime-пакетов удален `cri-tools`.
-- Обновлен `roles/container_runtime/tasks/main.yml`: добавлен probe `crictl` и условная установка `cri-tools` только при явном включении.
+- Обновлен `roles/k8s_container_runtime/defaults/main.yml`: установка `cri-tools` вынесена в опциональные параметры (`container_runtime_install_cri_tools`, `container_runtime_cri_tools_package`), из дефолтного списка runtime-пакетов удален `cri-tools`.
+- Обновлен `roles/k8s_container_runtime/tasks/main.yml`: добавлен probe `crictl` и условная установка `cri-tools` только при явном включении.
 - Обновлен `inventories/prod/group_vars/all.yml`: зафиксирован безопасный default `container_runtime_install_cri_tools: false`.
 - Обновлены `docs/Project.md` и `docs/runbook.md`: добавлены указания по runtime packaging policy и troubleshooting depsolve для `cri-tools`.
 - Обновлен `docs/Tasktracker.md`: задача `T-028` переведена в `Завершена`.
@@ -235,8 +255,8 @@
 
 ## 2026-02-19 (k8s repo resilience fix)
 ### Изменено
-- Обновлен `roles/kubernetes_core/defaults/main.yml`: добавлены параметры `kubernetes_packages_version_override`, `kubernetes_repo_validate_*`, `kubernetes_package_install_*`.
-- Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлены шаги precheck repo (`dnf makecache` c retry), вычисление списка устанавливаемых пакетов с учетом override-версии и retry установки пакетов.
+- Обновлен `roles/k8s_kubernetes_core/defaults/main.yml`: добавлены параметры `kubernetes_packages_version_override`, `kubernetes_repo_validate_*`, `kubernetes_package_install_*`.
+- Обновлен `roles/k8s_kubernetes_core/tasks/main.yml`: добавлены шаги precheck repo (`dnf makecache` c retry), вычисление списка устанавливаемых пакетов с учетом override-версии и retry установки пакетов.
 - Обновлен `inventories/prod/group_vars/all.yml`: зафиксированы параметры resilience для Kubernetes package install.
 - Обновлены `docs/Project.md` и `docs/runbook.md`: добавлены правила эксплуатации и troubleshooting для недоступности зеркал Kubernetes repo.
 - Обновлен `docs/Tasktracker.md`: задача `T-029` переведена в `Завершена`.
@@ -247,22 +267,22 @@
 
 ## 2026-02-19 (kubeadm init diagnostics fix)
 ### Изменено
-- Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлены preflight-проверки перед `kubeadm init` (запуск runtime service, ожидание runtime socket, проверка выключенного swap).
-- Обновлен `roles/kubernetes_core/tasks/main.yml`: `kubeadm init` переведен в `block/rescue` с автоматическим сбором диагностики (`systemctl is-active kubelet/runtime`, `journalctl -u kubelet`, `crictl ps`).
+- Обновлен `roles/k8s_kubernetes_core/tasks/main.yml`: добавлены preflight-проверки перед `kubeadm init` (запуск runtime service, ожидание runtime socket, проверка выключенного swap).
+- Обновлен `roles/k8s_kubernetes_core/tasks/main.yml`: `kubeadm init` переведен в `block/rescue` с автоматическим сбором диагностики (`systemctl is-active kubelet/runtime`, `journalctl -u kubelet`, `crictl ps`).
 - Обновлен `docs/runbook.md`: добавлен troubleshooting-раздел для сбоя `wait-control-plane` (`127.0.0.1:10248`) и команды повторного запуска.
 - Обновлен `docs/Tasktracker.md`: задача `T-030` переведена в `Завершена (без стендовой валидации)`.
 
 ## 2026-02-24 (kubeadm init endpoint/idempotency hardening)
 ### Изменено
-- Обновлен `roles/kubernetes_core/defaults/main.yml`: добавлены параметры управления precheck endpoint (`kubeadm_init_endpoint_check_*`) и управляемой детализацией логов `kubeadm` (`kubeadm_init_verbose`, `kubeadm_init_verbosity`).
-- Обновлен `roles/kubernetes_core/tasks/main.yml`: перед `kubeadm init` добавлена проверка доступности `controlPlaneEndpoint` (`wait_for` по `host:port`) с retry.
-- Обновлен `roles/kubernetes_core/tasks/main.yml`: idempotency `kubeadm init` переведена с `creates` на проверку фактической готовности API (`kubectl ... /readyz`) для исключения ложного пропуска после частичного init.
-- Обновлен `roles/kubernetes_core/tasks/main.yml`: расширена диагностика `rescue` (увеличен tail `kubelet` logs, добавлен контекст pre-init проверок в fail message).
+- Обновлен `roles/k8s_kubernetes_core/defaults/main.yml`: добавлены параметры управления precheck endpoint (`kubeadm_init_endpoint_check_*`) и управляемой детализацией логов `kubeadm` (`kubeadm_init_verbose`, `kubeadm_init_verbosity`).
+- Обновлен `roles/k8s_kubernetes_core/tasks/main.yml`: перед `kubeadm init` добавлена проверка доступности `controlPlaneEndpoint` (`wait_for` по `host:port`) с retry.
+- Обновлен `roles/k8s_kubernetes_core/tasks/main.yml`: idempotency `kubeadm init` переведена с `creates` на проверку фактической готовности API (`kubectl ... /readyz`) для исключения ложного пропуска после частичного init.
+- Обновлен `roles/k8s_kubernetes_core/tasks/main.yml`: расширена диагностика `rescue` (увеличен tail `kubelet` logs, добавлен контекст pre-init проверок в fail message).
 
 ## 2026-02-24 (kubeadm init VIP backend guard)
 ### Изменено
-- Обновлен `roles/kubernetes_core/tasks/main.yml`: в `rescue` добавлен probe доступности backend control-plane узлов на `:6443`.
-- Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлен явный `fail` для случая, когда `controlPlaneEndpoint` доступен, но ни один backend API не отвечает, с диагностическим сообщением по VIP/HAProxy-цепочке.
+- Обновлен `roles/k8s_kubernetes_core/tasks/main.yml`: в `rescue` добавлен probe доступности backend control-plane узлов на `:6443`.
+- Обновлен `roles/k8s_kubernetes_core/tasks/main.yml`: добавлен явный `fail` для случая, когда `controlPlaneEndpoint` доступен, но ни один backend API не отвечает, с диагностическим сообщением по VIP/HAProxy-цепочке.
 - Обновлен `docs/Tasktracker.md`: задача `T-032` переведена в `Завершена (без стендовой валидации)`.
 
 ## 2026-02-24 (ansible callback cleanup)
@@ -272,10 +292,10 @@
 
 ## 2026-02-24 (kubeadm stale-state guard)
 ### Изменено
-- Обновлен `roles/kubernetes_core/defaults/main.yml`: добавлен параметр `kubeadm_init_auto_reset_on_stale_state` (по умолчанию `false`).
-- Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлен precheck частично-инициализированного состояния control-plane перед `kubeadm init` (`/etc/kubernetes/manifests/kube-apiserver.yaml`, содержимое `/var/lib/etcd`) при неуспешном `/readyz`.
-- Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлена опциональная автоочистка stale-state (`kubeadm reset -f`, удаление stale manifests и `/var/lib/etcd`) при `kubeadm_init_auto_reset_on_stale_state=true`.
-- Обновлен `roles/kubernetes_core/tasks/main.yml`: при обнаружении stale-state и отключенной автоочистке play завершается явным fail с инструкцией по remediation.
+- Обновлен `roles/k8s_kubernetes_core/defaults/main.yml`: добавлен параметр `kubeadm_init_auto_reset_on_stale_state` (по умолчанию `false`).
+- Обновлен `roles/k8s_kubernetes_core/tasks/main.yml`: добавлен precheck частично-инициализированного состояния control-plane перед `kubeadm init` (`/etc/kubernetes/manifests/kube-apiserver.yaml`, содержимое `/var/lib/etcd`) при неуспешном `/readyz`.
+- Обновлен `roles/k8s_kubernetes_core/tasks/main.yml`: добавлена опциональная автоочистка stale-state (`kubeadm reset -f`, удаление stale manifests и `/var/lib/etcd`) при `kubeadm_init_auto_reset_on_stale_state=true`.
+- Обновлен `roles/k8s_kubernetes_core/tasks/main.yml`: при обнаружении stale-state и отключенной автоочистке play завершается явным fail с инструкцией по remediation.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-034`.
 
 ## 2026-02-24 (proxy no_proxy hardening for API VIP)
@@ -285,29 +305,29 @@
 
 ## 2026-02-24 (control-plane VIP SELinux hardening)
 ### Изменено
-- Обновлен `roles/control_plane_vip/defaults/main.yml`: добавлены параметры управления SELinux-настройкой для HAProxy и условным VIP post-check (`control_plane_vip_manage_selinux_haproxy_connect_any`, `control_plane_vip_selinux_haproxy_connect_any`, `control_plane_vip_postcheck_*`).
-- Обновлен `roles/control_plane_vip/tasks/main.yml`: добавлена idempotent-настройка SELinux boolean `haproxy_connect_any` (persisted) на control-plane нодах при включенном SELinux.
-- Обновлен `roles/control_plane_vip/tasks/main.yml`: добавлен безопасный post-check `https://<controlPlaneEndpoint>:<port>/readyz`, выполняемый только при наличии `admin.conf` (после инициализации control-plane).
+- Обновлен `roles/k8s_control_plane_vip/defaults/main.yml`: добавлены параметры управления SELinux-настройкой для HAProxy и условным VIP post-check (`control_plane_vip_manage_selinux_haproxy_connect_any`, `control_plane_vip_selinux_haproxy_connect_any`, `control_plane_vip_postcheck_*`).
+- Обновлен `roles/k8s_control_plane_vip/tasks/main.yml`: добавлена idempotent-настройка SELinux boolean `haproxy_connect_any` (persisted) на control-plane нодах при включенном SELinux.
+- Обновлен `roles/k8s_control_plane_vip/tasks/main.yml`: добавлен безопасный post-check `https://<controlPlaneEndpoint>:<port>/readyz`, выполняемый только при наличии `admin.conf` (после инициализации control-plane).
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-036`.
 
 ## 2026-02-24 (security_hardening SELinux mode normalization)
 ### Изменено
-- Обновлен `roles/security_hardening/tasks/main.yml`: валидация `selinux_target_mode` переведена на case-insensitive проверку через lowercase.
-- Обновлен `roles/security_hardening/tasks/main.yml`: для модуля `ansible.posix.selinux` добавлена нормализация `state` в lowercase, чтобы исключить сбой при значениях вида `Enforcing`.
+- Обновлен `roles/k8s_security_hardening/tasks/main.yml`: валидация `selinux_target_mode` переведена на case-insensitive проверку через lowercase.
+- Обновлен `roles/k8s_security_hardening/tasks/main.yml`: для модуля `ansible.posix.selinux` добавлена нормализация `state` в lowercase, чтобы исключить сбой при значениях вида `Enforcing`.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-037`.
 
 ## 2026-02-24 (kubeadm join resilience hardening)
 ### Изменено
-- Обновлен `roles/kubernetes_core/defaults/main.yml`: добавлены параметры проверки доступности `controlPlaneEndpoint` перед `kubeadm join` и параметры retry/delay для join.
-- Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлен precheck `wait_for` до API VIP перед join на всех non-primary нодах.
-- Обновлен `roles/kubernetes_core/tasks/main.yml`: для `Join secondary control-plane nodes` и `Join worker and metallb nodes` добавлены retry/delay с `until`, а также `throttle: 1` для последовательного join.
+- Обновлен `roles/k8s_kubernetes_core/defaults/main.yml`: добавлены параметры проверки доступности `controlPlaneEndpoint` перед `kubeadm join` и параметры retry/delay для join.
+- Обновлен `roles/k8s_kubernetes_core/tasks/main.yml`: добавлен precheck `wait_for` до API VIP перед join на всех non-primary нодах.
+- Обновлен `roles/k8s_kubernetes_core/tasks/main.yml`: для `Join secondary control-plane nodes` и `Join worker and metallb nodes` добавлены retry/delay с `until`, а также `throttle: 1` для последовательного join.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-038`.
 
 ## 2026-02-24 (kubeadm join endpoint fallback)
 ### Изменено
-- Обновлен `roles/kubernetes_core/defaults/main.yml`: добавлены параметры fallback endpoint для `kubeadm join` (`kubeadm_join_endpoint_fallback_enabled`, `kubeadm_join_fallback_port`).
-- Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлена логика выбора endpoint для join (`VIP` при доступности, fallback на `primary_control_plane:6443` при недоступности VIP).
-- Обновлен `roles/kubernetes_core/tasks/main.yml`: join-команды переведены на использование выбранного endpoint через адресную подмену `kubeadm join <endpoint>`.
+- Обновлен `roles/k8s_kubernetes_core/defaults/main.yml`: добавлены параметры fallback endpoint для `kubeadm join` (`kubeadm_join_endpoint_fallback_enabled`, `kubeadm_join_fallback_port`).
+- Обновлен `roles/k8s_kubernetes_core/tasks/main.yml`: добавлена логика выбора endpoint для join (`VIP` при доступности, fallback на `primary_control_plane:6443` при недоступности VIP).
+- Обновлен `roles/k8s_kubernetes_core/tasks/main.yml`: join-команды переведены на использование выбранного endpoint через адресную подмену `kubeadm join <endpoint>`.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-039`.
 
 ## 2026-02-24 (temporary SELinux disable for cluster-wide diagnostics)
@@ -317,16 +337,16 @@
 
 ## 2026-02-24 (kubeadm join forced primary endpoint mode)
 ### Изменено
-- Обновлен `roles/kubernetes_core/defaults/main.yml`: добавлен параметр `kubeadm_join_force_primary_endpoint` для принудительного join через `primary_control_plane:6443`.
-- Обновлен `roles/kubernetes_core/tasks/main.yml`: probe VIP для join отключается при `kubeadm_join_force_primary_endpoint=true`, endpoint выбирается сразу как fallback на primary.
+- Обновлен `roles/k8s_kubernetes_core/defaults/main.yml`: добавлен параметр `kubeadm_join_force_primary_endpoint` для принудительного join через `primary_control_plane:6443`.
+- Обновлен `roles/k8s_kubernetes_core/tasks/main.yml`: probe VIP для join отключается при `kubeadm_join_force_primary_endpoint=true`, endpoint выбирается сразу как fallback на primary.
 - Обновлен `inventories/prod/group_vars/all.yml`: включен `kubeadm_join_force_primary_endpoint: true` для устранения задержек на VIP precheck в текущем контуре.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-041`.
 
 ## 2026-02-24 (kubeadm join endpoint failure diagnostics)
 ### Изменено
-- Обновлен `roles/kubernetes_core/tasks/main.yml`: ожидание доступности выбранного join endpoint переведено в `block/rescue`.
-- Обновлен `roles/kubernetes_core/tasks/main.yml`: в `rescue` добавлен сбор сетевой диагностики на joining-ноде (`ip route get`, TCP probe `bash /dev/tcp`, `curl /readyz`).
-- Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлен итоговый `fail` с агрегированным диагностическим выводом для ускорения root-cause анализа.
+- Обновлен `roles/k8s_kubernetes_core/tasks/main.yml`: ожидание доступности выбранного join endpoint переведено в `block/rescue`.
+- Обновлен `roles/k8s_kubernetes_core/tasks/main.yml`: в `rescue` добавлен сбор сетевой диагностики на joining-ноде (`ip route get`, TCP probe `bash /dev/tcp`, `curl /readyz`).
+- Обновлен `roles/k8s_kubernetes_core/tasks/main.yml`: добавлен итоговый `fail` с агрегированным диагностическим выводом для ускорения root-cause анализа.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-042`.
 
 ## 2026-02-24 (bootstrap sequencing: security_hardening before kubernetes_core)
@@ -336,65 +356,65 @@
 
 ## 2026-02-24 (networking calico rollout diagnostics hardening)
 ### Изменено
-- Обновлен `roles/networking/defaults/main.yml`: добавлены параметры ожидания rollout CNI (`network_cni_rollout_timeout`, `network_cni_rollout_retries`, `network_cni_rollout_delay`).
-- Обновлен `roles/networking/tasks/main.yml`: ожидание `calico-node` rollout переведено на retry (`until`) с параметризуемым timeout.
-- Обновлен `roles/networking/tasks/main.yml`: добавлен `block/rescue` со сбором диагностик (`get pods`, `describe ds calico-node`, `get events`) и агрегированным fail-сообщением при таймауте rollout.
+- Обновлен `roles/k8s_networking/defaults/main.yml`: добавлены параметры ожидания rollout CNI (`network_cni_rollout_timeout`, `network_cni_rollout_retries`, `network_cni_rollout_delay`).
+- Обновлен `roles/k8s_networking/tasks/main.yml`: ожидание `calico-node` rollout переведено на retry (`until`) с параметризуемым timeout.
+- Обновлен `roles/k8s_networking/tasks/main.yml`: добавлен `block/rescue` со сбором диагностик (`get pods`, `describe ds calico-node`, `get events`) и агрегированным fail-сообщением при таймауте rollout.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-044`.
 
 ## 2026-02-25 (calico backend switch to VXLAN)
 ### Изменено
-- Обновлен `roles/networking/defaults/main.yml`: добавлены параметры backend-режима Calico (`network_calico_backend`, `network_calico_ipv4pool_ipip`, `network_calico_ipv4pool_vxlan`).
-- Обновлен `roles/networking/tasks/main.yml`: после применения манифеста добавлена настройка `calico-config` и `calico-node` под VXLAN через `kubectl patch`.
-- Обновлен `roles/networking/tasks/main.yml`: добавлен условный `rollout restart` для `daemonset/calico-node` и `deployment/calico-kube-controllers` при изменении сетевых параметров Calico.
+- Обновлен `roles/k8s_networking/defaults/main.yml`: добавлены параметры backend-режима Calico (`network_calico_backend`, `network_calico_ipv4pool_ipip`, `network_calico_ipv4pool_vxlan`).
+- Обновлен `roles/k8s_networking/tasks/main.yml`: после применения манифеста добавлена настройка `calico-config` и `calico-node` под VXLAN через `kubectl patch`.
+- Обновлен `roles/k8s_networking/tasks/main.yml`: добавлен условный `rollout restart` для `daemonset/calico-node` и `deployment/calico-kube-controllers` при изменении сетевых параметров Calico.
 - Обновлен `inventories/prod/group_vars/all.yml`: включен режим Calico VXLAN (`network_calico_backend: vxlan`, `network_calico_ipv4pool_ipip: Never`, `network_calico_ipv4pool_vxlan: Always`).
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-045`.
 
 ## 2026-02-25 (calico vxlan full migration without bird checks)
 ### Изменено
-- Обновлен `roles/networking/defaults/main.yml`: добавлен параметр `network_calico_cluster_type` для управления `CLUSTER_TYPE` в `calico-node`.
-- Обновлен `roles/networking/tasks/main.yml`: при `network_calico_backend=vxlan` добавлен patch `CLUSTER_TYPE=k8s` для `daemonset/calico-node`.
-- Обновлен `roles/networking/tasks/main.yml`: при VXLAN добавлен patch health checks `calico-node` на felix-only (`-felix-live`, `-felix-ready`) для удаления зависимости от BIRD.
+- Обновлен `roles/k8s_networking/defaults/main.yml`: добавлен параметр `network_calico_cluster_type` для управления `CLUSTER_TYPE` в `calico-node`.
+- Обновлен `roles/k8s_networking/tasks/main.yml`: при `network_calico_backend=vxlan` добавлен patch `CLUSTER_TYPE=k8s` для `daemonset/calico-node`.
+- Обновлен `roles/k8s_networking/tasks/main.yml`: при VXLAN добавлен patch health checks `calico-node` на felix-only (`-felix-live`, `-felix-ready`) для удаления зависимости от BIRD.
 - Обновлен `inventories/prod/group_vars/all.yml`: добавлен `network_calico_cluster_type: "k8s"` для production-контура.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-046`.
 
 ## 2026-02-25 (metallb webhook readiness hardening)
 ### Изменено
-- Обновлен `roles/metallb/defaults/main.yml`: добавлены параметры ожидания webhook endpoints и retry для применения pool-конфига MetalLB.
-- Обновлен `roles/metallb/tasks/main.yml`: добавлен precheck готовности `endpoints/metallb-webhook-service` перед `apply` CR-манифеста.
-- Обновлен `roles/metallb/tasks/main.yml`: применение `metallb-config.yaml` переведено в `block/rescue` с retry и сбором диагностик (`pods/events`) при ошибке webhook.
+- Обновлен `roles/k8s_metallb/defaults/main.yml`: добавлены параметры ожидания webhook endpoints и retry для применения pool-конфига MetalLB.
+- Обновлен `roles/k8s_metallb/tasks/main.yml`: добавлен precheck готовности `endpoints/metallb-webhook-service` перед `apply` CR-манифеста.
+- Обновлен `roles/k8s_metallb/tasks/main.yml`: применение `metallb-config.yaml` переведено в `block/rescue` с retry и сбором диагностик (`pods/events`) при ошибке webhook.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-047`.
 
 ## 2026-02-25 (metallb webhook temporary failurePolicy workaround)
 ### Изменено
-- Обновлен `roles/metallb/defaults/main.yml`: добавлены параметры временного workaround для `ValidatingWebhookConfiguration` (`metallb_webhook_failure_policy_workaround_enabled`, `metallb_webhook_configuration_name`).
-- Обновлен `roles/metallb/tasks/main.yml`: перед `apply` pool-конфига добавлен временный patch `failurePolicy=Ignore` для `ipaddresspool`/`l2advertisement` webhooks.
-- Обновлен `roles/metallb/tasks/main.yml`: после `apply` (в `always`) добавлено восстановление `failurePolicy=Fail`.
+- Обновлен `roles/k8s_metallb/defaults/main.yml`: добавлены параметры временного workaround для `ValidatingWebhookConfiguration` (`metallb_webhook_failure_policy_workaround_enabled`, `metallb_webhook_configuration_name`).
+- Обновлен `roles/k8s_metallb/tasks/main.yml`: перед `apply` pool-конфига добавлен временный patch `failurePolicy=Ignore` для `ipaddresspool`/`l2advertisement` webhooks.
+- Обновлен `roles/k8s_metallb/tasks/main.yml`: после `apply` (в `always`) добавлено восстановление `failurePolicy=Fail`.
 - Обновлен `inventories/prod/group_vars/all.yml`: включен workaround `metallb_webhook_failure_policy_workaround_enabled: true`.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-048`.
 
 ## 2026-02-25 (metallb webhook delete/recreate workaround)
 ### Изменено
-- Обновлен `roles/metallb/defaults/main.yml`: добавлен переключатель `metallb_webhook_delete_recreate_workaround_enabled` для удаления/восстановления webhook-конфигурации на время `pool apply`.
-- Обновлен `roles/metallb/tasks/main.yml`: перед применением `metallb-config.yaml` добавлено удаление `ValidatingWebhookConfiguration` MetalLB (`--ignore-not-found`).
-- Обновлен `roles/metallb/tasks/main.yml`: в `always` добавлено восстановление webhook-конфигурации через повторный `apply` базового манифеста MetalLB.
+- Обновлен `roles/k8s_metallb/defaults/main.yml`: добавлен переключатель `metallb_webhook_delete_recreate_workaround_enabled` для удаления/восстановления webhook-конфигурации на время `pool apply`.
+- Обновлен `roles/k8s_metallb/tasks/main.yml`: перед применением `metallb-config.yaml` добавлено удаление `ValidatingWebhookConfiguration` MetalLB (`--ignore-not-found`).
+- Обновлен `roles/k8s_metallb/tasks/main.yml`: в `always` добавлено восстановление webhook-конфигурации через повторный `apply` базового манифеста MetalLB.
 - Обновлен `inventories/prod/group_vars/all.yml`: включен workaround `metallb_webhook_delete_recreate_workaround_enabled: true`, предыдущий workaround `failurePolicy` отключен.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-049`.
 
 ## 2026-02-25 (metallb webhook restore proxy environment fix)
 ### Изменено
-- Обновлен `roles/metallb/tasks/main.yml`: в шаг восстановления webhook-конфигурации добавлен `environment: "{{ proxy_environment | default({}) }}"` для корректного доступа к `metallb_manifest_url` в проксируемом контуре.
+- Обновлен `roles/k8s_metallb/tasks/main.yml`: в шаг восстановления webhook-конфигурации добавлен `environment: "{{ proxy_environment | default({}) }}"` для корректного доступа к `metallb_manifest_url` в проксируемом контуре.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-050`.
 
 ## 2026-02-25 (control-plane helm and helmfile installation)
 ### Изменено
-- Обновлен `roles/kubernetes_core/defaults/main.yml`: добавлены параметры управления установкой `helm`/`helmfile` и версий release-артефактов для control-plane нод.
-- Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлена установка `helm` и `helmfile` из официальных release-архивов (с учетом архитектуры и `proxy_environment`) только на control-plane нодах.
+- Обновлен `roles/k8s_kubernetes_core/defaults/main.yml`: добавлены параметры управления установкой `helm`/`helmfile` и версий release-артефактов для control-plane нод.
+- Обновлен `roles/k8s_kubernetes_core/tasks/main.yml`: добавлена установка `helm` и `helmfile` из официальных release-архивов (с учетом архитектуры и `proxy_environment`) только на control-plane нодах.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-051`.
 
 ## 2026-02-25 (proxy management playbook)
 ### Изменено
-- Обновлен `roles/proxy/defaults/main.yml`: добавлен параметр `proxy_state` с поддержкой режимов `present/absent`.
-- Обновлен `roles/proxy/tasks/main.yml`: роль переведена на режимы включения/отключения proxy (создание/удаление profile, dnf block и systemd drop-in с reload/restart сервисов).
+- Обновлен `roles/k8s_proxy/defaults/main.yml`: добавлен параметр `proxy_state` с поддержкой режимов `present/absent`.
+- Обновлен `roles/k8s_proxy/tasks/main.yml`: роль переведена на режимы включения/отключения proxy (создание/удаление profile, dnf block и systemd drop-in с reload/restart сервисов).
 - Добавлен `playbooks/manage_proxy.yml`: отдельный эксплуатационный playbook управления proxy-режимом на всех нодах (`-e proxy_state=present|absent`).
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-052`.
 
@@ -405,13 +425,13 @@
 
 ## 2026-02-25 (validation failover source host guard)
 ### Изменено
-- Обновлен `roles/validation/tasks/main.yml`: добавлена безопасная предвычисляемая инициализация `validation_failover_source_host` перед failover-блоком.
-- Обновлен `roles/validation/tasks/main.yml`: шаги остановки/запуска `keepalived` на source-host защищены условием наличия `validation_failover_source_host`.
+- Обновлен `roles/k8s_validation/tasks/main.yml`: добавлена безопасная предвычисляемая инициализация `validation_failover_source_host` перед failover-блоком.
+- Обновлен `roles/k8s_validation/tasks/main.yml`: шаги остановки/запуска `keepalived` на source-host защищены условием наличия `validation_failover_source_host`.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-054`.
 
 ## 2026-02-25 (validation delegate_to fallback guard)
 ### Изменено
-- Обновлен `roles/validation/tasks/main.yml`: для failover-операций `keepalived` применен безопасный fallback в `delegate_to` через `validation_failover_source_host | default(inventory_hostname)` для исключения ошибок шаблонизации при undefined-переменной.
+- Обновлен `roles/k8s_validation/tasks/main.yml`: для failover-операций `keepalived` применен безопасный fallback в `delegate_to` через `validation_failover_source_host | default(inventory_hostname)` для исключения ошибок шаблонизации при undefined-переменной.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-055`.
 
 ## 2026-02-25 (full documentation synchronization)
@@ -424,8 +444,8 @@
 
 ## 2026-02-25 (validation ingress diagnostics hardening)
 ### Изменено
-- Обновлен `roles/validation/tasks/main.yml`: перед assert ingress-проверки добавлен диагностический вывод при `kubectl get svc` с `rc != 0` (rc/stdout/stderr).
-- Обновлен `roles/validation/tasks/main.yml`: расширено fail-сообщение ingress assert с добавлением `stderr` для ускорения root-cause анализа.
+- Обновлен `roles/k8s_validation/tasks/main.yml`: перед assert ingress-проверки добавлен диагностический вывод при `kubectl get svc` с `rc != 0` (rc/stdout/stderr).
+- Обновлен `roles/k8s_validation/tasks/main.yml`: расширено fail-сообщение ingress assert с добавлением `stderr` для ускорения root-cause анализа.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-057`.
 
 ## 2026-02-25 (temporary ingress validation disable)
@@ -442,62 +462,62 @@
 
 ## 2026-02-25 (validation switched to ingress node-ip mode)
 ### Изменено
-- Обновлен `roles/validation/defaults/main.yml`: добавлен режим проверки ingress (`validation_ingress_validation_mode`) и параметры проверки `DaemonSet`/controller-подов.
-- Обновлен `roles/validation/tasks/main.yml`: добавлена валидация ingress в режиме `node_ip` (готовность `daemonset`, размещение controller-подов на выделенных ingress-нодах), при сохранении режима `loadbalancer` для обратной совместимости.
+- Обновлен `roles/k8s_validation/defaults/main.yml`: добавлен режим проверки ingress (`validation_ingress_validation_mode`) и параметры проверки `DaemonSet`/controller-подов.
+- Обновлен `roles/k8s_validation/tasks/main.yml`: добавлена валидация ingress в режиме `node_ip` (готовность `daemonset`, размещение controller-подов на выделенных ingress-нодах), при сохранении режима `loadbalancer` для обратной совместимости.
 - Обновлен `inventories/prod/group_vars/all.yml`: ingress-check снова включен и переведен в режим `node_ip`.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-060`.
 
 ## 2026-02-25 (helm tooling download resilience hardening)
 ### Изменено
-- Обновлен `roles/kubernetes_core/defaults/main.yml`: добавлены параметры retry/delay и минимального размера архива для загрузки CLI tooling (`helm`/`helmfile`).
-- Обновлен `roles/kubernetes_core/tasks/main.yml`: загрузка архивов `helm`/`helmfile` переведена на устойчивую схему (проверка существующего файла, `force: false`, retry, post-check размера архива).
+- Обновлен `roles/k8s_kubernetes_core/defaults/main.yml`: добавлены параметры retry/delay и минимального размера архива для загрузки CLI tooling (`helm`/`helmfile`).
+- Обновлен `roles/k8s_kubernetes_core/tasks/main.yml`: загрузка архивов `helm`/`helmfile` переведена на устойчивую схему (проверка существующего файла, `force: false`, retry, post-check размера архива).
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-061`.
 
 ## 2026-02-25 (ingress role self-managed helm bootstrap)
 ### Изменено
-- Обновлен `roles/ingress_nginx/defaults/main.yml`: добавлены параметры автоустановки `helm` (версия, архитектура, retry/delay, минимальный размер архива, временный каталог).
-- Обновлен `roles/ingress_nginx/tasks/main.yml`: роль больше не падает при отсутствии `helm`; добавлена автоматическая установка `helm` (download/extract/install) перед `helm repo/upgrade`.
+- Обновлен `roles/k8s_ingress_nginx/defaults/main.yml`: добавлены параметры автоустановки `helm` (версия, архитектура, retry/delay, минимальный размер архива, временный каталог).
+- Обновлен `roles/k8s_ingress_nginx/tasks/main.yml`: роль больше не падает при отсутствии `helm`; добавлена автоматическая установка `helm` (download/extract/install) перед `helm repo/upgrade`.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-062`.
 
 ## 2026-02-25 (ingress helm path check hardening)
 ### Изменено
-- Обновлен `roles/ingress_nginx/defaults/main.yml`: добавлен параметр `ingress_nginx_helm_binary_path` (`/usr/local/bin/helm`).
-- Обновлен `roles/ingress_nginx/tasks/main.yml`: проверка наличия `helm` переведена на `stat`/абсолютный путь вместо `command -v`, команды `helm` вызываются через абсолютный путь с явным `PATH`.
+- Обновлен `roles/k8s_ingress_nginx/defaults/main.yml`: добавлен параметр `ingress_nginx_helm_binary_path` (`/usr/local/bin/helm`).
+- Обновлен `roles/k8s_ingress_nginx/tasks/main.yml`: проверка наличия `helm` переведена на `stat`/абсолютный путь вместо `command -v`, команды `helm` вызываются через абсолютный путь с явным `PATH`.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-063`.
 
 ## 2026-02-25 (base_os zram0 disable for RedOS 8)
 ### Изменено
-- Обновлен `roles/base_os/defaults/main.yml`: добавлен переключатель `base_os_disable_zram0` для управляемого отключения `zram0`.
-- Обновлен `roles/base_os/tasks/main.yml`: добавлено устойчивое отключение `zram0` на RedOS 8 (mask zram units, zram-generator override, `swapoff /dev/zram0`, проверка отсутствия zram в `swapon`).
+- Обновлен `roles/k8s_base_os/defaults/main.yml`: добавлен переключатель `base_os_disable_zram0` для управляемого отключения `zram0`.
+- Обновлен `roles/k8s_base_os/tasks/main.yml`: добавлено устойчивое отключение `zram0` на RedOS 8 (mask zram units, zram-generator override, `swapoff /dev/zram0`, проверка отсутствия zram в `swapon`).
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-064`.
 
 ## 2026-02-25 (networkmanager dns + kubelet resolvconf alignment)
 ### Изменено
-- Обновлен `roles/base_os/defaults/main.yml`: добавлены параметры управления DNS через `NetworkManager` для RedOS 8 (`base_os_manage_networkmanager_dns`, `base_os_networkmanager_ignore_auto_dns`).
-- Обновлен `roles/base_os/tasks/main.yml`: добавлена idempotent-настройка активного профиля `NetworkManager` через `nmcli` (DNS из `dns_servers`, optional `ignore-auto-dns`, `connection up`).
-- Обновлен `roles/kubernetes_core/defaults/main.yml`: добавлен параметр `kubelet_resolv_conf_path` (по умолчанию `/run/systemd/resolve/resolv.conf`).
-- Обновлен `roles/kubernetes_core/templates/kubeadm-config.yaml.j2`: в `KubeletConfiguration` добавлен `resolvConf`.
-- Обновлен `roles/validation/defaults/main.yml` и `roles/validation/tasks/main.yml`: добавлена проверка `resolvConf` в `/var/lib/kubelet/config.yaml` на всех узлах `k8s_cluster`.
+- Обновлен `roles/k8s_base_os/defaults/main.yml`: добавлены параметры управления DNS через `NetworkManager` для RedOS 8 (`base_os_manage_networkmanager_dns`, `base_os_networkmanager_ignore_auto_dns`).
+- Обновлен `roles/k8s_base_os/tasks/main.yml`: добавлена idempotent-настройка активного профиля `NetworkManager` через `nmcli` (DNS из `dns_servers`, optional `ignore-auto-dns`, `connection up`).
+- Обновлен `roles/k8s_kubernetes_core/defaults/main.yml`: добавлен параметр `kubelet_resolv_conf_path` (по умолчанию `/run/systemd/resolve/resolv.conf`).
+- Обновлен `roles/k8s_kubernetes_core/templates/kubeadm-config.yaml.j2`: в `KubeletConfiguration` добавлен `resolvConf`.
+- Обновлен `roles/k8s_validation/defaults/main.yml` и `roles/k8s_validation/tasks/main.yml`: добавлена проверка `resolvConf` в `/var/lib/kubelet/config.yaml` на всех узлах `k8s_cluster`.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-065`.
 
 ## 2026-02-25 (ingress webhook hooks temporary disable workaround)
 ### Изменено
-- Обновлен `roles/ingress_nginx/defaults/main.yml`: добавлены параметры временного отключения admission webhooks (`ingress_nginx_controller_admission_webhooks_enabled`, `ingress_nginx_controller_admission_webhooks_patch_enabled`).
-- Обновлен `roles/ingress_nginx/templates/values.yaml.j2`: для ingress chart добавлена конфигурация `controller.admissionWebhooks.enabled/patch.enabled`.
+- Обновлен `roles/k8s_ingress_nginx/defaults/main.yml`: добавлены параметры временного отключения admission webhooks (`ingress_nginx_controller_admission_webhooks_enabled`, `ingress_nginx_controller_admission_webhooks_patch_enabled`).
+- Обновлен `roles/k8s_ingress_nginx/templates/values.yaml.j2`: для ingress chart добавлена конфигурация `controller.admissionWebhooks.enabled/patch.enabled`.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-066`.
 
 ## 2026-02-25 (resolv.conf stub drift guard on rebootstrap)
 ### Изменено
-- Обновлен `roles/base_os/defaults/main.yml`: добавлены параметры `base_os_manage_resolv_conf_symlink` и `base_os_resolv_conf_target` для явного управления `/etc/resolv.conf`.
-- Обновлен `roles/base_os/tasks/main.yml`: добавлена проверка существования target-файла и принудительная фиксация `/etc/resolv.conf` как symlink на non-stub resolved-файл.
-- Обновлен `roles/kubernetes_core/defaults/main.yml`: добавлен переключатель `kubelet_enforce_resolv_conf_post_join`.
-- Обновлен `roles/kubernetes_core/tasks/main.yml`: добавлено пост-выравнивание `resolvConf` в `/var/lib/kubelet/config.yaml` и restart `kubelet` при изменении.
+- Обновлен `roles/k8s_base_os/defaults/main.yml`: добавлены параметры `base_os_manage_resolv_conf_symlink` и `base_os_resolv_conf_target` для явного управления `/etc/resolv.conf`.
+- Обновлен `roles/k8s_base_os/tasks/main.yml`: добавлена проверка существования target-файла и принудительная фиксация `/etc/resolv.conf` как symlink на non-stub resolved-файл.
+- Обновлен `roles/k8s_kubernetes_core/defaults/main.yml`: добавлен переключатель `kubelet_enforce_resolv_conf_post_join`.
+- Обновлен `roles/k8s_kubernetes_core/tasks/main.yml`: добавлено пост-выравнивание `resolvConf` в `/var/lib/kubelet/config.yaml` и restart `kubelet` при изменении.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-067`.
 
 ## 2026-02-25 (validation resolvconf quote-normalization fix)
 ### Изменено
-- Обновлен `roles/validation/tasks/main.yml`: чтение `resolvConf` переведено на нормализацию значения без кавычек.
-- Обновлен `roles/validation/tasks/main.yml`: сравнение ожидаемого `resolvConf` выполняется по нормализованным значениям (`trim` + удаление кавычек), чтобы исключить ложные срабатывания.
+- Обновлен `roles/k8s_validation/tasks/main.yml`: чтение `resolvConf` переведено на нормализацию значения без кавычек.
+- Обновлен `roles/k8s_validation/tasks/main.yml`: сравнение ожидаемого `resolvConf` выполняется по нормализованным значениям (`trim` + удаление кавычек), чтобы исключить ложные срабатывания.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-068`.
 
 ## 2026-02-25 (apps auto-deploy with inventory-driven settings)
@@ -528,8 +548,8 @@
 
 ## 2026-03-03 (kubernetes packages install nobest fallback)
 ### Изменено
-- Обновлен `roles/kubernetes_core/defaults/main.yml`: добавлен параметр `kubernetes_package_install_nobest` (по умолчанию `true`).
-- Обновлен `roles/kubernetes_core/tasks/main.yml`: установка Kubernetes-пакетов через `ansible.builtin.dnf` переведена на управляемый режим `nobest`.
+- Обновлен `roles/k8s_kubernetes_core/defaults/main.yml`: добавлен параметр `kubernetes_package_install_nobest` (по умолчанию `true`).
+- Обновлен `roles/k8s_kubernetes_core/tasks/main.yml`: установка Kubernetes-пакетов через `ansible.builtin.dnf` переведена на управляемый режим `nobest`.
 - Обновлен `inventories/prod/group_vars/all.yml`: зафиксирован `kubernetes_package_install_nobest: true`.
 - Обновлены `docs/Project.md` и `docs/runbook.md`: добавлены эксплуатационные пояснения по fallback-режиму установки пакетов в условиях нестабильных зеркал.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-073`.
@@ -537,22 +557,22 @@
 ## 2026-03-03 (firewalld disable and firewall steps cleanup)
 ### Изменено
 - Обновлен `inventories/prod/group_vars/all.yml`: установлен `firewalld_enabled: false` для текущего диагностического контура.
-- Обновлен `roles/security_hardening/tasks/main.yml`: добавлено явное отключение сервиса `firewalld` (`stopped/disabled`) при `firewalld_enabled=false`; валидация firewall-переменных сделана условной.
-- Обновлен `roles/base_os/tasks/main.yml`: исключена установка пакета `firewalld` из baseline-пакетов при `firewalld_enabled=false`.
+- Обновлен `roles/k8s_security_hardening/tasks/main.yml`: добавлено явное отключение сервиса `firewalld` (`stopped/disabled`) при `firewalld_enabled=false`; валидация firewall-переменных сделана условной.
+- Обновлен `roles/k8s_base_os/tasks/main.yml`: исключена установка пакета `firewalld` из baseline-пакетов при `firewalld_enabled=false`.
 - Обновлены `docs/Project.md`, `docs/runbook.md`, `docs/qa.md`: синхронизирован текущий режим безопасности (firewalld отключен).
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-075`.
 
 ## 2026-03-03 (base_os full package update pre-step)
 ### Изменено
-- Обновлен `roles/base_os/defaults/main.yml`: добавлен параметр `base_os_update_all_packages` (по умолчанию `true`).
-- Обновлен `roles/base_os/tasks/main.yml`: добавлен шаг полного обновления установленных пакетов (`dnf`, `name='*'`, `state=latest`, `update_only=true`) перед установкой baseline-пакетов.
+- Обновлен `roles/k8s_base_os/defaults/main.yml`: добавлен параметр `base_os_update_all_packages` (по умолчанию `true`).
+- Обновлен `roles/k8s_base_os/tasks/main.yml`: добавлен шаг полного обновления установленных пакетов (`dnf`, `name='*'`, `state=latest`, `update_only=true`) перед установкой baseline-пакетов.
 - Обновлен `inventories/prod/group_vars/all.yml`: зафиксирован `base_os_update_all_packages: true`.
 - Обновлены `docs/Project.md` и `docs/runbook.md`: отражен обязательный pre-step обновления пакетов перед установкой кластера.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-076`.
 
 ## 2026-03-03 (selinux/hardening toggle)
 ### Изменено
-- Обновлен `roles/security_hardening/defaults/main.yml`: добавлен параметр `security_hardening_enabled` (по умолчанию `true`).
+- Обновлен `roles/k8s_security_hardening/defaults/main.yml`: добавлен параметр `security_hardening_enabled` (по умолчанию `true`).
 - Обновлен `playbooks/bootstrap.yml`: роль `security_hardening` выполняется условно по флагу `security_hardening_enabled`.
 - Обновлен `playbooks/hardening.yml`: роль `security_hardening` выполняется условно по флагу `security_hardening_enabled`.
 - Обновлен `inventories/prod/group_vars/all.yml`: в текущем контуре установлен `security_hardening_enabled: false`.
@@ -561,8 +581,8 @@
 
 ## 2026-03-03 (calico rollout self-heal hardening)
 ### Изменено
-- Обновлен `roles/networking/defaults/main.yml`: увеличены параметры ожидания rollout (`network_cni_rollout_timeout: 600s`, `network_cni_rollout_retries: 3`) и добавлены параметры controlled retry (`network_cni_rollout_retry_after_restart`, `network_cni_rollout_timeout_retry`).
-- Обновлен `roles/networking/tasks/main.yml`: в `rescue` при таймауте `calico-node` добавлены controlled `rollout restart` и повторный `rollout status`, с условным `fail` только при неуспешном повторе.
+- Обновлен `roles/k8s_networking/defaults/main.yml`: увеличены параметры ожидания rollout (`network_cni_rollout_timeout: 600s`, `network_cni_rollout_retries: 3`) и добавлены параметры controlled retry (`network_cni_rollout_retry_after_restart`, `network_cni_rollout_timeout_retry`).
+- Обновлен `roles/k8s_networking/tasks/main.yml`: в `rescue` при таймауте `calico-node` добавлены controlled `rollout restart` и повторный `rollout status`, с условным `fail` только при неуспешном повторе.
 - Обновлен `inventories/prod/group_vars/all.yml`: зафиксированы параметры Calico rollout resilience для текущего контура.
 - Обновлены `docs/Project.md` и `docs/runbook.md`: добавлено описание CNI rollout resilience и troubleshooting для таймаута `calico-node`.
 - Обновлен `docs/Tasktracker.md`: добавлена и завершена задача `T-078`.
@@ -576,11 +596,11 @@
 
 ## 2026-03-03 (containerd registry/proxy hardening for pause image pull)
 ### Изменено
-- Обновлен `roles/proxy/tasks/main.yml`: добавлен явный `systemd daemon-reload` до рестарта сервисов после изменения proxy drop-in, чтобы `HTTP(S)_PROXY/NO_PROXY` гарантированно применялись к `containerd`/`kubelet`.
-- Обновлен `roles/container_runtime/defaults/main.yml`: добавлены параметры mirror для `registry.k8s.io` (`containerd_registry_k8s_io_*`) и `containerd_registry_config_path`.
-- Обновлен `roles/container_runtime/templates/containerd-config.toml.j2`: включен `registry.config_path` (`/etc/containerd/certs.d`).
-- Добавлен `roles/container_runtime/templates/registry-k8s-io-hosts.toml.j2`: шаблон `hosts.toml` для маршрутизации pulls `registry.k8s.io` через mirror с fallback на upstream.
-- Обновлен `roles/container_runtime/tasks/main.yml`: добавлены валидация mirror endpoint, управление `hosts.toml` и restart `containerd` при изменениях.
+- Обновлен `roles/k8s_proxy/tasks/main.yml`: добавлен явный `systemd daemon-reload` до рестарта сервисов после изменения proxy drop-in, чтобы `HTTP(S)_PROXY/NO_PROXY` гарантированно применялись к `containerd`/`kubelet`.
+- Обновлен `roles/k8s_container_runtime/defaults/main.yml`: добавлены параметры mirror для `registry.k8s.io` (`containerd_registry_k8s_io_*`) и `containerd_registry_config_path`.
+- Обновлен `roles/k8s_container_runtime/templates/containerd-config.toml.j2`: включен `registry.config_path` (`/etc/containerd/certs.d`).
+- Добавлен `roles/k8s_container_runtime/templates/registry-k8s-io-hosts.toml.j2`: шаблон `hosts.toml` для маршрутизации pulls `registry.k8s.io` через mirror с fallback на upstream.
+- Обновлен `roles/k8s_container_runtime/tasks/main.yml`: добавлены валидация mirror endpoint, управление `hosts.toml` и restart `containerd` при изменениях.
 - Обновлен `inventories/prod/group_vars/all.yml`: для текущего контура включен mirror `containerd_registry_k8s_io_mirror_enabled=true`, endpoint `https://cr.yandex/mirror/k8s.gcr.io`.
 - Обновлены `docs/Project.md` и `docs/runbook.md`: добавлены архитектурные и эксплуатационные инструкции по проверке proxy/mirror для `containerd`.
 - Обновлен `docs/Tasktracker.md`: задача `T-079` переведена в завершенный статус.
@@ -611,17 +631,17 @@
 
 ## 2026-03-04 (nfs data-disk silent-skip guard + mount verification)
 ### Изменено
-- Обновлен `roles/storage_nfs/tasks/main.yml`: добавлен guard, который останавливает play, если указан `storage_nfs_data_disk_device`, но `storage_nfs_data_disk_enabled=false`.
-- Обновлен `roles/storage_nfs/tasks/main.yml`: добавлена пост-проверка монтирования `nfs_export_path` на ожидаемый `resolved_storage_nfs_partition_path` через `findmnt`.
+- Обновлен `roles/k8s_storage_nfs/tasks/main.yml`: добавлен guard, который останавливает play, если указан `storage_nfs_data_disk_device`, но `storage_nfs_data_disk_enabled=false`.
+- Обновлен `roles/k8s_storage_nfs/tasks/main.yml`: добавлена пост-проверка монтирования `nfs_export_path` на ожидаемый `resolved_storage_nfs_partition_path` через `findmnt`.
 - Обновлен `docs/runbook.md`: добавлены пояснения по новому guard и проверке фактического mount source.
 - Обновлен `docs/Tasktracker.md`: задача `T-083` переведена в завершенный статус.
 
 ## 2026-03-04 (metallb node-name resolution for labeling)
 ### Изменено
-- Обновлен `roles/metallb/defaults/main.yml`: добавлен флаг `metallb_resolve_node_name_by_internal_ip` для fallback-резолва по `InternalIP`.
-- Обновлен `roles/metallb/tasks/main.yml`: перед labeling добавлен шаг резолва фактических Kubernetes node names для `groups['metallb']` (по `inventory hostname`, при необходимости — по `ansible_host`).
-- Обновлен `roles/metallb/tasks/main.yml`: добавлен явный assert с диагностикой, если node-name резолв невозможен.
-- Обновлен `roles/metallb/tasks/main.yml`: labeling выполняется по `resolved_metallb_node_names`, а не напрямую по inventory ключам.
+- Обновлен `roles/k8s_metallb/defaults/main.yml`: добавлен флаг `metallb_resolve_node_name_by_internal_ip` для fallback-резолва по `InternalIP`.
+- Обновлен `roles/k8s_metallb/tasks/main.yml`: перед labeling добавлен шаг резолва фактических Kubernetes node names для `groups['metallb']` (по `inventory hostname`, при необходимости — по `ansible_host`).
+- Обновлен `roles/k8s_metallb/tasks/main.yml`: добавлен явный assert с диагностикой, если node-name резолв невозможен.
+- Обновлен `roles/k8s_metallb/tasks/main.yml`: labeling выполняется по `resolved_metallb_node_names`, а не напрямую по inventory ключам.
 - Обновлен `docs/Tasktracker.md`: задача `T-084` переведена в завершенный статус.
 
 ## 2026-03-04 (scale_out replacement-node rejoin mode)

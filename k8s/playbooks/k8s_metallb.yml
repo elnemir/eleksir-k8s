@@ -6,5 +6,5 @@
   become: true
   gather_facts: true
   roles:
-    - role: metallb
+    - role: k8s_metallb
       tags: [metallb, ingress]
