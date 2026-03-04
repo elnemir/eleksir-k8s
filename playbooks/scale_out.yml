@@ -80,7 +80,7 @@
   roles:
     - role: control_plane_vip
       tags: [scale, vip, control-plane]
-  when: hostvars['localhost'].scale_out_contains_control_plane_hosts | default(false) | bool
+      when: hostvars['localhost'].scale_out_contains_control_plane_hosts | default(false) | bool
 
 - name: Reconcile MetalLB after metallb-node scale-out
   hosts: control_plane[0]
@@ -89,4 +89,4 @@
   roles:
     - role: metallb
       tags: [scale, metallb, ingress]
-  when: hostvars['localhost'].scale_out_contains_metallb_hosts | default(false) | bool
+      when: hostvars['localhost'].scale_out_contains_metallb_hosts | default(false) | bool

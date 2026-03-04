@@ -583,3 +583,9 @@
 - В `scale_out.yml` добавлен автоматический post-reconcile `metallb` при добавлении metallb-нод.
 - Обновлены `docs/Project.md` и `docs/runbook.md`: добавлен новый playbook и инструкции по масштабированию.
 - Обновлен `docs/Tasktracker.md`: задача `T-081` переведена в завершенный статус.
+
+## 2026-03-04 (scale_out play-level when syntax fix)
+### Изменено
+- Обновлен `playbooks/scale_out.yml`: условия `when` для шагов reconcile (`control_plane_vip`, `metallb`) перенесены с уровня play на уровень role-записей.
+- Устранена ошибка парсера Ansible: `'when' is not a valid attribute for a Play`.
+- Обновлен `docs/Tasktracker.md`: задача `T-082` переведена в завершенный статус.

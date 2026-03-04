@@ -537,3 +537,17 @@
 
 ### Проблемы
 - Стендовый запуск `playbooks/scale_out.yml` в этой сессии не выполнялся (в текущей среде отсутствует `ansible-playbook`).
+
+## Дата: 2026-03-04 (сессия 39)
+### Наблюдения
+- При запуске `playbooks/scale_out.yml` на стенде выявлена синтаксическая ошибка Ansible: `'when' is not a valid attribute for a Play`.
+- Причина: условие было задано на уровне play, где Ansible ожидает `when` только на уровне tasks/roles.
+
+### Решения
+- В `playbooks/scale_out.yml` условия для post-reconcile шагов перенесены на уровень role entries:
+  - `control_plane_vip`;
+  - `metallb`.
+- Выполнена проверка YAML-синтаксиса файла после правки.
+
+### Проблемы
+- Полный функциональный прогон `playbooks/scale_out.yml` на control host остается обязательным для финального подтверждения.

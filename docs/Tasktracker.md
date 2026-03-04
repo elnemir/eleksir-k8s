@@ -94,6 +94,7 @@
 | T-079 | Containerd Registry/Proxy Hardening | Устранить `FailedCreatePodSandbox` (`pause:3.9` Forbidden): обеспечить применение proxy в systemd и добавить mirror/fallback для `registry.k8s.io` в `containerd` | Критический | Завершена (без стендовой валидации) |
 | T-080 | Separate MetalLB Playbook | Вынести конфигурацию MetalLB из `bootstrap.yml` в отдельный playbook `playbooks/metallb.yml` и подключить его в `site.yml` | Высокий | Завершена (без стендовой валидации) |
 | T-081 | Cluster Scale-Out Playbook | Добавить отдельный playbook подготовки и присоединения новых нод к существующему кластеру (`playbooks/scale_out.yml`) с precheck целевой группы | Критический | Завершена (без стендовой валидации) |
+| T-082 | Scale-Out Play Syntax Fix | Исправить ошибку Ansible `'when' is not a valid attribute for a Play` в `playbooks/scale_out.yml` | Критический | Завершена (без стендовой валидации) |
 
 ## Собранные данные (2026-02-19)
 - VMware: `vCenter 7.0.3`, `ESXi 7.0.3`, `clone_from_template`, шаблон `k8s-pcp-template`.
@@ -185,6 +186,7 @@
 - В `networking` усилено ожидание Calico: увеличены timeout/retries и добавлен controlled self-heal (`rollout restart daemonset/calico-node` + повторная проверка) при первичном таймауте rollout.
 - Конфигурация MetalLB вынесена из `playbooks/bootstrap.yml` в отдельный playbook `playbooks/metallb.yml`; orchestration `playbooks/site.yml` обновлен с отдельным этапом MetalLB.
 - Добавлен отдельный playbook `playbooks/scale_out.yml` для подготовки и добавления новых нод в существующий кластер с precheck группы `scale_out_nodes` и пост-reconcile `control_plane_vip`/`metallb` по фактическому типу добавляемых нод.
+- В `playbooks/scale_out.yml` исправлено применение условий `when`: перенесены с уровня play на уровень role-записей для совместимости с Ansible parser.
 - В роли `ingress_nginx` временно отключены admission webhooks (`controller.admissionWebhooks.enabled=false`, `controller.admissionWebhooks.patch.enabled=false`) для обхода таймаутов pre/post-upgrade hooks Helm в текущем troubleshooting-контуре.
 - В роли `base_os` добавлена принудительная фиксация `/etc/resolv.conf` на non-stub target (`/run/systemd/resolve/resolv.conf`) с проверкой существования целевого файла, чтобы исключить drift после перераскатки.
 - В роли `kubernetes_core` добавлено пост-выравнивание `resolvConf` в `/var/lib/kubelet/config.yaml` и restart `kubelet` при изменении для стабильного DNS-поведения на повторных прогонах.
