@@ -551,3 +551,16 @@
 
 ### Проблемы
 - Полный функциональный прогон `playbooks/scale_out.yml` на control host остается обязательным для финального подтверждения.
+
+## Дата: 2026-03-04 (сессия 40)
+### Наблюдения
+- Зафиксирован кейс: data-диск NFS не подготавливается и не монтируется.
+- В текущем `prod` inventory по умолчанию стоит `storage_nfs_data_disk_enabled: false`, поэтому шаги разметки/FS/mount логически пропускаются.
+
+### Решения
+- В `storage_nfs` добавлен guard от silent-skip: если `storage_nfs_data_disk_device` указан, но `storage_nfs_data_disk_enabled=false`, play завершится явной ошибкой с инструкцией.
+- В `storage_nfs` добавлена пост-проверка: `findmnt` проверяет, что `nfs_export_path` смонтирован именно с ожидаемого partition.
+- В `runbook` добавлены пояснения по новому поведению.
+
+### Проблемы
+- Для фактической подготовки диска в окружении нужно явно задать `storage_nfs_data_disk_enabled=true` и корректный `storage_nfs_data_disk_device` в inventory перед запуском `playbooks/storage.yml`.

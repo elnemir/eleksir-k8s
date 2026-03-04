@@ -589,3 +589,10 @@
 - Обновлен `playbooks/scale_out.yml`: условия `when` для шагов reconcile (`control_plane_vip`, `metallb`) перенесены с уровня play на уровень role-записей.
 - Устранена ошибка парсера Ansible: `'when' is not a valid attribute for a Play`.
 - Обновлен `docs/Tasktracker.md`: задача `T-082` переведена в завершенный статус.
+
+## 2026-03-04 (nfs data-disk silent-skip guard + mount verification)
+### Изменено
+- Обновлен `roles/storage_nfs/tasks/main.yml`: добавлен guard, который останавливает play, если указан `storage_nfs_data_disk_device`, но `storage_nfs_data_disk_enabled=false`.
+- Обновлен `roles/storage_nfs/tasks/main.yml`: добавлена пост-проверка монтирования `nfs_export_path` на ожидаемый `resolved_storage_nfs_partition_path` через `findmnt`.
+- Обновлен `docs/runbook.md`: добавлены пояснения по новому guard и проверке фактического mount source.
+- Обновлен `docs/Tasktracker.md`: задача `T-083` переведена в завершенный статус.

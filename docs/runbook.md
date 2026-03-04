@@ -337,6 +337,8 @@ ansible-playbook -i inventories/prod/hosts.yml playbooks/validate.yml \
 - используйте только целевой data-диск.
 - по умолчанию включен guardrail, блокирующий системный диск (`/`, `/boot`, `/boot/efi`, `/var`).
 - принудительный обход возможен только явным `storage_nfs_data_disk_allow_system_disk=true` (не рекомендуется).
+- если указан `storage_nfs_data_disk_device`, но `storage_nfs_data_disk_enabled=false`, playbook завершится ошибкой (защита от silent-skip).
+- после монтирования выполняется проверка, что `nfs_export_path` смонтирован именно с ожидаемого partition.
 
 ## 13. Рекомендованный порядок запуска
 1. `playbooks/bootstrap.yml`

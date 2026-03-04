@@ -56,6 +56,20 @@
     - inventory_hostname in groups['nfs']
     - resolved_storage_nfs_data_disk_enabled | bool
 
+- name: Guard against silent skip when data disk device is set but option is disabled
+  ansible.builtin.assert:
+    that:
+      - not (
+          (resolved_storage_nfs_data_disk_device | default('') | length > 0)
+          and not (resolved_storage_nfs_data_disk_enabled | bool)
+        )
+    fail_msg: >-
+      storage_nfs_data_disk_device is set ({{ resolved_storage_nfs_data_disk_device }}),
+      but storage_nfs_data_disk_enabled=false. Enable the option explicitly to prepare/mount data disk.
+  when:
+    - storage_nfs_manage_server | bool
+    - inventory_hostname in groups['nfs']
+
 - name: Resolve target partition path for data disk
   ansible.builtin.set_fact:
     resolved_storage_nfs_partition_path: >-
@@ -171,6 +185,28 @@
     fstype: "{{ resolved_storage_nfs_data_disk_fs_type }}"
     opts: "{{ resolved_storage_nfs_data_disk_mount_opts }}"
     state: mounted
+  when:
+    - storage_nfs_manage_server | bool
+    - inventory_hostname in groups['nfs']
+    - resolved_storage_nfs_data_disk_enabled | bool
+
+- name: Read active source mounted on NFS export path after data-disk mount
+  ansible.builtin.command: "findmnt -n -o SOURCE --target {{ resolved_nfs_export_path }}"
+  register: storage_nfs_export_mount_source
+  changed_when: false
+  when:
+    - storage_nfs_manage_server | bool
+    - inventory_hostname in groups['nfs']
+    - resolved_storage_nfs_data_disk_enabled | bool
+
+- name: Ensure NFS export path is mounted from selected data partition
+  ansible.builtin.assert:
+    that:
+      - (storage_nfs_export_mount_source.stdout | trim) == resolved_storage_nfs_partition_path
+    fail_msg: >-
+      NFS export path {{ resolved_nfs_export_path }} is mounted from
+      {{ storage_nfs_export_mount_source.stdout | default('unknown') | trim }},
+      expected {{ resolved_storage_nfs_partition_path }}.
   when:
     - storage_nfs_manage_server | bool
     - inventory_hostname in groups['nfs']
