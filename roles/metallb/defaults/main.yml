@@ -12,3 +12,4 @@ metallb_pool_apply_delay: 10
 metallb_webhook_failure_policy_workaround_enabled: false
 metallb_webhook_configuration_name: metallb-webhook-configuration
 metallb_webhook_delete_recreate_workaround_enabled: false
+metallb_resolve_node_name_by_internal_ip: true

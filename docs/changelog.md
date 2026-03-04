@@ -596,3 +596,18 @@
 - Обновлен `roles/storage_nfs/tasks/main.yml`: добавлена пост-проверка монтирования `nfs_export_path` на ожидаемый `resolved_storage_nfs_partition_path` через `findmnt`.
 - Обновлен `docs/runbook.md`: добавлены пояснения по новому guard и проверке фактического mount source.
 - Обновлен `docs/Tasktracker.md`: задача `T-083` переведена в завершенный статус.
+
+## 2026-03-04 (metallb node-name resolution for labeling)
+### Изменено
+- Обновлен `roles/metallb/defaults/main.yml`: добавлен флаг `metallb_resolve_node_name_by_internal_ip` для fallback-резолва по `InternalIP`.
+- Обновлен `roles/metallb/tasks/main.yml`: перед labeling добавлен шаг резолва фактических Kubernetes node names для `groups['metallb']` (по `inventory hostname`, при необходимости — по `ansible_host`).
+- Обновлен `roles/metallb/tasks/main.yml`: добавлен явный assert с диагностикой, если node-name резолв невозможен.
+- Обновлен `roles/metallb/tasks/main.yml`: labeling выполняется по `resolved_metallb_node_names`, а не напрямую по inventory ключам.
+- Обновлен `docs/Tasktracker.md`: задача `T-084` переведена в завершенный статус.
+
+## 2026-03-04 (scale_out replacement-node rejoin mode)
+### Изменено
+- Обновлен `playbooks/scale_out.yml`: добавлен режим repare/rejoin для replacement-ноды при `scale_out_allow_reprepare_existing_nodes=true`.
+- В `scale_out.yml` добавлен cleanup stale state перед повторным join: `kubeadm reset -f`, очистка `/etc/kubernetes`, `/var/lib/kubelet`, CNI-state, и `/var/lib/etcd` для control-plane нод.
+- Обновлен `docs/runbook.md`: добавлены инструкции и команда запуска для сценария replacement-ноды.
+- Обновлен `docs/Tasktracker.md`: задача `T-085` переведена в завершенный статус.

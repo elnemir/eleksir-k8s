@@ -115,11 +115,54 @@
       environment: "{{ proxy_environment | default({}) }}"
       when: metallb_webhook_delete_recreate_workaround_enabled | bool
 
+- name: Resolve Kubernetes node names for MetalLB inventory hosts
+  ansible.builtin.shell: |
+    set -o pipefail
+    inventory_name="{{ item }}"
+    inventory_ip="{{ hostvars[item].ansible_host | default('') }}"
+    node_name="$(kubectl --kubeconfig={{ metallb_kubeconfig }} get node "${inventory_name}" -o name 2>/dev/null | sed 's#^node/##' | head -n1)"
+    if [ -z "${node_name}" ] && [ "{{ metallb_resolve_node_name_by_internal_ip | bool }}" = "True" ] && [ -n "${inventory_ip}" ]; then
+      node_name="$(kubectl --kubeconfig={{ metallb_kubeconfig }} get nodes -o wide --no-headers | awk -v ip="${inventory_ip}" '$6==ip {print $1; exit}')"
+    fi
+    if [ -z "${node_name}" ]; then
+      echo "__NOT_FOUND__"
+    else
+      echo "${node_name}"
+    fi
+  args:
+    executable: /bin/bash
+  loop: "{{ groups['metallb'] }}"
+  register: metallb_node_name_resolution
+  changed_when: false
+  when:
+    - groups['metallb'] | length > 0
+    - resolved_metallb_node_labels | length > 0
+
+- name: Ensure all MetalLB inventory hosts are resolvable to Kubernetes node names
+  ansible.builtin.assert:
+    that:
+      - (metallb_node_name_resolution.results | map(attribute='stdout') | select('equalto', '__NOT_FOUND__') | list | length) == 0
+    fail_msg: >-
+      Unable to resolve one or more MetalLB inventory hosts to Kubernetes node names.
+      Inventory metallb hosts={{ groups['metallb'] | join(', ') }}.
+      Resolution results={% for r in metallb_node_name_resolution.results | default([]) %}[{{ r.item }} -> {{ r.stdout | trim }}]{% if not loop.last %}, {% endif %}{% endfor %}.
+      Ensure node names in cluster match inventory names or map via ansible_host/InternalIP.
+  when:
+    - groups['metallb'] | length > 0
+    - resolved_metallb_node_labels | length > 0
+
+- name: Build resolved MetalLB node name list
+  ansible.builtin.set_fact:
+    resolved_metallb_node_names: "{{ metallb_node_name_resolution.results | map(attribute='stdout') | map('trim') | unique | list }}"
+  when:
+    - groups['metallb'] | length > 0
+    - resolved_metallb_node_labels | length > 0
+
 - name: Apply labels to dedicated MetalLB nodes
   ansible.builtin.command: >-
     kubectl --kubeconfig={{ metallb_kubeconfig }}
     label node {{ item.0 }} {{ item.1 }} --overwrite
-  loop: "{{ groups['metallb'] | product(resolved_metallb_node_labels) | list }}"
+  loop: "{{ resolved_metallb_node_names | product(resolved_metallb_node_labels) | list }}"
   changed_when: false
   when:
     - groups['metallb'] | length > 0

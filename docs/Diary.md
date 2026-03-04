@@ -564,3 +564,35 @@
 
 ### Проблемы
 - Для фактической подготовки диска в окружении нужно явно задать `storage_nfs_data_disk_enabled=true` и корректный `storage_nfs_data_disk_device` в inventory перед запуском `playbooks/storage.yml`.
+
+## Дата: 2026-03-04 (сессия 41)
+### Наблюдения
+- На этапе `metallb` зафиксирован сбой `kubectl label node ... NotFound` для inventory hostname `k8s-pmlb-02`.
+- Причина: имя ноды в Kubernetes API не совпадало с inventory-ключом; существующая логика labeling предполагала точное совпадение.
+
+### Решения
+- В роль `metallb` добавлен резолв фактических node names перед labeling:
+  - сначала прямой поиск по inventory hostname;
+  - при отсутствии — fallback-поиск по `InternalIP` (через `ansible_host`).
+- Добавлен явный assert с диагностикой результатов резолва для предотвращения неочевидных `NotFound`.
+- Labeling переведен на использование списка `resolved_metallb_node_names`.
+
+### Проблемы
+- Для репозитория, где выполнялся запуск (`/home/eln/eleksir-k8s`), аналогичный фикс нужно применить и перезапустить `playbooks/metallb.yml`.
+
+## Дата: 2026-03-04 (сессия 42)
+### Наблюдения
+- Подтвержден operational-сценарий replacement-ноды: старая нода удалена из кластера, новая VM развернута с тем же hostname/IP.
+- В таком кейсе на ноде может оставаться `kubelet.conf`/stale-state, а join-задачи в `kubernetes_core` используют `creates: /etc/kubernetes/kubelet.conf`, из-за чего join пропускается.
+
+### Решения
+- В `playbooks/scale_out.yml` добавлен режим cleanup+rejoin при `scale_out_allow_reprepare_existing_nodes=true`.
+- В режиме cleanup выполняются:
+  - остановка `kubelet` и runtime;
+  - `kubeadm reset -f`;
+  - удаление `/etc/kubernetes`, `/var/lib/kubelet`, `/etc/cni/net.d`, `/var/lib/cni`;
+  - удаление `/var/lib/etcd` для replacement control-plane нод.
+- После cleanup выполняется штатный этап join через роль `kubernetes_core`.
+
+### Проблемы
+- Нужен повторный запуск `playbooks/scale_out.yml` на control host в репозитории выполнения (`/home/eln/eleksir-k8s`) с флагом `scale_out_allow_reprepare_existing_nodes=true`.

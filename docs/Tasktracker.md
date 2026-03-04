@@ -96,6 +96,8 @@
 | T-081 | Cluster Scale-Out Playbook | Добавить отдельный playbook подготовки и присоединения новых нод к существующему кластеру (`playbooks/scale_out.yml`) с precheck целевой группы | Критический | Завершена (без стендовой валидации) |
 | T-082 | Scale-Out Play Syntax Fix | Исправить ошибку Ansible `'when' is not a valid attribute for a Play` в `playbooks/scale_out.yml` | Критический | Завершена (без стендовой валидации) |
 | T-083 | NFS Data Disk Guard & Verify | Добавить явный guard от silent-skip data-диска и проверку фактического монтирования `nfs_export_path` на выбранный partition | Критический | Завершена (без стендовой валидации) |
+| T-084 | MetalLB Node Name Resolution Fix | Устранить падение `label node ... NotFound` при несовпадении inventory hostname и фактического имени Kubernetes node | Критический | Завершена (без стендовой валидации) |
+| T-085 | Scale-Out Replacement Node Rejoin | Добавить в `scale_out.yml` режим безопасной repare/rejoin для replacement-ноды (тот же hostname/IP) через cleanup stale kubeadm/kubelet state | Критический | Завершена (без стендовой валидации) |
 
 ## Собранные данные (2026-02-19)
 - VMware: `vCenter 7.0.3`, `ESXi 7.0.3`, `clone_from_template`, шаблон `k8s-pcp-template`.
@@ -189,6 +191,8 @@
 - Добавлен отдельный playbook `playbooks/scale_out.yml` для подготовки и добавления новых нод в существующий кластер с precheck группы `scale_out_nodes` и пост-reconcile `control_plane_vip`/`metallb` по фактическому типу добавляемых нод.
 - В `playbooks/scale_out.yml` исправлено применение условий `when`: перенесены с уровня play на уровень role-записей для совместимости с Ansible parser.
 - В `storage_nfs` добавлены guard/check для data-диска: явная ошибка при `device` без `enabled=true` и проверка фактического mount source для `nfs_export_path`.
+- В `metallb` добавлен resilient-resolve имени node перед labeling: сначала `inventory hostname`, при отсутствии — поиск node по `InternalIP` (`ansible_host`) и явный fail с диагностикой при невозможности резолва.
+- В `playbooks/scale_out.yml` добавлен режим replacement-node rejoin: при `scale_out_allow_reprepare_existing_nodes=true` выполняется cleanup stale state (`kubeadm reset`, очистка `/etc/kubernetes`, `/var/lib/kubelet`, CNI-state, `/var/lib/etcd` для control-plane), затем выполняется повторный join.
 - В роли `ingress_nginx` временно отключены admission webhooks (`controller.admissionWebhooks.enabled=false`, `controller.admissionWebhooks.patch.enabled=false`) для обхода таймаутов pre/post-upgrade hooks Helm в текущем troubleshooting-контуре.
 - В роли `base_os` добавлена принудительная фиксация `/etc/resolv.conf` на non-stub target (`/run/systemd/resolve/resolv.conf`) с проверкой существования целевого файла, чтобы исключить drift после перераскатки.
 - В роли `kubernetes_core` добавлено пост-выравнивание `resolvConf` в `/var/lib/kubelet/config.yaml` и restart `kubelet` при изменении для стабильного DNS-поведения на повторных прогонах.

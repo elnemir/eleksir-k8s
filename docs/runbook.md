@@ -379,6 +379,16 @@ ansible-playbook -i inventories/prod/hosts.yml playbooks/scale_out.yml
 - если на целевой ноде уже существует `/etc/kubernetes/kubelet.conf`, playbook завершится с ошибкой;
 - принудительный режим допускается только с `-e scale_out_allow_reprepare_existing_nodes=true`.
 
+Сценарий replacement-ноды (старая нода удалена из кластера, новая VM поднята с тем же hostname/IP):
+- запускайте `scale_out` с `-e scale_out_allow_reprepare_existing_nodes=true`;
+- playbook выполнит cleanup stale state (`kubeadm reset`, очистка `/etc/kubernetes`, `/var/lib/kubelet`, CNI-state), затем выполнит повторный join.
+
+Пример:
+```bash
+ansible-playbook -i inventories/prod/hosts.yml playbooks/scale_out.yml \
+  -e scale_out_allow_reprepare_existing_nodes=true
+```
+
 ## 14. Деструктивный сценарий: полная переустановка (cluster_and_nfs)
 Внимание: сценарий удаляет:
 - весь Kubernetes state на узлах `k8s_cluster`;

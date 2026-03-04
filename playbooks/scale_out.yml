@@ -53,6 +53,45 @@
       when:
         - scale_out_kubelet_conf_stat.stat.exists | default(false)
         - not (scale_out_allow_reprepare_existing_nodes | default(false) | bool)
+
+    - name: Reprepare replacement node for clean kubeadm join
+      block:
+        - name: Stop kubelet before cleanup
+          ansible.builtin.service:
+            name: kubelet
+            state: stopped
+          failed_when: false
+
+        - name: Stop container runtime before cleanup
+          ansible.builtin.service:
+            name: "{{ 'containerd' if (container_runtime_name | default('containerd')) == 'containerd' else 'crio' }}"
+            state: stopped
+          failed_when: false
+
+        - name: Reset stale kubeadm state
+          ansible.builtin.command: kubeadm reset -f
+          register: scale_out_kubeadm_reset
+          changed_when: scale_out_kubeadm_reset.rc == 0
+          failed_when: false
+
+        - name: Remove stale Kubernetes and CNI state directories
+          ansible.builtin.file:
+            path: "{{ item }}"
+            state: absent
+          loop:
+            - /etc/kubernetes
+            - /var/lib/kubelet
+            - /etc/cni/net.d
+            - /var/lib/cni
+
+        - name: Remove stale etcd data for replacement control-plane nodes
+          ansible.builtin.file:
+            path: /var/lib/etcd
+            state: absent
+          when: inventory_hostname in groups['control_plane']
+      when:
+        - scale_out_kubelet_conf_stat.stat.exists | default(false)
+        - scale_out_allow_reprepare_existing_nodes | default(false) | bool
   roles:
     - role: base_os
       tags: [scale, base]
