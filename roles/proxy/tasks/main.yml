@@ -11,6 +11,10 @@
       - no_proxy is iterable
     fail_msg: "Proxy variables are not valid"
 
+- name: Resolve package manager for proxy configuration
+  ansible.builtin.set_fact:
+    proxy_pkg_mgr: "{{ ansible_pkg_mgr | default(ansible_facts.pkg_mgr | default('')) }}"
+
 - name: Ensure systemd drop-in directories exist
   ansible.builtin.file:
     path: "/etc/systemd/system/{{ item }}.service.d"
@@ -35,25 +39,52 @@
     - proxy_manage_profile | bool
     - proxy_state == 'absent'
 
-- name: Configure DNF proxy settings
+- name: Configure DNF/YUM proxy settings
   ansible.builtin.blockinfile:
-    path: /etc/dnf/dnf.conf
+    path: "{{ proxy_dnf_config_path }}"
     marker: "# {mark} ANSIBLE MANAGED PROXY"
     block: |
       proxy={{ proxy_env.http_proxy }}
     state: present
   when:
+    - proxy_manage_package_manager | bool
     - proxy_manage_dnf | bool
     - proxy_state == 'present'
+    - proxy_pkg_mgr in ['dnf', 'yum']
 
-- name: Remove DNF proxy settings
+- name: Remove DNF/YUM proxy settings
   ansible.builtin.blockinfile:
-    path: /etc/dnf/dnf.conf
+    path: "{{ proxy_dnf_config_path }}"
     marker: "# {mark} ANSIBLE MANAGED PROXY"
     state: absent
   when:
+    - proxy_manage_package_manager | bool
     - proxy_manage_dnf | bool
     - proxy_state == 'absent'
+    - proxy_pkg_mgr in ['dnf', 'yum']
+
+- name: Configure APT proxy settings
+  ansible.builtin.copy:
+    dest: "{{ proxy_apt_config_path }}"
+    mode: "0644"
+    content: |
+      Acquire::http::Proxy "{{ proxy_env.http_proxy }}";
+      Acquire::https::Proxy "{{ proxy_env.https_proxy }}";
+  when:
+    - proxy_manage_package_manager | bool
+    - proxy_manage_apt | bool
+    - proxy_state == 'present'
+    - proxy_pkg_mgr == 'apt'
+
+- name: Remove APT proxy settings
+  ansible.builtin.file:
+    path: "{{ proxy_apt_config_path }}"
+    state: absent
+  when:
+    - proxy_manage_package_manager | bool
+    - proxy_manage_apt | bool
+    - proxy_state == 'absent'
+    - proxy_pkg_mgr == 'apt'
 
 - name: Configure systemd proxy drop-in files
   ansible.builtin.template:

@@ -66,25 +66,26 @@ flowchart LR
 
 ## 6. Предлагаемая структура Ansible-репозитория
 ```text
-inventories/
-  prod/
-    hosts.yml
-    group_vars/
-      all.yml
-      control_plane.yml
-      workers.yml
-      metallb.yml
-      nfs.yml
-playbooks/
-  site.yml
-  bootstrap.yml
-  metallb.yml
-  scale_out.yml
-  hardening.yml
-  storage.yml
-  validate.yml
-  reinstall_cluster_and_nfs.yml
-  manage_proxy.yml
+k8s/
+  inventories/
+    prod/
+      hosts.ini
+      group_vars/
+        all.yml
+        control_plane.yml
+        workers.yml
+        metallb.yml
+        nfs.yml
+  playbooks/
+    k8s_site.yml
+    k8s_bootstrap.yml
+    k8s_metallb.yml
+    k8s_scale_out.yml
+    k8s_hardening.yml
+    k8s_storage.yml
+    k8s_validate.yml
+    k8s_reinstall_cluster_and_nfs.yml
+    k8s_manage_proxy.yml
 roles/
   base_os/
   proxy/
@@ -241,7 +242,7 @@ roles/
 - `containerd` использует `certs.d` (`/etc/containerd/certs.d`) и `hosts.toml` для маршрутизации pulls `registry.k8s.io` через mirror/fallback.
 - В роли `proxy` применен порядок `daemon-reload -> restart services`, чтобы proxy drop-in гарантированно применялся к `containerd`/`kubelet`.
 - Для неизолированной сети допускается установка `proxy_enabled=false`.
-- Для оперативного переключения proxy-режима без полного bootstrap используется отдельный playbook `playbooks/manage_proxy.yml` с `proxy_state=present|absent`.
+- Для оперативного переключения proxy-режима без полного bootstrap используется отдельный playbook `k8s/playbooks/k8s_manage_proxy.yml` с `proxy_state=present|absent`.
 
 ### 12.5 NFS
 - NFS OS: `RedOS 8.0.2`
@@ -280,7 +281,7 @@ roles/
 - Quality gate: `ansible-lint`
 - require_check_diff_support: `yes`
 - Acceptance criteria:
-  - Полный запуск `playbooks/site.yml` завершается успешно на чистом контуре.
+  - Полный запуск `k8s/playbooks/k8s_site.yml` завершается успешно на чистом контуре.
   - Повторный запуск плейбука не приводит к незапланированным изменениям (идемпотентность).
   - Все ноды кластера в состоянии `Ready`, системные поды в `Running`.
   - Kubernetes API доступен через `control_plane_endpoint` (`10.255.106.20:8443`).
@@ -294,17 +295,17 @@ roles/
 
 ## 13. Статус реализации архитектуры (2026-02-19)
 - Реализован каркас `inventory`:
-  - `inventories/prod/hosts.yml`
-  - `inventories/prod/group_vars/{all,control_plane,workers,metallb,nfs}.yml`
+  - `k8s/inventories/prod/hosts.ini`
+  - `k8s/inventories/prod/group_vars/{all,control_plane,workers,metallb,nfs}.yml`
 - Реализован каркас оркестрации:
-  - `playbooks/site.yml`
-  - `playbooks/bootstrap.yml`
-  - `playbooks/metallb.yml`
-  - `playbooks/scale_out.yml`
-  - `playbooks/hardening.yml`
-  - `playbooks/storage.yml`
-  - `playbooks/validate.yml`
-  - `playbooks/reinstall_cluster_and_nfs.yml`
+  - `k8s/playbooks/k8s_site.yml`
+  - `k8s/playbooks/k8s_bootstrap.yml`
+  - `k8s/playbooks/k8s_metallb.yml`
+  - `k8s/playbooks/k8s_scale_out.yml`
+  - `k8s/playbooks/k8s_hardening.yml`
+  - `k8s/playbooks/k8s_storage.yml`
+  - `k8s/playbooks/k8s_validate.yml`
+  - `k8s/playbooks/k8s_reinstall_cluster_and_nfs.yml`
 - Реализован каркас ролей:
   - `roles/base_os`
   - `roles/proxy`
@@ -335,9 +336,9 @@ roles/
   - системные hostname должны синхронизироваться с именами узлов из inventory;
   - необходимость настройки proxy должна управляться параметром (`proxy_enabled`).
   - должен существовать отдельный деструктивный сценарий полной переустановки (`cluster_and_nfs`).
-  - должен существовать отдельный сценарий масштабирования (`playbooks/scale_out.yml`) для подготовки и присоединения новых нод к уже работающему кластеру.
+  - должен существовать отдельный сценарий масштабирования (`k8s/playbooks/k8s_scale_out.yml`) для подготовки и присоединения новых нод к уже работающему кластеру.
   - для NFS должна поддерживаться опциональная подготовка выделенного data-диска.
   - control-plane endpoint должен быть реализован как HA VIP через `keepalived + haproxy`.
-  - должен быть отдельный operational playbook для переключения proxy-режима (`manage_proxy.yml`).
-  - конфигурация MetalLB должна запускаться отдельным этапом через `playbooks/metallb.yml` (вне `bootstrap.yml`).
+- должен быть отдельный operational playbook для переключения proxy-режима (`k8s/playbooks/k8s_manage_proxy.yml`).
+- конфигурация MetalLB должна запускаться отдельным этапом через `k8s/playbooks/k8s_metallb.yml` (вне `k8s/playbooks/k8s_bootstrap.yml`).
   - failover-сценарий validation должен быть устойчив к отсутствию `validation_failover_source_host` (safe init + `delegate_to` fallback).

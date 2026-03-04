@@ -7,6 +7,7 @@
       - kubernetes_version is defined
       - kubernetes_packages is iterable
       - kubernetes_packages | length > 0
+      - ansible_os_family in kubernetes_supported_os_families
       - kubeadm_config_api_version is defined
       - kubeadm_config_api_version | length > 0
       - control_plane_endpoint is defined
@@ -15,13 +16,17 @@
       - groups['control_plane'] | length > 0
     fail_msg: "Kubernetes core variables are incomplete"
 
+- name: Resolve Kubernetes package manager settings for current host OS
+  ansible.builtin.set_fact:
+    kubernetes_package_version_separator: "{{ kubernetes_package_version_separator_map.get(ansible_os_family, '-') }}"
+
 - name: Resolve Kubernetes package list for install
   ansible.builtin.set_fact:
     kubernetes_packages_resolved: >-
       {{
         (
           kubernetes_packages
-          | map('regex_replace', '$', '-' ~ kubernetes_packages_version_override)
+          | map('regex_replace', '$', kubernetes_package_version_separator ~ kubernetes_packages_version_override)
           | list
         )
         if (kubernetes_packages_version_override | default('') | length > 0)
@@ -37,23 +42,62 @@
     kubernetes_runtime_service_name: "{{ 'containerd' if (container_runtime_name | default('containerd')) == 'containerd' else 'crio' }}"
     kubernetes_runtime_socket_path: "{{ '/run/containerd/containerd.sock' if (container_runtime_name | default('containerd')) == 'containerd' else '/var/run/crio/crio.sock' }}"
 
-- name: Configure Kubernetes repository
+- name: Configure Kubernetes RPM repository
   ansible.builtin.template:
     src: kubernetes.repo.j2
     dest: /etc/yum.repos.d/kubernetes.repo
     mode: "0644"
+  when: ansible_os_family == 'RedHat'
 
-- name: Refresh Kubernetes repo metadata with retries
+- name: Refresh Kubernetes RPM repo metadata with retries
   ansible.builtin.command: dnf -q makecache --refresh --disablerepo='*' --enablerepo=kubernetes
   register: kubernetes_repo_makecache
   changed_when: false
   retries: "{{ kubernetes_repo_validate_retries | int }}"
   delay: "{{ kubernetes_repo_validate_delay | int }}"
   until: kubernetes_repo_makecache.rc == 0
-  when: kubernetes_repo_validate_before_install | bool
+  when:
+    - kubernetes_repo_validate_before_install | bool
+    - ansible_os_family == 'RedHat'
   environment: "{{ proxy_environment | default({}) }}"
 
-- name: Install Kubernetes packages
+- name: Ensure apt keyrings directory exists for Kubernetes repo
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+  when: ansible_os_family == 'Debian'
+
+- name: Download Kubernetes apt repository key
+  ansible.builtin.get_url:
+    url: "{{ kubernetes_repo_deb_key_url }}"
+    dest: "{{ kubernetes_repo_deb_keyring_path }}"
+    mode: "0644"
+  environment: "{{ proxy_environment | default({}) }}"
+  when: ansible_os_family == 'Debian'
+
+- name: Configure Kubernetes apt repository
+  ansible.builtin.apt_repository:
+    repo: "{{ kubernetes_repo_deb_entry }}"
+    filename: kubernetes
+    state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Refresh Kubernetes apt metadata with retries
+  ansible.builtin.apt:
+    update_cache: true
+    force_apt_get: true
+  register: kubernetes_repo_apt_update
+  changed_when: false
+  retries: "{{ kubernetes_repo_validate_retries | int }}"
+  delay: "{{ kubernetes_repo_validate_delay | int }}"
+  until: kubernetes_repo_apt_update is succeeded
+  environment: "{{ proxy_environment | default({}) }}"
+  when:
+    - kubernetes_repo_validate_before_install | bool
+    - ansible_os_family == 'Debian'
+
+- name: Install Kubernetes packages (RedHat family)
   ansible.builtin.dnf:
     name: "{{ kubernetes_packages_resolved }}"
     state: present
@@ -63,6 +107,20 @@
   delay: "{{ kubernetes_package_install_delay | int }}"
   until: kubernetes_packages_install_result is succeeded
   environment: "{{ proxy_environment | default({}) }}"
+  when: ansible_os_family == 'RedHat'
+
+- name: Install Kubernetes packages (Debian family)
+  ansible.builtin.apt:
+    name: "{{ kubernetes_packages_resolved }}"
+    state: present
+    update_cache: false
+    force_apt_get: true
+  register: kubernetes_packages_install_result
+  retries: "{{ kubernetes_package_install_retries | int }}"
+  delay: "{{ kubernetes_package_install_delay | int }}"
+  until: kubernetes_packages_install_result is succeeded
+  environment: "{{ proxy_environment | default({}) }}"
+  when: ansible_os_family == 'Debian'
 
 - name: Ensure kubelet is enabled
   ansible.builtin.service:

@@ -1,8 +1,8 @@
 # ## Задача: Единая точка запуска плейбуков
 # - **Статус**: В процессе
 # - **Описание**: Объединить этапы развертывания в последовательный сценарий.
-- import_playbook: bootstrap.yml
-- import_playbook: metallb.yml
-- import_playbook: hardening.yml
-- import_playbook: storage.yml
-- import_playbook: validate.yml
+- import_playbook: k8s_bootstrap.yml
+- import_playbook: k8s_metallb.yml
+- import_playbook: k8s_hardening.yml
+- import_playbook: k8s_storage.yml
+- import_playbook: k8s_validate.yml

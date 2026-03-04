@@ -9,6 +9,23 @@ storage_nfs_namespace: nfs-storage
 storage_nfs_provisioner_name: k8s-sigs.io/nfs-subdir-external-provisioner
 storage_nfs_provisioner_image: registry.k8s.io/sig-storage/nfs-subdir-external-provisioner:v4.0.2
 
+storage_nfs_server_packages_map:
+  RedHat:
+    - nfs-utils
+    - rpcbind
+  Debian:
+    - nfs-kernel-server
+    - nfs-common
+    - rpcbind
+
+storage_nfs_server_services_map:
+  RedHat:
+    - rpcbind
+    - nfs-server
+  Debian:
+    - rpcbind
+    - nfs-kernel-server
+
 storage_nfs_data_disk_enabled: false
 storage_nfs_data_disk_device: ""
 storage_nfs_data_disk_partition_number: 1

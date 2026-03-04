@@ -36,6 +36,20 @@
       {{ storage_nfs_data_disk_allow_system_disk | default(hostvars[nfs_server_host].storage_nfs_data_disk_allow_system_disk | default(false)) }}
     resolved_storage_nfs_data_disk_guard_mounts: >-
       {{ storage_nfs_data_disk_guard_mounts | default(hostvars[nfs_server_host].storage_nfs_data_disk_guard_mounts | default(['/','/boot','/boot/efi','/var'])) }}
+    resolved_storage_nfs_server_packages: >-
+      {{
+        storage_nfs_server_packages_map.get(
+          ansible_os_family,
+          storage_nfs_server_packages_map.get('RedHat', ['nfs-utils', 'rpcbind'])
+        )
+      }}
+    resolved_storage_nfs_server_services: >-
+      {{
+        storage_nfs_server_services_map.get(
+          ansible_os_family,
+          storage_nfs_server_services_map.get('RedHat', ['rpcbind', 'nfs-server'])
+        )
+      }}
 
 - name: Validate resolved NFS variables
   ansible.builtin.assert:
@@ -214,9 +228,7 @@
 
 - name: Ensure NFS packages are installed on NFS host
   ansible.builtin.package:
-    name:
-      - nfs-utils
-      - rpcbind
+    name: "{{ resolved_storage_nfs_server_packages }}"
     state: present
   when:
     - storage_nfs_manage_server | bool
@@ -247,9 +259,7 @@
     name: "{{ item }}"
     enabled: true
     state: started
-  loop:
-    - rpcbind
-    - nfs-server
+  loop: "{{ resolved_storage_nfs_server_services }}"
   when:
     - storage_nfs_manage_server | bool
     - inventory_hostname in groups['nfs']

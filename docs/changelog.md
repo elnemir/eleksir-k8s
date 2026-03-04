@@ -1,5 +1,24 @@
 # changelog.md
 
+## 2026-03-04 (repo refactor: k8s namespace + INI inventory + cross-OS)
+### Добавлено
+- Добавлен `k8s/inventories/prod/hosts.ini` как основной inventory в формате INI.
+- Добавлена структура `k8s/playbooks/` с переименованными playbook-файлами: `k8s_*.yml`.
+
+### Изменено
+- Обновлен `ansible.cfg`: `inventory` переключен на `k8s/inventories/prod/hosts.ini`.
+- Перенесены `group_vars` в `k8s/inventories/prod/group_vars/`.
+- Перенесены и переименованы playbooks в `k8s/playbooks/` для безопасного merge с другим репозиторием.
+- Обновлен orchestration-файл `k8s/playbooks/k8s_site.yml` на новые import-пути.
+- Обновлены роли для мульти-ОС bootstrap:
+  - `roles/base_os`: update-пакеты через `dnf`/`apt`, карта пакетов/chrony-сервиса по OS family, защита nmcli-шагов на хостах без NetworkManager.
+  - `roles/proxy`: поддержка прокси для `dnf/yum` и `apt` пакетных менеджеров.
+  - `roles/kubernetes_core`: установка Kubernetes пакетов и репозитория для `RedHat` и `Debian`.
+  - `roles/container_runtime`: резолв runtime-пакетов по `ansible_os_family`.
+  - `roles/storage_nfs`: OS-aware map пакетов/сервисов NFS (`nfs-server`/`nfs-kernel-server`).
+  - `roles/security_hardening`: SELinux-настройки выполняются только при поддержке SELinux на хосте.
+- Обновлена эксплуатационная документация (`docs/runbook.md`, `docs/Project.md`, `docs/qa.md`, `docs/Tasktracker.md`) на новые пути `k8s/...`.
+
 ## 2026-02-19
 ### Добавлено
 - Создан каталог документации `docs/`.

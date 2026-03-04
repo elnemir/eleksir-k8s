@@ -8,9 +8,19 @@ container_runtime_cri_tools_package: cri-tools
 
 container_runtime_packages_map:
   containerd:
-    - containerd
+    RedHat:
+      - containerd
+    Debian:
+      - containerd
   crio:
-    - cri-o
+    RedHat:
+      - cri-o
+    Debian:
+      - cri-o
+
+container_runtime_service_map:
+  containerd: containerd
+  crio: crio
 
 containerd_config_path: /etc/containerd/config.toml
 containerd_sandbox_image: registry.k8s.io/pause:3.9

@@ -9,6 +9,13 @@ kubernetes_packages:
   - kubeadm
   - kubectl
 
+kubernetes_supported_os_families:
+  - RedHat
+  - Debian
+kubernetes_package_version_separator_map:
+  RedHat: "-"
+  Debian: "="
+
 kubernetes_packages_version_override: ""
 kubernetes_repo_validate_before_install: true
 kubernetes_repo_validate_retries: 4
@@ -20,6 +27,11 @@ kubernetes_package_install_nobest: true
 kubernetes_repo_channel: "v{{ (kubernetes_version.split('.')[0:2] | join('.')) }}"
 kubernetes_repo_baseurl: "https://pkgs.k8s.io/core:/stable:/{{ kubernetes_repo_channel }}/rpm/"
 kubernetes_repo_gpgkey: "{{ kubernetes_repo_baseurl }}repodata/repomd.xml.key"
+kubernetes_repo_deb_baseurl: "https://pkgs.k8s.io/core:/stable:/{{ kubernetes_repo_channel }}/deb/"
+kubernetes_repo_deb_key_url: "{{ kubernetes_repo_deb_baseurl }}Release.key"
+kubernetes_repo_deb_keyring_path: /etc/apt/keyrings/kubernetes-apt-keyring.asc
+kubernetes_repo_deb_list_path: /etc/apt/sources.list.d/kubernetes.list
+kubernetes_repo_deb_entry: "deb [signed-by={{ kubernetes_repo_deb_keyring_path }}] {{ kubernetes_repo_deb_baseurl }} /"
 
 kubeadm_cri_socket: "unix:///run/containerd/containerd.sock"
 kubelet_resolv_conf_path: /run/systemd/resolve/resolv.conf

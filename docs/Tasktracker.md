@@ -6,8 +6,8 @@
 
 ## Текущий статус проекта
 - Общий статус: **В процессе**
-- Текущий этап: **Готовность к валидации на control host**
-- Следующий этап: **Стендовые проверки, идемпотентность, устранение дефектов**
+- Текущий этап: **Рефактор структуры под merge + кросс-OS адаптация**
+- Следующий этап: **Стендовые проверки на control host, идемпотентность, устранение дефектов**
 
 ## Бэклог и прогресс
 
@@ -15,7 +15,7 @@
 |---|---|---|---|---|
 | T-001 | Архитектура | Подготовить и согласовать `docs/Project.md` | Критический | Завершена |
 | T-002 | Аналитика | Собрать недостающие входные данные (сеть, прокси, DNS/NTP, vCenter, версии) | Критический | Завершена |
-| T-003 | Инвентори | Подготовить `inventories/prod/hosts.yml` с группами `control_plane`, `workers`, `metallb`, `nfs` | Критический | Завершена |
+| T-003 | Инвентори | Подготовить `k8s/inventories/prod/hosts.ini` с группами `control_plane`, `workers`, `metallb`, `nfs` | Критический | Завершена |
 | T-004 | Переменные | Сформировать `group_vars` для прокси, сети, k8s, MetalLB, NFS | Критический | Завершена |
 | T-005 | Базовая ОС | Реализовать роль `base_os` для RedOS 8.0.2 | Высокий | Завершена (без стендовой валидации) |
 | T-006 | Прокси | Реализовать роль `proxy` (dnf/systemd/runtime) | Критический | Завершена (без стендовой валидации) |
@@ -65,7 +65,7 @@
 | T-050 | MetalLB Webhook Restore Proxy Fix | Добавить proxy environment в шаг восстановления webhook-конфигурации MetalLB | Высокий | Завершена (без стендовой валидации) |
 | T-051 | Control Plane Helm Tooling | Добавить установку `helm` и `helmfile` на control-plane ноды через `kubernetes_core` | Высокий | Завершена (без стендовой валидации) |
 | T-052 | Proxy Mode Management Playbook | Добавить отдельный playbook для включения/отключения proxy-режима и доработать роль `proxy` под `present/absent` | Высокий | Завершена (без стендовой валидации) |
-| T-053 | Runbook Proxy Operations | Добавить в runbook раздел по оперативному переключению proxy-режима через `playbooks/manage_proxy.yml` | Средний | Завершена |
+| T-053 | Runbook Proxy Operations | Добавить в runbook раздел по оперативному переключению proxy-режима через `k8s/playbooks/k8s_manage_proxy.yml` | Средний | Завершена |
 | T-054 | Validation Failover Source Guard | Устранить падение failover-проверки при undefined `validation_failover_source_host` через безопасную инициализацию и guards | Высокий | Завершена |
 | T-055 | Validation Delegate Fallback Guard | Исключить падение шаблонизации `delegate_to` в failover-блоке через безопасный fallback `default(inventory_hostname)` | Высокий | Завершена |
 | T-056 | Documentation Full Sync | Полностью синхронизировать `Project.md`, `runbook.md`, `qa.md`, `Diary.md` с актуальным состоянием ролей и эксплуатационных сценариев | Высокий | Завершена |
@@ -92,12 +92,14 @@
 | T-077 | SELinux/Hardening Toggle | Добавить возможность отключать SELinux и связанные шаги hardening через единый параметр запуска | Критический | Завершена (без стендовой валидации) |
 | T-078 | Calico Rollout Self-Heal | Усилить роль `networking` при таймауте `calico-node` rollout: авто-диагностика + controlled restart + повторная проверка | Критический | Завершена (без стендовой валидации) |
 | T-079 | Containerd Registry/Proxy Hardening | Устранить `FailedCreatePodSandbox` (`pause:3.9` Forbidden): обеспечить применение proxy в systemd и добавить mirror/fallback для `registry.k8s.io` в `containerd` | Критический | Завершена (без стендовой валидации) |
-| T-080 | Separate MetalLB Playbook | Вынести конфигурацию MetalLB из `bootstrap.yml` в отдельный playbook `playbooks/metallb.yml` и подключить его в `site.yml` | Высокий | Завершена (без стендовой валидации) |
-| T-081 | Cluster Scale-Out Playbook | Добавить отдельный playbook подготовки и присоединения новых нод к существующему кластеру (`playbooks/scale_out.yml`) с precheck целевой группы | Критический | Завершена (без стендовой валидации) |
-| T-082 | Scale-Out Play Syntax Fix | Исправить ошибку Ansible `'when' is not a valid attribute for a Play` в `playbooks/scale_out.yml` | Критический | Завершена (без стендовой валидации) |
+| T-080 | Separate MetalLB Playbook | Вынести конфигурацию MetalLB из `k8s/playbooks/k8s_bootstrap.yml` в отдельный playbook `k8s/playbooks/k8s_metallb.yml` и подключить его в `k8s/playbooks/k8s_site.yml` | Высокий | Завершена (без стендовой валидации) |
+| T-081 | Cluster Scale-Out Playbook | Добавить отдельный playbook подготовки и присоединения новых нод к существующему кластеру (`k8s/playbooks/k8s_scale_out.yml`) с precheck целевой группы | Критический | Завершена (без стендовой валидации) |
+| T-082 | Scale-Out Play Syntax Fix | Исправить ошибку Ansible `'when' is not a valid attribute for a Play` в `k8s/playbooks/k8s_scale_out.yml` | Критический | Завершена (без стендовой валидации) |
 | T-083 | NFS Data Disk Guard & Verify | Добавить явный guard от silent-skip data-диска и проверку фактического монтирования `nfs_export_path` на выбранный partition | Критический | Завершена (без стендовой валидации) |
 | T-084 | MetalLB Node Name Resolution Fix | Устранить падение `label node ... NotFound` при несовпадении inventory hostname и фактического имени Kubernetes node | Критический | Завершена (без стендовой валидации) |
-| T-085 | Scale-Out Replacement Node Rejoin | Добавить в `scale_out.yml` режим безопасной repare/rejoin для replacement-ноды (тот же hostname/IP) через cleanup stale kubeadm/kubelet state | Критический | Завершена (без стендовой валидации) |
+| T-085 | Scale-Out Replacement Node Rejoin | Добавить в `k8s/playbooks/k8s_scale_out.yml` режим безопасной repare/rejoin для replacement-ноды (тот же hostname/IP) через cleanup stale kubeadm/kubelet state | Критический | Завершена (без стендовой валидации) |
+| T-086 | Repo Namespace Refactor | Перевести inventory в INI, перенести inventory/group_vars и playbooks в `k8s/` с переименованием playbooks (`k8s_*`) | Критический | Завершена (без стендовой валидации) |
+| T-087 | Cross-OS Bootstrap Adaptation | Адаптировать роли bootstrap для мульти-ОС (RedHat/Debian): package manager, repo, proxy, NFS service/package maps, SELinux guard | Критический | Завершена (без стендовой валидации) |
 
 ## Собранные данные (2026-02-19)
 - VMware: `vCenter 7.0.3`, `ESXi 7.0.3`, `clone_from_template`, шаблон `k8s-pcp-template`.
@@ -110,9 +112,9 @@
 - MetalLB placement: label `node-role.kubernetes.io/metallb=true`, без taints.
 
 ## Реализованный каркас (2026-02-19)
-- Создан `inventories/prod/hosts.yml` с группами `control_plane`, `workers`, `metallb`, `nfs`, `k8s_cluster`.
+- Создан `k8s/inventories/prod/hosts.ini` с группами `control_plane`, `workers`, `metallb`, `nfs`, `k8s_cluster`.
 - Созданы `group_vars` для `all`, `control_plane`, `workers`, `metallb`, `nfs`.
-- Создан набор playbook-файлов: `site.yml`, `bootstrap.yml`, `metallb.yml`, `scale_out.yml`, `hardening.yml`, `storage.yml`, `validate.yml`.
+- Создан набор playbook-файлов: `k8s/playbooks/k8s_site.yml`, `k8s/playbooks/k8s_bootstrap.yml`, `k8s/playbooks/k8s_metallb.yml`, `k8s/playbooks/k8s_scale_out.yml`, `k8s/playbooks/k8s_hardening.yml`, `k8s/playbooks/k8s_storage.yml`, `k8s/playbooks/k8s_validate.yml`.
 - Созданы роли-каркасы: `base_os`, `proxy`, `container_runtime`, `kubernetes_core`, `networking`, `metallb`, `security_hardening`, `storage_nfs`, `validation`.
 - Добавлены `ansible.cfg` и `requirements.yml`.
 
@@ -129,14 +131,14 @@
 - `base_os`: добавлена синхронизация системного hostname с `inventory_hostname` и управление `/etc/hosts` по inventory.
 - Параметр `proxy_enabled` добавлен в `group_vars/all.yml`; роль `proxy` и proxy-env для `kubectl apply` стали условными.
 - Добавлен `docs/runbook.md` с командами запуска для `proxy_enabled=true/false`, предчеками и checklist приемки.
-- Добавлен `playbooks/reinstall_cluster_and_nfs.yml` для полной деструктивной переустановки (`cluster_and_nfs`) с guardrail-токеном подтверждения.
+- Добавлен `k8s/playbooks/k8s_reinstall_cluster_and_nfs.yml` для полной деструктивной переустановки (`cluster_and_nfs`) с guardrail-токеном подтверждения.
 - В `storage_nfs` добавлена опция выделенного data-диска: разметка, форматирование и монтирование в `nfs_export_path`.
 - Добавлен guardrail в `storage_nfs`: блокировка системного диска по умолчанию с явным override-флагом.
 - В документации зафиксирован операционный сценарий MetalLB L2 без прав на сетевые изменения в `vCenter`.
 - В роль `validation` добавлена автоматическая ingress-проверка с основным режимом `node_ip` (DaemonSet readiness/placement) и обратной совместимостью режима `LoadBalancer`.
 - Добавлена роль `control_plane_vip`: реализация API endpoint VIP через `keepalived + haproxy` на control-plane нодах.
 - Роль `validation` дополнена проверками API VIP (`/readyz`), состояния `keepalived/haproxy` и опциональным failover-test для control-plane VIP.
-- В `playbooks/validate.yml` добавлен отдельный on-demand путь запуска failover-проверки по тегу `failover`.
+- В `k8s/playbooks/k8s_validate.yml` добавлен отдельный on-demand путь запуска failover-проверки по тегу `failover`.
 - Исправлена совместимость bootstrap: kubeadm config API параметризован и по умолчанию переключен на `kubeadm.k8s.io/v1beta3`.
 - В роли `container_runtime` установка `cri-tools` сделана опциональной и отключена по умолчанию для устранения depsolve-конфликта.
 - В роли `kubernetes_core` добавлены precheck/retry для repo и установка пакетов с retry, а также override версии пакетов через `kubernetes_packages_version_override`.
@@ -145,7 +147,7 @@
 - В роли `kubernetes_core` добавлен явный guard в `rescue`: если `controlPlaneEndpoint` доступен, но все backend `control-plane` на `:6443` недоступны, play завершается с целевым сообщением о проблеме VIP/HAProxy-цепочки.
 - В `ansible.cfg` удален `stdout_callback = yaml` как устаревшая настройка для актуальной версии Ansible.
 - В роли `kubernetes_core` добавлен guard частично-инициализированного состояния (`/etc/kubernetes/manifests`, `/var/lib/etcd`) с опциональным auto-reset через `kubeadm_init_auto_reset_on_stale_state`.
-- В `inventories/prod/group_vars/all.yml` в `no_proxy` добавлены явные IP `controlPlaneEndpoint` и control-plane нод для исключения доступа Kubernetes-компонентов к API через HTTP(S)-proxy.
+- В `k8s/inventories/prod/group_vars/all.yml` в `no_proxy` добавлены явные IP `controlPlaneEndpoint` и control-plane нод для исключения доступа Kubernetes-компонентов к API через HTTP(S)-proxy.
 - В роли `control_plane_vip` добавлена idempotent-настройка SELinux boolean `haproxy_connect_any` (persisted) на control-plane нодах при включенном SELinux.
 - В роли `control_plane_vip` добавлен условный post-check API VIP (`/readyz`) после применения конфигурации, выполняемый только при наличии `admin.conf`.
 - В роли `security_hardening` добавлена case-insensitive валидация `selinux_target_mode` и нормализация значения `state` в lowercase перед вызовом `ansible.posix.selinux`.
@@ -153,14 +155,14 @@
 - В `kubernetes_core` join-таски переведены на retry (`until` + `retries/delay`) и последовательное выполнение (`throttle: 1`) для снижения ошибок `context deadline exceeded`/`rate limiter`.
 - В роли `kubernetes_core` добавлен выбор endpoint для `kubeadm join`: сначала `controlPlaneEndpoint`, при недоступности — fallback на `primary_control_plane:6443`.
 - Join-команды выполняются через адресную подмену `kubeadm join <endpoint>`, что позволяет прозрачно использовать fallback без пересоздания токена.
-- В `inventories/prod/group_vars/all.yml` добавлен `selinux_target_mode: Disabled` как временный диагностический режим для всех узлов (требуется reboot для полного применения).
+- В `k8s/inventories/prod/group_vars/all.yml` добавлен `selinux_target_mode: Disabled` как временный диагностический режим для всех узлов (требуется reboot для полного применения).
 - В роли `kubernetes_core` добавлен режим `kubeadm_join_force_primary_endpoint`, отключающий VIP probe и принудительно выбирающий endpoint `primary_control_plane:6443` для join.
-- В `inventories/prod/group_vars/all.yml` включен `kubeadm_join_force_primary_endpoint: true` для текущего troubleshooting-контура.
+- В `k8s/inventories/prod/group_vars/all.yml` включен `kubeadm_join_force_primary_endpoint: true` для текущего troubleshooting-контура.
 - В `roles/kubernetes_core/tasks/main.yml` добавлен `block/rescue` и авто-диагностика сети на joining-ноде при недоступности выбранного endpoint (`ip route get`, TCP probe, `curl /readyz`) с агрегированным fail-сообщением.
-- В `playbooks/bootstrap.yml` добавлен запуск роли `security_hardening` на `k8s_cluster` до роли `kubernetes_core`, чтобы исключить повторный bootstrap без примененных firewall-правил.
+- В `k8s/playbooks/k8s_bootstrap.yml` добавлен запуск роли `security_hardening` на `k8s_cluster` до роли `kubernetes_core`, чтобы исключить повторный bootstrap без примененных firewall-правил.
 - В роли `networking` ожидание `calico-node` rollout сделано параметризуемым и переведено в `block/rescue` с автосбором диагностик (`pods`, `describe ds`, `events`) при таймауте.
 - В роли `networking` добавлена параметризация backend-режима Calico и применение VXLAN-параметров (`calico_backend=vxlan`, `IPIP=Never`, `VXLAN=Always`) после `kubectl apply`.
-- В `inventories/prod/group_vars/all.yml` включен VXLAN-режим Calico и отключен IPIP для текущего production-контура.
+- В `k8s/inventories/prod/group_vars/all.yml` включен VXLAN-режим Calico и отключен IPIP для текущего production-контура.
 - В роли `networking` добавлен patch `CLUSTER_TYPE=k8s` и felix-only health checks для `calico-node` в VXLAN-режиме, чтобы исключить ожидание BIRD и CrashLoop/Unhealthy по `bird.*`.
 - В роли `metallb` добавлены precheck готовности `metallb-webhook-service` endpoints, retry при `kubectl apply -f /tmp/metallb-config.yaml` и rescue-диагностика (`metallb-system` pods/events) для сбоев webhook.
 - В роли `metallb` добавлен временный workaround `failurePolicy=Ignore` для `ipaddresspool`/`l2advertisement` webhook на время `apply` pool-конфига и автоматический rollback в `failurePolicy=Fail` в `always`.
@@ -168,13 +170,13 @@
 - В роли `metallb` шаг восстановления webhook-конфигурации переведен на проксируемое окружение (`proxy_environment`) для устранения `network is unreachable` при загрузке remote manifest URL.
 - В роли `kubernetes_core` добавлена параметризуемая установка `helm` и `helmfile` на control-plane нодах из официальных release-артефактов с учетом архитектуры и proxy-настроек.
 - В роли `proxy` добавлена поддержка `proxy_state=present|absent` для управляемого включения/отключения system/profile/dnf proxy-конфигурации.
-- Добавлен отдельный `playbooks/manage_proxy.yml` для оперативного переключения proxy-режима без полного bootstrap.
-- В `docs/runbook.md` добавлены эксплуатационные команды переключения proxy (`present/absent`) через `playbooks/manage_proxy.yml` и базовые проверки результата.
+- Добавлен отдельный `k8s/playbooks/k8s_manage_proxy.yml` для оперативного переключения proxy-режима без полного bootstrap.
+- В `docs/runbook.md` добавлены эксплуатационные команды переключения proxy (`present/absent`) через `k8s/playbooks/k8s_manage_proxy.yml` и базовые проверки результата.
 - В роли `validation` добавлена безопасная прединициализация `validation_failover_source_host` и защитные `when`-условия для failover-операций `keepalived`, чтобы исключить `undefined` в `delegate_to`.
 - В роли `validation` для failover-операций `keepalived` добавлен fallback в `delegate_to` через `validation_failover_source_host | default(inventory_hostname)`, чтобы исключить падение до вычисления `when`.
 - Выполнена полная синхронизация эксплуатационной и архитектурной документации (`Project.md`, `runbook.md`, `qa.md`, `Diary.md`) с текущим фактическим состоянием кластера и последних фиксов validation failover.
 - В роли `validation` добавлена расширенная диагностика ingress-проверки: при `rc != 0` выводятся `rc/stdout/stderr`, а итоговый assert содержит `stderr` для упрощения устранения причин (`NotFound`/namespace/service mismatch/доступ).
-- В `inventories/prod/group_vars/all.yml` временно отключена ingress VIP-проверка (`validation_enable_ingress_vip_check: false`) до появления `ingress-nginx/ingress-nginx-controller` в кластере.
+- В `k8s/inventories/prod/group_vars/all.yml` временно отключена ingress VIP-проверка (`validation_enable_ingress_vip_check: false`) до появления `ingress-nginx/ingress-nginx-controller` в кластере.
 - Добавлена роль `ingress_nginx` и этап в `bootstrap` для автоматического деплоя ingress в режиме `DaemonSet + hostNetwork` на нодах с меткой `node-role.kubernetes.io/metallb=true`.
 - Роль `validation` переведена на проверку ingress в `node_ip` режиме (готовность ingress controller `DaemonSet` и проверка размещения controller-подов на выделенных ingress-нодах), при сохранении legacy-пути для `LoadBalancer`.
 - В роли `kubernetes_core` усилена загрузка `helm`/`helmfile`: добавлены pre/post `stat`, условная повторная загрузка (`force: false`) с retry и контроль минимального размера архивов для защиты от частичных/битых скачиваний.
@@ -187,20 +189,20 @@
 - В `base_os` добавлен pre-step полного обновления установленных пакетов (`dnf update_only`) перед установкой baseline-компонентов; шаг управляется параметром `base_os_update_all_packages`.
 - Добавлен единый переключатель `security_hardening_enabled`: при `false` роль `security_hardening` пропускается в `bootstrap` и `hardening` playbooks (для контуров с отключенным SELinux/hardening).
 - В `networking` усилено ожидание Calico: увеличены timeout/retries и добавлен controlled self-heal (`rollout restart daemonset/calico-node` + повторная проверка) при первичном таймауте rollout.
-- Конфигурация MetalLB вынесена из `playbooks/bootstrap.yml` в отдельный playbook `playbooks/metallb.yml`; orchestration `playbooks/site.yml` обновлен с отдельным этапом MetalLB.
-- Добавлен отдельный playbook `playbooks/scale_out.yml` для подготовки и добавления новых нод в существующий кластер с precheck группы `scale_out_nodes` и пост-reconcile `control_plane_vip`/`metallb` по фактическому типу добавляемых нод.
-- В `playbooks/scale_out.yml` исправлено применение условий `when`: перенесены с уровня play на уровень role-записей для совместимости с Ansible parser.
+- Конфигурация MetalLB вынесена из `k8s/playbooks/k8s_bootstrap.yml` в отдельный playbook `k8s/playbooks/k8s_metallb.yml`; orchestration `k8s/playbooks/k8s_site.yml` обновлен с отдельным этапом MetalLB.
+- Добавлен отдельный playbook `k8s/playbooks/k8s_scale_out.yml` для подготовки и добавления новых нод в существующий кластер с precheck группы `scale_out_nodes` и пост-reconcile `control_plane_vip`/`metallb` по фактическому типу добавляемых нод.
+- В `k8s/playbooks/k8s_scale_out.yml` исправлено применение условий `when`: перенесены с уровня play на уровень role-записей для совместимости с Ansible parser.
 - В `storage_nfs` добавлены guard/check для data-диска: явная ошибка при `device` без `enabled=true` и проверка фактического mount source для `nfs_export_path`.
 - В `metallb` добавлен resilient-resolve имени node перед labeling: сначала `inventory hostname`, при отсутствии — поиск node по `InternalIP` (`ansible_host`) и явный fail с диагностикой при невозможности резолва.
-- В `playbooks/scale_out.yml` добавлен режим replacement-node rejoin: при `scale_out_allow_reprepare_existing_nodes=true` выполняется cleanup stale state (`kubeadm reset`, очистка `/etc/kubernetes`, `/var/lib/kubelet`, CNI-state, `/var/lib/etcd` для control-plane), затем выполняется повторный join.
+- В `k8s/playbooks/k8s_scale_out.yml` добавлен режим replacement-node rejoin: при `scale_out_allow_reprepare_existing_nodes=true` выполняется cleanup stale state (`kubeadm reset`, очистка `/etc/kubernetes`, `/var/lib/kubelet`, CNI-state, `/var/lib/etcd` для control-plane), затем выполняется повторный join.
 - В роли `ingress_nginx` временно отключены admission webhooks (`controller.admissionWebhooks.enabled=false`, `controller.admissionWebhooks.patch.enabled=false`) для обхода таймаутов pre/post-upgrade hooks Helm в текущем troubleshooting-контуре.
 - В роли `base_os` добавлена принудительная фиксация `/etc/resolv.conf` на non-stub target (`/run/systemd/resolve/resolv.conf`) с проверкой существования целевого файла, чтобы исключить drift после перераскатки.
 - В роли `kubernetes_core` добавлено пост-выравнивание `resolvConf` в `/var/lib/kubelet/config.yaml` и restart `kubelet` при изменении для стабильного DNS-поведения на повторных прогонах.
 - В роли `validation` нормализовано чтение/сравнение `kubelet resolvConf` (удаление кавычек и trim), чтобы исключить ложные mismatch при фактически корректном значении.
 - В `bootstrap` добавлены этапы автоматизированного деплоя `kube-prometheus-stack`, `gitlab-runner`, `k8tz` на primary control-plane с отдельными тегами и `when`-переключателями.
 - Добавлены роли `prometheus_stack`, `gitlab_runner`, `k8tz` с Helm-деплоем и параметризацией `repo/chart/version`, URL/адресов ingress, timezone и registration token.
-- В `inventories/prod/group_vars/all.yml` добавлены управляемые переменные деплоя приложений (включая ссылку на `vault` для токена `gitlab-runner`).
-- Добавлен шаблон `inventories/prod/group_vars/vault.yml.example` для хранения чувствительных переменных (`vault_gitlab_runner_registration_token`) через ansible-vault.
+- В `k8s/inventories/prod/group_vars/all.yml` добавлены управляемые переменные деплоя приложений (включая ссылку на `vault` для токена `gitlab-runner`).
+- Добавлен шаблон `k8s/inventories/prod/group_vars/vault.yml.example` для хранения чувствительных переменных (`vault_gitlab_runner_registration_token`) через ansible-vault.
 - В `docs/runbook.md` добавлен эксплуатационный раздел по автодеплою `prometheus`/`gitlab-runner`/`k8tz` и командам запуска по тегам с `--ask-vault-pass`.
 
 ## Декомпозиция ближайшего этапа (сбор данных)

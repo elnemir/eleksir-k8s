@@ -4,10 +4,24 @@
 - name: Validate base OS variables
   ansible.builtin.assert:
     that:
-      - redos_release is defined
       - base_os_packages is iterable
+      - base_os_packages_common is iterable
+      - base_os_packages_by_family is mapping
       - base_os_kernel_modules is iterable
     fail_msg: "Base OS variables are incomplete"
+
+- name: Resolve base OS package and service settings for current host OS
+  ansible.builtin.set_fact:
+    base_os_packages_resolved: >-
+      {{
+        (
+          base_os_packages
+          if (base_os_packages | default([]) | length > 0)
+          else ((base_os_packages_common | default([])) + (base_os_packages_by_family.get(ansible_os_family, []) | default([])))
+        ) | unique
+      }}
+    base_os_timesync_service_name: "{{ base_os_timesync_service_by_family.get(ansible_os_family, 'chronyd') }}"
+    base_os_chrony_conf_path: "{{ base_os_chrony_conf_by_family.get(ansible_os_family, '/etc/chrony.conf') }}"
 
 - name: Set system hostname from inventory name
   ansible.builtin.hostname:
@@ -24,23 +38,45 @@
       {% endfor %}
   when: base_os_manage_hosts_file | bool
 
-- name: Update all installed packages before cluster installation
+- name: Update all installed packages before cluster installation (RedHat family)
   ansible.builtin.dnf:
     name: "*"
     state: latest
     update_only: true
-  when: base_os_update_all_packages | bool
+  when:
+    - base_os_manage_package_updates | bool
+    - base_os_update_all_packages | bool
+    - ansible_os_family == 'RedHat'
+  environment: "{{ proxy_environment | default({}) }}"
+
+- name: Update all installed packages before cluster installation (Debian family)
+  ansible.builtin.apt:
+    update_cache: true
+    upgrade: dist
+    autoremove: false
+    force_apt_get: true
+  when:
+    - base_os_manage_package_updates | bool
+    - base_os_update_all_packages | bool
+    - ansible_os_family == 'Debian'
   environment: "{{ proxy_environment | default({}) }}"
 
 - name: Install baseline packages
   ansible.builtin.package:
     name: >-
       {{
-        (base_os_packages | reject('equalto', 'firewalld') | list)
+        (base_os_packages_resolved | reject('equalto', 'firewalld') | list)
         if (not (firewalld_enabled | default(true) | bool))
-        else base_os_packages
+        else base_os_packages_resolved
       }}
     state: present
+
+- name: Check whether nmcli is available
+  ansible.builtin.command: command -v nmcli
+  register: base_os_nmcli_probe
+  changed_when: false
+  failed_when: false
+  when: base_os_manage_networkmanager_dns | bool
 
 - name: Get active NetworkManager connection for primary interface
   ansible.builtin.command: >-
@@ -51,6 +87,7 @@
   when:
     - base_os_manage_networkmanager_dns | bool
     - dns_servers | default([]) | length > 0
+    - (base_os_nmcli_probe.rc | default(1)) == 0
 
 - name: Resolve active NetworkManager profile name
   ansible.builtin.set_fact:
@@ -68,6 +105,7 @@
   when:
     - base_os_manage_networkmanager_dns | bool
     - dns_servers | default([]) | length > 0
+    - (base_os_nmcli_probe.rc | default(1)) == 0
 
 - name: Ensure active NetworkManager profile was detected
   ansible.builtin.assert:
@@ -79,6 +117,7 @@
   when:
     - base_os_manage_networkmanager_dns | bool
     - dns_servers | default([]) | length > 0
+    - (base_os_nmcli_probe.rc | default(1)) == 0
 
 - name: Read current NetworkManager DNS settings
   ansible.builtin.command: >-
@@ -88,6 +127,7 @@
   when:
     - base_os_manage_networkmanager_dns | bool
     - dns_servers | default([]) | length > 0
+    - (base_os_nmcli_probe.rc | default(1)) == 0
     - base_os_nm_profile_name | default('') | length > 0
 
 - name: Calculate desired NetworkManager DNS settings
@@ -97,6 +137,7 @@
   when:
     - base_os_manage_networkmanager_dns | bool
     - dns_servers | default([]) | length > 0
+    - (base_os_nmcli_probe.rc | default(1)) == 0
     - base_os_nm_profile_name | default('') | length > 0
 
 - name: Configure DNS servers via NetworkManager profile
@@ -109,6 +150,7 @@
   when:
     - base_os_manage_networkmanager_dns | bool
     - dns_servers | default([]) | length > 0
+    - (base_os_nmcli_probe.rc | default(1)) == 0
     - base_os_nm_profile_name | default('') | length > 0
     - (base_os_nm_dns_current.stdout_lines | default(['', '']))[0] != base_os_nm_dns_desired_servers
       or (base_os_nm_dns_current.stdout_lines | default(['', '']))[1] != base_os_nm_dns_desired_ignore_auto
@@ -119,6 +161,7 @@
   register: base_os_nm_dns_apply
   changed_when: true
   when:
+    - (base_os_nmcli_probe.rc | default(1)) == 0
     - base_os_nm_dns_config is changed
 
 - name: Check resolved resolv.conf target availability
@@ -169,7 +212,7 @@
     mode: "0644"
   notify: Apply sysctl settings
 
-- name: Disable zram0 swap on RedOS 8
+- name: Disable zram0 swap on supported distributions
   block:
     - name: Stop and mask zram systemd units
       ansible.builtin.systemd:
@@ -219,7 +262,8 @@
   when:
     - base_os_disable_swap | bool
     - base_os_disable_zram0 | bool
-    - (redos_release | string) is search('^8(\\.|$)')
+    - ansible_distribution in (base_os_disable_zram_distributions | default([]))
+    - ansible_distribution_major_version in (base_os_disable_zram_major_versions | default([]))
 
 - name: Disable swap immediately
   ansible.builtin.command: swapoff -a
@@ -237,18 +281,18 @@
 
 - name: Configure chrony NTP servers
   ansible.builtin.blockinfile:
-    path: /etc/chrony.conf
+    path: "{{ base_os_chrony_conf_path }}"
     marker: "# {mark} ANSIBLE MANAGED NTP"
     block: |
       {% for server in ntp_servers | default([]) %}
       server {{ server }} iburst
       {% endfor %}
   when: base_os_manage_time | bool
-  notify: Restart chronyd
+  notify: Restart chrony service
 
-- name: Ensure chronyd is enabled and running
+- name: Ensure time synchronization service is enabled and running
   ansible.builtin.service:
-    name: chronyd
+    name: "{{ base_os_timesync_service_name }}"
     state: started
     enabled: true
   when: base_os_manage_time | bool

@@ -5,9 +5,30 @@
   ansible.builtin.assert:
     that:
       - container_runtime_name in ['containerd', 'crio']
-      - container_runtime_packages_map[container_runtime_name] is iterable
+      - container_runtime_packages_map[container_runtime_name] is defined
       - container_runtime_cri_tools_package is string
     fail_msg: "Supported runtimes: containerd, crio"
+
+- name: Resolve container runtime packages and service name for current OS
+  ansible.builtin.set_fact:
+    container_runtime_packages_resolved: >-
+      {{
+        (
+          container_runtime_packages_map[container_runtime_name].get(ansible_os_family, [])
+          if (container_runtime_packages_map[container_runtime_name] is mapping)
+          else container_runtime_packages_map[container_runtime_name]
+        )
+      }}
+    container_runtime_service_name: "{{ container_runtime_service_map.get(container_runtime_name, container_runtime_name) }}"
+
+- name: Ensure container runtime package list was resolved for current OS
+  ansible.builtin.assert:
+    that:
+      - container_runtime_packages_resolved is iterable
+      - container_runtime_packages_resolved | length > 0
+    fail_msg: >-
+      No runtime packages resolved for runtime={{ container_runtime_name }}
+      on os_family={{ ansible_os_family }}.
 
 - name: Validate containerd registry mirror settings
   ansible.builtin.assert:
@@ -20,7 +41,7 @@
 
 - name: Install container runtime packages
   ansible.builtin.package:
-    name: "{{ container_runtime_packages_map[container_runtime_name] }}"
+    name: "{{ container_runtime_packages_resolved }}"
     state: present
 
 - name: Check if crictl binary is already present
@@ -95,6 +116,6 @@
 
 - name: Ensure container runtime service is enabled
   ansible.builtin.service:
-    name: "{{ 'containerd' if container_runtime_name == 'containerd' else 'crio' }}"
+    name: "{{ container_runtime_service_name }}"
     enabled: true
     state: started

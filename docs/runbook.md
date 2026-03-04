@@ -13,7 +13,7 @@
 
 ## 2. Предварительные требования (control host)
 - ОС control host: Debian 13 (или совместимая Linux-среда).
-- Доступ по SSH к узлам из `inventories/prod/hosts.yml`.
+- Доступ по SSH к узлам из `k8s/inventories/prod/hosts.ini`.
 - Python3 и pip установлены.
 - Доступ к репозиторию проекта и `sudo` при необходимости.
 
@@ -47,21 +47,21 @@ yamllint --version
 cd /Users/eln/Documents/k8s-redos
 source .venv/bin/activate
 
-ansible-inventory -i inventories/prod/hosts.yml --graph
-ansible -i inventories/prod/hosts.yml all -m ping
+ansible-inventory -i k8s/inventories/prod/hosts.ini --graph
+ansible -i k8s/inventories/prod/hosts.ini all -m ping
 
-ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/site.yml
-ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/bootstrap.yml
-ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/metallb.yml
-ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/scale_out.yml
-ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/hardening.yml
-ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/storage.yml
-ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/validate.yml
-ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/reinstall_cluster_and_nfs.yml
-ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/manage_proxy.yml
+ansible-playbook -i k8s/inventories/prod/hosts.ini --syntax-check k8s/playbooks/k8s_site.yml
+ansible-playbook -i k8s/inventories/prod/hosts.ini --syntax-check k8s/playbooks/k8s_bootstrap.yml
+ansible-playbook -i k8s/inventories/prod/hosts.ini --syntax-check k8s/playbooks/k8s_metallb.yml
+ansible-playbook -i k8s/inventories/prod/hosts.ini --syntax-check k8s/playbooks/k8s_scale_out.yml
+ansible-playbook -i k8s/inventories/prod/hosts.ini --syntax-check k8s/playbooks/k8s_hardening.yml
+ansible-playbook -i k8s/inventories/prod/hosts.ini --syntax-check k8s/playbooks/k8s_storage.yml
+ansible-playbook -i k8s/inventories/prod/hosts.ini --syntax-check k8s/playbooks/k8s_validate.yml
+ansible-playbook -i k8s/inventories/prod/hosts.ini --syntax-check k8s/playbooks/k8s_reinstall_cluster_and_nfs.yml
+ansible-playbook -i k8s/inventories/prod/hosts.ini --syntax-check k8s/playbooks/k8s_manage_proxy.yml
 ```
 
-Проверить параметры control-plane VIP в `inventories/prod/group_vars`:
+Проверить параметры control-plane VIP в `k8s/inventories/prod/group_vars`:
 - `control_plane_endpoint: 10.255.106.20`
 - `control_plane_endpoint_port: 8443`
 - `control_plane_vip_enabled: true`
@@ -75,36 +75,36 @@ ansible-playbook -i inventories/prod/hosts.yml --syntax-check playbooks/manage_p
 - `security_hardening_enabled: false|true` (управление запуском роли hardening)
 
 ## 5. Режим A: Изолированная сеть (proxy включен)
-Убедитесь, что в `inventories/prod/group_vars/all.yml`:
+Убедитесь, что в `k8s/inventories/prod/group_vars/all.yml`:
 - `proxy_enabled: true`
 - `http_proxy/https_proxy/no_proxy` заданы корректно.
 
 Запуск:
 ```bash
-ansible-playbook -i inventories/prod/hosts.yml playbooks/site.yml
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_site.yml
 ```
 
 ## 6. Режим B: Неизолированная сеть (proxy выключен)
 Вариант 1 (временный override на запуск):
 ```bash
-ansible-playbook -i inventories/prod/hosts.yml playbooks/site.yml -e proxy_enabled=false
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_site.yml -e proxy_enabled=false
 ```
 
 Вариант 2 (постоянно для окружения):
-- установить `proxy_enabled: false` в `inventories/prod/group_vars/all.yml`
+- установить `proxy_enabled: false` в `k8s/inventories/prod/group_vars/all.yml`
 - затем запускать обычной командой:
 ```bash
-ansible-playbook -i inventories/prod/hosts.yml playbooks/site.yml
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_site.yml
 ```
 
 Управление hardening/SELinux шагами:
 - для отключения hardening-этапа (включая SELinux/firewalld шаги роли `security_hardening`) используйте:
 ```bash
-ansible-playbook -i inventories/prod/hosts.yml playbooks/site.yml -e security_hardening_enabled=false
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_site.yml -e security_hardening_enabled=false
 ```
 - для обратного включения:
 ```bash
-ansible-playbook -i inventories/prod/hosts.yml playbooks/site.yml -e security_hardening_enabled=true
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_site.yml -e security_hardening_enabled=true
 ```
 
 ## 7. Проверка hostname по inventory
@@ -112,7 +112,7 @@ ansible-playbook -i inventories/prod/hosts.yml playbooks/site.yml -e security_ha
 
 Проверка:
 ```bash
-ansible -i inventories/prod/hosts.yml all -m command -a hostname
+ansible -i k8s/inventories/prod/hosts.ini all -m command -a hostname
 ```
 
 Ожидается:
@@ -126,17 +126,17 @@ ansible -i inventories/prod/hosts.yml all -m command -a hostname
 
 Проверка:
 ```bash
-ansible -i inventories/prod/hosts.yml all -m shell -a "sed -n '/ANSIBLE MANAGED INVENTORY HOSTS/,+15p' /etc/hosts"
+ansible -i k8s/inventories/prod/hosts.ini all -m shell -a "sed -n '/ANSIBLE MANAGED INVENTORY HOSTS/,+15p' /etc/hosts"
 ```
 
 Ожидается:
 - в управляемом блоке присутствуют соответствия `IP -> inventory hostname` для всех узлов кластера;
-- обновление выполняется из inventory (при изменении IP/hostname в `inventories/prod/hosts.yml` блок перегенерируется при следующем запуске `bootstrap`).
+- обновление выполняется из inventory (при изменении IP/hostname в `k8s/inventories/prod/hosts.ini` блок перегенерируется при следующем запуске `bootstrap`).
 
 ## 8. Проверка идемпотентности
 После успешного деплоя выполнить повторный запуск:
 ```bash
-ansible-playbook -i inventories/prod/hosts.yml playbooks/site.yml
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_site.yml
 ```
 
 Критерий:
@@ -183,7 +183,7 @@ curl -I http://10.255.106.18
 kubectl --kubeconfig /etc/kubernetes/admin.conf -n ingress-nginx get svc ingress-nginx-controller -o wide
 ```
 
-Автоматизация в `playbooks/validate.yml`:
+Автоматизация в `k8s/playbooks/k8s_validate.yml`:
 - Роль `validation` проверяет доступность API через control-plane VIP (`/readyz` через `kubectl --server=https://10.255.106.20:8443`).
 - Роль `validation` проверяет `keepalived/haproxy` на всех control-plane нодах и наличие ровно одного владельца VIP.
 - Роль `validation` в текущем режиме `node_ip` проверяет готовность ingress `DaemonSet` и размещение controller-подов на ingress-нодах.
@@ -196,21 +196,21 @@ kubectl --kubeconfig /etc/kubernetes/admin.conf -n ingress-nginx get svc ingress
 Пример запуска:
 ```bash
 # Стандартная безопасная валидация
-ansible-playbook -i inventories/prod/hosts.yml playbooks/validate.yml
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_validate.yml
 
 # Стендовый failover-check control-plane VIP
-ansible-playbook -i inventories/prod/hosts.yml playbooks/validate.yml \
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_validate.yml \
   -e validation_enable_control_plane_vip_failover_test=true
 ```
 
 Запуск только failover-сценария по тегу:
 ```bash
-ansible-playbook -i inventories/prod/hosts.yml playbooks/validate.yml --tags failover
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_validate.yml --tags failover
 ```
 
 Рекомендованный запуск failover в текущем контуре (явно включить проверку):
 ```bash
-ansible-playbook -i inventories/prod/hosts.yml playbooks/validate.yml \
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_validate.yml \
   --tags failover \
   -e validation_enable_control_plane_vip_failover_test=true
 ```
@@ -224,13 +224,13 @@ kubectl --kubeconfig /etc/kubernetes/admin.conf get svc -A
 kubectl --kubeconfig /etc/kubernetes/admin.conf get storageclass
 
 # Проверка режима firewall
-ansible -i inventories/prod/hosts.yml all -m command -a "systemctl is-enabled firewalld || true"
-ansible -i inventories/prod/hosts.yml all -m command -a "systemctl is-active firewalld || true"
+ansible -i k8s/inventories/prod/hosts.ini all -m command -a "systemctl is-enabled firewalld || true"
+ansible -i k8s/inventories/prod/hosts.ini all -m command -a "systemctl is-active firewalld || true"
 
 # Control-plane VIP
-ansible -i inventories/prod/hosts.yml control_plane -m command -a "systemctl is-active haproxy"
-ansible -i inventories/prod/hosts.yml control_plane -m command -a "systemctl is-active keepalived"
-ansible -i inventories/prod/hosts.yml control_plane -m shell -a "ip -4 addr show | grep -F 10.255.106.20 || true"
+ansible -i k8s/inventories/prod/hosts.ini control_plane -m command -a "systemctl is-active haproxy"
+ansible -i k8s/inventories/prod/hosts.ini control_plane -m command -a "systemctl is-active keepalived"
+ansible -i k8s/inventories/prod/hosts.ini control_plane -m shell -a "ip -4 addr show | grep -F 10.255.106.20 || true"
 nc -vz 10.255.106.20 8443
 
 # Проверка MetalLB
@@ -244,14 +244,14 @@ kubectl --kubeconfig /etc/kubernetes/admin.conf -n nfs-storage get all
 1. Убедиться, что используется `kubeadm_config_api_version: kubeadm.k8s.io/v1beta3`.
 2. Перезапустить bootstrap после фикса:
 ```bash
-ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_bootstrap.yml
 ```
 
 Если на этапе runtime возникает `Depsolve Error` по `cri-tools`:
 1. Убедиться, что `container_runtime_install_cri_tools: false`.
 2. Перезапустить bootstrap:
 ```bash
-ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_bootstrap.yml
 ```
 
 Если на этапе `kubernetes_core` возникает `Cannot download, all mirrors were already tried`:
@@ -265,7 +265,7 @@ sudo dnf -q makecache --refresh --disablerepo='*' --enablerepo=kubernetes
 - `kubernetes_packages_version_override: "1.30.1-150500.1.1"` (пример)
 4. Повторить bootstrap:
 ```bash
-ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_bootstrap.yml
 ```
 
 Если `kubeadm init` падает на `wait-control-plane` (`kubelet 10248`):
@@ -276,26 +276,26 @@ ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml
    - что `kubelet` в `active` и не падает по cgroup/конфигу.
 3. После исправления причины перезапустить:
 ```bash
-ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml --tags k8s
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_bootstrap.yml --tags k8s
 ```
 
 Если в `kube-system events` есть `FailedCreatePodSandBox` с `pause:3.9` и `registry.k8s.io ... Forbidden`:
 1. Проверить применение proxy-env к systemd-сервисам:
 ```bash
-ansible -i inventories/prod/hosts.yml all -m shell -a "systemctl show containerd -p Environment --no-pager"
-ansible -i inventories/prod/hosts.yml all -m shell -a "systemctl show kubelet -p Environment --no-pager"
+ansible -i k8s/inventories/prod/hosts.ini all -m shell -a "systemctl show containerd -p Environment --no-pager"
+ansible -i k8s/inventories/prod/hosts.ini all -m shell -a "systemctl show kubelet -p Environment --no-pager"
 ```
 2. Проверить, что включен mirror `registry.k8s.io` для `containerd`:
 ```bash
-ansible -i inventories/prod/hosts.yml all -m shell -a "cat /etc/containerd/certs.d/registry.k8s.io/hosts.toml || true"
-ansible -i inventories/prod/hosts.yml all -m shell -a "grep -n 'config_path' /etc/containerd/config.toml"
+ansible -i k8s/inventories/prod/hosts.ini all -m shell -a "cat /etc/containerd/certs.d/registry.k8s.io/hosts.toml || true"
+ansible -i k8s/inventories/prod/hosts.ini all -m shell -a "grep -n 'config_path' /etc/containerd/config.toml"
 ```
 3. Убедиться в inventory:
 - `containerd_registry_k8s_io_mirror_enabled: true`
 - `containerd_registry_k8s_io_mirror_endpoint: https://cr.yandex/mirror/k8s.gcr.io`
 4. Перезапустить runtime и сетевой этап:
 ```bash
-ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml --tags proxy,runtime,network
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_bootstrap.yml --tags proxy,runtime,network
 ```
 
 Если на этапе `networking` возникает таймаут `calico-node rollout`:
@@ -310,21 +310,21 @@ ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml --tags pr
 - `network_cni_rollout_timeout_retry: "600s"`
 3. Повторить bootstrap:
 ```bash
-ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml --tags network
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_bootstrap.yml --tags network
 ```
 
 Если failover-валидация падала с `validation_failover_source_host is undefined`:
 1. Убедиться, что используется актуальная версия роли `validation` с guard/fallback для `delegate_to`.
 2. Запускать failover по команде с явным флагом:
 ```bash
-ansible-playbook -i inventories/prod/hosts.yml playbooks/validate.yml \
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_validate.yml \
   --tags failover \
   -e validation_enable_control_plane_vip_failover_test=true
 ```
 3. Проверить, что в конце play `failed=0`, а `keepalived` на source-host возвращен в `started`.
 
 ## 12. Опция data-диска для NFS
-Если нужен отдельный диск под `nfs_export_path`, настройте в `inventories/prod/group_vars/nfs.yml`:
+Если нужен отдельный диск под `nfs_export_path`, настройте в `k8s/inventories/prod/group_vars/nfs.yml`:
 - `storage_nfs_data_disk_enabled: true`
 - `storage_nfs_data_disk_device: /dev/sdb` (или другой нужный диск)
 - `storage_nfs_data_disk_partition_number: 1`
@@ -341,31 +341,31 @@ ansible-playbook -i inventories/prod/hosts.yml playbooks/validate.yml \
 - после монтирования выполняется проверка, что `nfs_export_path` смонтирован именно с ожидаемого partition.
 
 ## 13. Рекомендованный порядок запуска
-1. `playbooks/bootstrap.yml`
-2. `playbooks/metallb.yml`
-3. `playbooks/hardening.yml`
-4. `playbooks/storage.yml`
-5. `playbooks/validate.yml`
+1. `k8s/playbooks/k8s_bootstrap.yml`
+2. `k8s/playbooks/k8s_metallb.yml`
+3. `k8s/playbooks/k8s_hardening.yml`
+4. `k8s/playbooks/k8s_storage.yml`
+5. `k8s/playbooks/k8s_validate.yml`
 
 Отдельный запуск только этапа MetalLB:
 ```bash
-ansible-playbook -i inventories/prod/hosts.yml playbooks/metallb.yml
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_metallb.yml
 ```
 
 Либо единым запуском:
 ```bash
-ansible-playbook -i inventories/prod/hosts.yml playbooks/site.yml
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_site.yml
 ```
 
 ## 13.1 Масштабирование существующего кластера (добавление нод)
-Используйте отдельный playbook `playbooks/scale_out.yml`.
+Используйте отдельный playbook `k8s/playbooks/k8s_scale_out.yml`.
 
 Шаги:
 1. Добавьте новые хосты в inventory в их целевые роли (`control_plane` или `workers` или `metallb`).
 2. Добавьте эти же хосты в группу `scale_out_nodes`.
 3. Запустите:
 ```bash
-ansible-playbook -i inventories/prod/hosts.yml playbooks/scale_out.yml
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_scale_out.yml
 ```
 
 Ключевые особенности:
@@ -385,7 +385,7 @@ ansible-playbook -i inventories/prod/hosts.yml playbooks/scale_out.yml
 
 Пример:
 ```bash
-ansible-playbook -i inventories/prod/hosts.yml playbooks/scale_out.yml \
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_scale_out.yml \
   -e scale_out_allow_reprepare_existing_nodes=true
 ```
 
@@ -400,37 +400,37 @@ ansible-playbook -i inventories/prod/hosts.yml playbooks/scale_out.yml \
 
 Запуск:
 ```bash
-ansible-playbook -i inventories/prod/hosts.yml playbooks/reinstall_cluster_and_nfs.yml \
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_reinstall_cluster_and_nfs.yml \
   -e reinstall_scope=cluster_and_nfs \
   -e reinstall_confirm_token=DESTROY_CLUSTER_AND_NFS_DATA
 ```
 
 После выполнения:
-1. Повторно развернуть кластер через `playbooks/site.yml`.
+1. Повторно развернуть кластер через `k8s/playbooks/k8s_site.yml`.
 2. Проверить, что `StorageClass nfs-sp` пересоздан и PVC создаются заново.
 3. Проверить readiness всех нод и системных подов.
 
 ## 15. Оперативное управление proxy-режимом
-Для переключения proxy без полного bootstrap используйте отдельный playbook `playbooks/manage_proxy.yml`.
+Для переключения proxy без полного bootstrap используйте отдельный playbook `k8s/playbooks/k8s_manage_proxy.yml`.
 
 Включить proxy (применить profile/dnf/systemd proxy конфигурацию):
 ```bash
-ansible-playbook -i inventories/prod/hosts.yml playbooks/manage_proxy.yml -e proxy_state=present
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_manage_proxy.yml -e proxy_state=present
 ```
 
 Отключить proxy (удалить profile/dnf/systemd proxy конфигурацию):
 ```bash
-ansible-playbook -i inventories/prod/hosts.yml playbooks/manage_proxy.yml -e proxy_state=absent
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_manage_proxy.yml -e proxy_state=absent
 ```
 
 Быстрая проверка после переключения:
 ```bash
-ansible -i inventories/prod/hosts.yml all -m shell -a "systemctl show kubelet -p Environment --no-pager"
-ansible -i inventories/prod/hosts.yml all -m shell -a "grep -n 'ANSIBLE MANAGED PROXY' /etc/dnf/dnf.conf || true"
+ansible -i k8s/inventories/prod/hosts.ini all -m shell -a "systemctl show kubelet -p Environment --no-pager"
+ansible -i k8s/inventories/prod/hosts.ini all -m shell -a "grep -n 'ANSIBLE MANAGED PROXY' /etc/dnf/dnf.conf || true"
 ```
 
 ## 16. Автодеплой приложений: Prometheus, GitLab Runner, k8tz
-Автодеплой выполняется из `playbooks/bootstrap.yml` на `control_plane[0]` и управляется переменными в `inventories/prod/group_vars/all.yml`:
+Автодеплой выполняется из `k8s/playbooks/k8s_bootstrap.yml` на `control_plane[0]` и управляется переменными в `k8s/inventories/prod/group_vars/all.yml`:
 - `deploy_prometheus_stack: true|false`
 - `deploy_gitlab_runner: true|false`
 - `deploy_k8tz: true|false`
@@ -445,35 +445,35 @@ ansible -i inventories/prod/hosts.yml all -m shell -a "grep -n 'ANSIBLE MANAGED 
 
 Создать vault-файл из примера:
 ```bash
-cp inventories/prod/group_vars/vault.yml.example inventories/prod/group_vars/vault.yml
-ansible-vault encrypt inventories/prod/group_vars/vault.yml
-ansible-vault edit inventories/prod/group_vars/vault.yml
+cp k8s/inventories/prod/group_vars/vault.yml.example k8s/inventories/prod/group_vars/vault.yml
+ansible-vault encrypt k8s/inventories/prod/group_vars/vault.yml
+ansible-vault edit k8s/inventories/prod/group_vars/vault.yml
 ```
 
 ### 16.2 Запуск только новых приложений по тегам
 Только Prometheus:
 ```bash
-ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml --tags prometheus
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_bootstrap.yml --tags prometheus
 ```
 
 Только GitLab Runner:
 ```bash
-ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml --tags gitlab-runner
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_bootstrap.yml --tags gitlab-runner
 ```
 
 Только k8tz:
 ```bash
-ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml --tags k8tz
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_bootstrap.yml --tags k8tz
 ```
 
 Все три приложения:
 ```bash
-ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml --tags observability,gitlab-runner,k8tz
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_bootstrap.yml --tags observability,gitlab-runner,k8tz
 ```
 
 Пример запуска с vault:
 ```bash
-ansible-playbook -i inventories/prod/hosts.yml playbooks/bootstrap.yml \
+ansible-playbook -i k8s/inventories/prod/hosts.ini k8s/playbooks/k8s_bootstrap.yml \
   --tags gitlab-runner \
   --ask-vault-pass
 ```

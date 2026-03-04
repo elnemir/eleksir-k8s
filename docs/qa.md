@@ -85,7 +85,7 @@
   - ansible-core: `2.19.4`
   - quality gate: `ansible-lint`
   - require_check_diff_support: `yes`
-  - unified `site.yml`: `true`
+  - unified `k8s_site.yml`: `true`
   - split playbooks: `true`
   - tags strategy: `true`
   - runbook required: `true`
@@ -97,7 +97,7 @@
   - daily snapshot
   - retention: `14 days`
 - Acceptance criteria:
-  - Успешный полный deploy (`playbooks/site.yml`) на чистом контуре.
+  - Успешный полный deploy (`k8s/playbooks/k8s_site.yml`) на чистом контуре.
   - Идемпотентный повторный запуск без незапланированных изменений.
   - Все ноды `Ready`, системные поды `Running`.
   - Проверка ingress в режиме `node_ip` (готовность `DaemonSet` и доступность `80/443` на ingress-нодах).

@@ -1,7 +1,9 @@
 # ## Задача: Роль base_os
 # - **Статус**: В процессе
-# - **Описание**: Дефолтные параметры подготовки ОС RedOS.
-base_os_packages:
+# - **Описание**: Дефолтные параметры подготовки ОС перед установкой Kubernetes.
+base_os_packages: []
+
+base_os_packages_common:
   - curl
   - vim
   - wget
@@ -9,12 +11,36 @@ base_os_packages:
   - unzip
   - ca-certificates
   - chrony
-  - conntrack-tools
-  - iproute-tc
-  - nfs-utils
-  - firewalld
-  - policycoreutils-python-utils
 
+base_os_packages_by_family:
+  RedHat:
+    - conntrack-tools
+    - iproute-tc
+    - nfs-utils
+    - firewalld
+    - policycoreutils-python-utils
+  Debian:
+    - conntrack
+    - iproute2
+    - nfs-common
+    - firewalld
+    - policycoreutils
+
+base_os_timesync_service_by_family:
+  RedHat: chronyd
+  Debian: chrony
+
+base_os_chrony_conf_by_family:
+  RedHat: /etc/chrony.conf
+  Debian: /etc/chrony/chrony.conf
+
+base_os_disable_zram_distributions:
+  - RedOS
+
+base_os_disable_zram_major_versions:
+  - "8"
+
+base_os_manage_package_updates: true
 base_os_disable_swap: true
 base_os_disable_zram0: true
 base_os_update_all_packages: true
@@ -23,7 +49,7 @@ base_os_manage_hostname: true
 base_os_manage_hosts_file: true
 base_os_manage_networkmanager_dns: true
 base_os_networkmanager_ignore_auto_dns: true
-base_os_manage_resolv_conf_symlink: true
+base_os_manage_resolv_conf_symlink: false
 base_os_resolv_conf_target: /run/systemd/resolve/resolv.conf
 
 base_os_kernel_modules:

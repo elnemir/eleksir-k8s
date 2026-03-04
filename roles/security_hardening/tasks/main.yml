@@ -36,10 +36,15 @@
     state: started
   when: firewalld_enabled | bool
 
+- name: Detect SELinux support on current host
+  ansible.builtin.set_fact:
+    security_selinux_supported: "{{ ansible_facts.selinux is defined }}"
+
 - name: Set SELinux mode
   ansible.posix.selinux:
     policy: targeted
     state: "{{ selinux_target_mode | lower }}"
+  when: security_selinux_supported | bool
 
 - name: Build firewalld TCP ports list
   ansible.builtin.set_fact:
